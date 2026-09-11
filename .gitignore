@@ -238,6 +238,10 @@ __marimo__/
 # compilers write access to the system temp directory).
 /.tmp/
 
+# Local assistant/tooling state. Not part of the project deliverable; the directory
+# itself is kept on disk by the tooling, it is just never published.
+/.workbuddy/
+
 # Engine build outputs. These live inside the engine submodule (which already
 # ignores them) - repeated here so they can never be committed by accident.
 engine/ikemen-go/Ikemen_GO.exe
