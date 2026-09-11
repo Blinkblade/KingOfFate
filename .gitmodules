@@ -1,0 +1,4 @@
+[submodule "engine/ikemen-go"]
+	path = engine/ikemen-go
+	url = https://github.com/Blinkblade/Ikemen-GO.git
+	branch = kingoffate/rc5
