@@ -1,0 +1,187 @@
+==> Embedding Windows resources (icon + manifest) with windres...
+==> Using system FFmpeg (BUILD_FFMPEG=no).
+WARNING: WebM alpha requires FFmpeg to select the libvpx VP8/VP9 decoder.
+         Use BUILD_FFMPEG=yes if the system build selects the native decoder.
+==> Delay-load import libs already exist in build/delaylib, skipping generation (delete that directory to force regeneration)
+==> Building Go binary (this may take a while)...
+# github.com/veandco/go-sdl2/sdl
+cgo: gcc did not produce error at completed:1
+on input:
+
+#line 1 "cgo-builtin-prolog"
+#include <stddef.h>
+
+/* Define intgo when compiling with GCC.  */
+typedef ptrdiff_t intgo;
+
+#define GO_CGO_GOSTRING_TYPEDEF
+typedef struct { const char *p; intgo n; } _GoString_;
+typedef struct { char *p; intgo n; intgo c; } _GoBytes_;
+_GoString_ GoString(char *p);
+_GoString_ GoStringN(char *p, int l);
+_GoBytes_ GoBytes(void *p, int n);
+char *CString(_GoString_);
+void *CBytes(_GoBytes_);
+void *_CMalloc(size_t);
+
+__attribute__ ((unused))
+static size_t _GoStringLen(_GoString_ s) { return (size_t)s.n; }
+
+__attribute__ ((unused))
+static const char *_GoStringPtr(_GoString_ s) { return s.p; }
+#line 3 "C:\\Users\\lm\\go\\pkg\\mod\\github.com\\veandco\\go-sdl2@v0.5.0-alpha.7.0.20250220045537-7f43f67a3a12\\sdl\\clipboard.go"
+
+#include "sdl_wrapper.h"
+
+#if !(SDL_VERSION_ATLEAST(2,26,0))
+
+#if defined(WARN_OUTDATED)
+#pragma message("SDL_SetPrimarySelectionText is not supported before SDL 2.26.0")
+#pragma message("SDL_GetPrimarySelectionText is not supported before SDL 2.26.0")
+#pragma message("SDL_HasPrimarySelectionText is not supported before SDL 2.26.0")
+#endif
+
+static inline int SDL_SetPrimarySelectionText(const char *text)
+{
+    return -1;
+}
+
+static inline char * SDL_GetPrimarySelectionText(void)
+{
+    return NULL;
+}
+
+static inline SDL_bool SDL_HasPrimarySelectionText(void)
+{
+    return SDL_FALSE;
+}
+
+#endif
+
+#line 1 "cgo-generated-wrapper"
+#line 1 "not-declared"
+void __cgo_f_1_1(void) { __typeof__(CString) *__cgo_undefined__1; }
+#line 1 "not-type"
+void __cgo_f_1_2(void) { CString *__cgo_undefined__2; }
+#line 1 "not-int-const"
+void __cgo_f_1_3(void) { enum { __cgo_undefined__3 = (CString)*1 }; }
+#line 1 "not-num-const"
+void __cgo_f_1_4(void) { static const double __cgo_undefined__4 = (CString); }
+#line 1 "not-str-lit"
+void __cgo_f_1_5(void) { static const char __cgo_undefined__5[] = (CString); }
+#line 2 "not-declared"
+void __cgo_f_2_1(void) { __typeof__(GoString) *__cgo_undefined__1; }
+#line 2 "not-type"
+void __cgo_f_2_2(void) { GoString *__cgo_undefined__2; }
+#line 2 "not-int-const"
+void __cgo_f_2_3(void) { enum { __cgo_undefined__3 = (GoString)*1 }; }
+#line 2 "not-num-const"
+void __cgo_f_2_4(void) { static const double __cgo_undefined__4 = (GoString); }
+#line 2 "not-str-lit"
+void __cgo_f_2_5(void) { static const char __cgo_undefined__5[] = (GoString); }
+#line 3 "not-declared"
+void __cgo_f_3_1(void) { __typeof__(SDL_GetClipboardText) *__cgo_undefined__1; }
+#line 3 "not-type"
+void __cgo_f_3_2(void) { SDL_GetClipboardText *__cgo_undefined__2; }
+#line 3 "not-int-const"
+void __cgo_f_3_3(void) { enum { __cgo_undefined__3 = (SDL_GetClipboardText)*1 }; }
+#line 3 "not-num-const"
+void __cgo_f_3_4(void) { static const double __cgo_undefined__4 = (SDL_GetClipboardText); }
+#line 3 "not-str-lit"
+void __cgo_f_3_5(void) { static const char __cgo_undefined__5[] = (SDL_GetClipboardText); }
+#line 4 "not-declared"
+void __cgo_f_4_1(void) { __typeof__(SDL_GetPrimarySelectionText) *__cgo_undefined__1; }
+#line 4 "not-type"
+void __cgo_f_4_2(void) { SDL_GetPrimarySelectionText *__cgo_undefined__2; }
+#line 4 "not-int-const"
+void __cgo_f_4_3(void) { enum { __cgo_undefined__3 = (SDL_GetPrimarySelectionText)*1 }; }
+#line 4 "not-num-const"
+void __cgo_f_4_4(void) { static const double __cgo_undefined__4 = (SDL_GetPrimarySelectionText); }
+#line 4 "not-str-lit"
+void __cgo_f_4_5(void) { static const char __cgo_undefined__5[] = (SDL_GetPrimarySelectionText); }
+#line 5 "not-declared"
+void __cgo_f_5_1(void) { __typeof__(SDL_HasClipboardText) *__cgo_undefined__1; }
+#line 5 "not-type"
+void __cgo_f_5_2(void) { SDL_HasClipboardText *__cgo_undefined__2; }
+#line 5 "not-int-const"
+void __cgo_f_5_3(void) { enum { __cgo_undefined__3 = (SDL_HasClipboardText)*1 }; }
+#line 5 "not-num-const"
+void __cgo_f_5_4(void) { static const double __cgo_undefined__4 = (SDL_HasClipboardText); }
+#line 5 "not-str-lit"
+void __cgo_f_5_5(void) { static const char __cgo_undefined__5[] = (SDL_HasClipboardText); }
+#line 6 "not-declared"
+void __cgo_f_6_1(void) { __typeof__(SDL_HasPrimarySelectionText) *__cgo_undefined__1; }
+#line 6 "not-type"
+void __cgo_f_6_2(void) { SDL_HasPrimarySelectionText *__cgo_undefined__2; }
+#line 6 "not-int-const"
+void __cgo_f_6_3(void) { enum { __cgo_undefined__3 = (SDL_HasPrimarySelectionText)*1 }; }
+#line 6 "not-num-const"
+void __cgo_f_6_4(void) { static const double __cgo_undefined__4 = (SDL_HasPrimarySelectionText); }
+#line 6 "not-str-lit"
+void __cgo_f_6_5(void) { static const char __cgo_undefined__5[] = (SDL_HasPrimarySelectionText); }
+#line 7 "not-declared"
+void __cgo_f_7_1(void) { __typeof__(SDL_SetClipboardText) *__cgo_undefined__1; }
+#line 7 "not-type"
+void __cgo_f_7_2(void) { SDL_SetClipboardText *__cgo_undefined__2; }
+#line 7 "not-int-const"
+void __cgo_f_7_3(void) { enum { __cgo_undefined__3 = (SDL_SetClipboardText)*1 }; }
+#line 7 "not-num-const"
+void __cgo_f_7_4(void) { static const double __cgo_undefined__4 = (SDL_SetClipboardText); }
+#line 7 "not-str-lit"
+void __cgo_f_7_5(void) { static const char __cgo_undefined__5[] = (SDL_SetClipboardText); }
+#line 8 "not-declared"
+void __cgo_f_8_1(void) { __typeof__(SDL_SetPrimarySelectionText) *__cgo_undefined__1; }
+#line 8 "not-type"
+void __cgo_f_8_2(void) { SDL_SetPrimarySelectionText *__cgo_undefined__2; }
+#line 8 "not-int-const"
+void __cgo_f_8_3(void) { enum { __cgo_undefined__3 = (SDL_SetPrimarySelectionText)*1 }; }
+#line 8 "not-num-const"
+void __cgo_f_8_4(void) { static const double __cgo_undefined__4 = (SDL_SetPrimarySelectionText); }
+#line 8 "not-str-lit"
+void __cgo_f_8_5(void) { static const char __cgo_undefined__5[] = (SDL_SetPrimarySelectionText); }
+#line 9 "not-declared"
+void __cgo_f_9_1(void) { __typeof__(SDL_TRUE) *__cgo_undefined__1; }
+#line 9 "not-type"
+void __cgo_f_9_2(void) { SDL_TRUE *__cgo_undefined__2; }
+#line 9 "not-int-const"
+void __cgo_f_9_3(void) { enum { __cgo_undefined__3 = (SDL_TRUE)*1 }; }
+#line 9 "not-num-const"
+void __cgo_f_9_4(void) { static const double __cgo_undefined__4 = (SDL_TRUE); }
+#line 9 "not-str-lit"
+void __cgo_f_9_5(void) { static const char __cgo_undefined__5[] = (SDL_TRUE); }
+#line 10 "not-declared"
+void __cgo_f_10_1(void) { __typeof__(SDL_free) *__cgo_undefined__1; }
+#line 10 "not-type"
+void __cgo_f_10_2(void) { SDL_free *__cgo_undefined__2; }
+#line 10 "not-int-const"
+void __cgo_f_10_3(void) { enum { __cgo_undefined__3 = (SDL_free)*1 }; }
+#line 10 "not-num-const"
+void __cgo_f_10_4(void) { static const double __cgo_undefined__4 = (SDL_free); }
+#line 10 "not-str-lit"
+void __cgo_f_10_5(void) { static const char __cgo_undefined__5[] = (SDL_free); }
+#line 11 "not-declared"
+void __cgo_f_11_1(void) { __typeof__(free) *__cgo_undefined__1; }
+#line 11 "not-type"
+void __cgo_f_11_2(void) { free *__cgo_undefined__2; }
+#line 11 "not-int-const"
+void __cgo_f_11_3(void) { enum { __cgo_undefined__3 = (free)*1 }; }
+#line 11 "not-num-const"
+void __cgo_f_11_4(void) { static const double __cgo_undefined__4 = (free); }
+#line 11 "not-str-lit"
+void __cgo_f_11_5(void) { static const char __cgo_undefined__5[] = (free); }
+#line 1 "completed"
+int __cgo__1 = __cgo__2;
+
+full error output:
+cc1.exe: fatal error: cannot open 'D:\AI\develop\KingOfFate\.tmp\ccZTTHfi.s' for writing: Permission denied
+compilation terminated.
+
+# github.com/ikemen-engine/reisen
+cc1.exe: fatal error: cannot open 'D:\AI\develop\KingOfFate\.tmp\ccwfnrsD.s' for writing: Permission denied
+compilation terminated.
+# github.com/ikemen-engine/reisen
+cc1.exe: fatal error: cannot open 'D:\AI\develop\KingOfFate\.tmp\ccAja0l2.s' for writing: Permission denied
+compilation terminated.
+# github.com/ikemen-engine/reisen
+cc1.exe: fatal error: cannot open 'D:\AI\develop\KingOfFate\.tmp\ccIjWx02.s' for writing: Permission denied
+compilation terminated.
