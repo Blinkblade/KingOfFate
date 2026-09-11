@@ -228,6 +228,9 @@ __marimo__/
 !/logs/build/**
 
 # Local runtime distribution assembled for testing / release packaging.
+# Re-include the directory itself first: the generic "dist/" rule above excludes the
+# whole directory, which would prevent any re-inclusion of files inside it.
+!/dist/
 /dist/*
 !/dist/.gitkeep
 
