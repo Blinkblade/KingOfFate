@@ -14,6 +14,12 @@
     Directory that holds Ikemen_GO.exe together with data/, font/, external/,
     chars/ and stages/. Defaults to engine/ikemen-go.
 
+.PARAMETER Msys2Root
+    MSYS2 installation root, used to locate the MinGW64 runtime DLLs
+    (SDL2/libxmp/FFmpeg...). Only needed when those DLLs are not bundled next to
+    the executable. Defaults to -Msys2Root > $env:MSYS2_ROOT > $env:MSYS2_HOME >
+    the usual install locations; nothing is hardcoded.
+
 .PARAMETER Wait
     Wait for the game process to exit before returning.
 
@@ -33,6 +39,7 @@
 [CmdletBinding()]
 param(
     [string]$RuntimeRoot,
+    [string]$Msys2Root,
     [switch]$Wait,
     [string[]]$ExtraArgs,
     [switch]$CheckOnly
@@ -109,6 +116,47 @@ Write-Ok 'runtime assets: data/ font/ external/ chars/ stages/ all present'
 Write-Host '         motif   : data/ikemen1/system.def'
 Write-Host '         char    : chars/kfm/kfm.def'
 Write-Host '         stage   : stages/stage0.def'
+Write-Host ''
+
+# ---------------------------------------------------------------------------
+# Runtime DLL search path
+# ---------------------------------------------------------------------------
+# When the engine is linked against the system FFmpeg (BUILD_FFMPEG=no) the engine
+# build script does not bundle the runtime DLLs, so the executable resolves them
+# from the MSYS2 mingw64 prefix. Prepend that directory to the PATH of the game
+# process. If the DLLs are ever bundled next to the executable this is skipped.
+function Resolve-Msys2MingwBin {
+    $candidates = New-Object System.Collections.Generic.List[string]
+    if (-not [string]::IsNullOrWhiteSpace($Msys2Root)) { $candidates.Add($Msys2Root) }
+    foreach ($n in 'MSYS2_ROOT', 'MSYS2_HOME') {
+        $v = [System.Environment]::GetEnvironmentVariable($n)
+        if (-not [string]::IsNullOrWhiteSpace($v)) { $candidates.Add($v) }
+    }
+    $candidates.Add('C:\msys64')
+    $candidates.Add('D:\msys64')
+    foreach ($c in $candidates) {
+        if ([string]::IsNullOrWhiteSpace($c)) { continue }
+        $p = Join-Path $c 'mingw64\bin'
+        if (Test-Path -LiteralPath (Join-Path $p 'SDL2.dll')) { return $p }
+    }
+    return $null
+}
+
+if (-not (Test-Path -LiteralPath (Join-Path $RuntimeRoot 'SDL2.dll'))) {
+    $mingwBin = Resolve-Msys2MingwBin
+    if ($mingwBin) {
+        $env:PATH = "$mingwBin;$env:PATH"
+        Write-Ok "DLL path     : $mingwBin  (prepended to the game process PATH)"
+    }
+    else {
+        Write-Host '[warn ] DLL path     : no bundled DLLs next to the exe and no MSYS2 mingw64/bin found' -ForegroundColor Yellow
+        Write-Host '       the game may fail to start with a missing-DLL error.' -ForegroundColor Yellow
+        Write-Host '       Build with BUILD_FFMPEG=auto, or pass -Msys2Root <path>.' -ForegroundColor Yellow
+    }
+}
+else {
+    Write-Ok 'DLL path     : runtime DLLs are bundled next to the executable'
+}
 Write-Host ''
 
 if ($CheckOnly) {
