@@ -110,8 +110,18 @@ Build logs are written to `logs/build/<YYYYMMDD>/`.
 pwsh -File scripts/run_game.ps1
 ```
 
-The run script locates the built `Ikemen_GO.exe`, checks the runtime assets, and launches the game. It never
-builds for you — if the executable is missing it will tell you to run `scripts/build_engine.ps1` first.
+The run script locates the built `Ikemen_GO.exe`, checks the runtime assets, resolves the runtime
+DLL search path, and launches the game. It never builds for you — if the executable is missing it
+will tell you to run `scripts/build_engine.ps1` first.
+
+Run `-CheckOnly` for a preflight check without launching:
+
+```powershell
+pwsh -File scripts/run_game.ps1 -CheckOnly
+```
+
+Full launch documentation — script parameters, direct-executable launch, the engine's command line
+arguments and troubleshooting — is in [`docs/running.md`](docs/running.md).
 
 ---
 
