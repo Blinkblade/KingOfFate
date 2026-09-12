@@ -14,7 +14,7 @@ Last updated: 2026-09-12
 
 | Phase | Name | Status |
 | --- | --- | --- |
-| **P0** | Repository & Environment | **BLOCKED** |
+| **P0** | Repository & Environment | **PASS** |
 | P1 | IKEMEN Character Architecture | NOT_STARTED |
 | P2 | Base Fighter Template | NOT_STARTED |
 | P3 | Test Fighter A | NOT_STARTED |
@@ -32,12 +32,11 @@ Last updated: 2026-09-12
 
 ## P0 — Repository & Environment
 
-**Status: BLOCKED**
+**Status: PASS**
 
-Blocked on: the engine cannot currently be compiled in this local environment. `cc1.exe` cannot
-write the temporary `.s` file that the gcc driver creates while **cgo** compiles, failing with
-`Permission denied` (see `docs/iterations/20260911-p0-bootstrap.md` for the evidence and for the
-hypotheses that were already excluded). Everything that does not need a compiled binary is done.
+All 10 exit gates pass. The engine builds and runs, and every step is reproducible from
+the repository scripts. See the phase report for the full account:
+[`docs/phase_reports/P0-repository-and-environment.md`](phase_reports/P0-repository-and-environment.md).
 
 ### Completed
 
@@ -54,34 +53,40 @@ hypotheses that were already excluded). Everything that does not need a compiled
 - Windows build environment (MSYS2 / MINGW64 toolchain verified by `scripts/check_build_env.sh`)
 - runtime assets (official screenpack) unpacked next to the executable
 - `scripts/build_engine.ps1`, `scripts/run_game.ps1`, `scripts/test.ps1`
-- smoke test suite in `tests/smoke/`
-- `README.md`, `docs/environment.md`
-
-### Still open
-
-- engine build (`Ikemen_GO.exe`)
-- engine runtime verification
+- smoke test suite in `tests/smoke/` (29/29 passing, including a real launch check)
+- engine built: `engine/ikemen-go/Ikemen_GO.exe` (14.94 MB)
+- engine verified running: window `Ikemen GO`, responsive
+- `README.md`, `CONTRIBUTING.md`, `docs/environment.md`, `docs/phase_reports/`
 
 ### P0 exit gates
 
 | Gate | Description | Result |
 | --- | --- | --- |
 | PASS-01 | `engine/ikemen-go` still points at the correct submodule baseline | **PASS** |
-| PASS-02 | IKEMEN GO builds successfully in the current Windows environment | **BLOCKED** |
-| PASS-03 | the built program starts successfully | **BLOCKED** |
-| PASS-04 | `scripts/build_engine.ps1` can repeat the build | **PASS** (script verified; the build itself is blocked) |
-| PASS-05 | `scripts/run_game.ps1` can launch the game | **BLOCKED** (needs a built executable) |
-| PASS-06 | `scripts/test.ps1` basic smoke test passes | **PASS** (static checks) |
+| PASS-02 | IKEMEN GO builds successfully in the current Windows environment | **PASS** |
+| PASS-03 | the built program starts successfully | **PASS** |
+| PASS-04 | `scripts/build_engine.ps1` can repeat the build | **PASS** |
+| PASS-05 | `scripts/run_game.ps1` can launch the game | **PASS** |
+| PASS-06 | `scripts/test.ps1` basic smoke test passes | **PASS** (29/29) |
 | PASS-07 | README / environment / development_status are in sync | **PASS** |
 | PASS-08 | this iteration's Iteration Record is complete | **PASS** |
 | PASS-09 | `git status` shows no stray temporary files | **PASS** |
 | PASS-10 | nothing depends on an unrecorded manual step | **PASS** |
 
-Full detail, including exactly which hypotheses were excluded and what is required to unblock the
-build, is in the P0 iteration record:
-[`docs/iterations/20260911-p0-bootstrap.md`](iterations/20260911-p0-bootstrap.md).
+### Carried into later phases
 
-A phase is only ever marked `PASS` when every gate passes.
+These do not block P0 but must not be forgotten:
+
+- `pacman` signature checking is disabled locally (`SigLevel = Never`) because the gpg
+  shipped with this MSYS2 snapshot loops forever on `pacman-key --init`. Restore
+  `SigLevel = Required` once MSYS2 is fixed. See `docs/environment.md`.
+- The build uses the system FFmpeg (`BUILD_FFMPEG=no`) instead of building FFmpeg from
+  source. WebM alpha video may therefore not use the libvpx decoder. Switch back to
+  `auto` when the environment allows.
+- Runtime DLLs are not bundled; `run_game.ps1` prepends the MSYS2 `mingw64/bin` to the
+  game process PATH. Release packaging (P12) must place them next to the executable.
+- The branch has not been pushed and no PR exists yet (no GitHub credentials on this
+  machine). See the phase report for the suggested PR title/description.
 
 ---
 

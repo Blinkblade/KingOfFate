@@ -149,9 +149,24 @@ Notes on the options:
 
 ### Result on this machine
 
-**BLOCKED.** See the P0 iteration record
-[`docs/iterations/20260911-p0-bootstrap.md`](iterations/20260911-p0-bootstrap.md) for the exact
-failure, the evidence gathered, and what is required to unblock it.
+**PASS.** The full build completes:
+
+```text
+==> Build successful (Windows)
+    Binary: ./Ikemen_GO.exe
+```
+
+`engine/ikemen-go/Ikemen_GO.exe` — 14.94 MB.
+
+A note on the build temp directory: an earlier attempt failed inside cgo with
+`cc1.exe: fatal error: cannot open '<tmp>\ccXXXXXXXX.s' for writing: Permission denied`, which
+turned out to be stale leftovers in the temp directory from an interrupted concurrent compile.
+Clearing `<project>/.tmp` resolved it. If that error ever comes back, empty `.tmp` and re-run.
+Everything else the build needs is handled by the script.
+
+Building FFmpeg from source (`BUILD_FFMPEG=auto`, the CI default) is *not* used here: libvpx and
+FFmpeg do compile, but their `make install` `STRIP` step produced 0-byte DLLs on this machine.
+The documented system-FFmpeg option is used instead.
 
 ---
 
@@ -161,8 +176,19 @@ failure, the evidence gathered, and what is required to unblock it.
 pwsh -File scripts/run_game.ps1
 ```
 
-Checks the executable and the runtime assets, then launches `Ikemen_GO.exe` from
-`engine/ikemen-go/`. It never builds.
+Verified result: process starts, window title `Ikemen GO`, `Responding = True`,
+working set ~320–380 MB.
+
+Checks the executable and the runtime assets, resolves the runtime DLL search path, then launches
+`Ikemen_GO.exe` from `engine/ikemen-go/`. It never builds.
+
+### Runtime DLL search path
+
+Because the build uses the system FFmpeg, `build.sh` does not bundle the runtime DLLs and
+`engine/ikemen-go/lib/` stays empty. The executable therefore needs the MSYS2 `mingw64\bin`
+directory at run time. `run_game.ps1` detects it (via `-Msys2Root` → `$env:MSYS2_ROOT` →
+`$env:MSYS2_HOME` → the usual install locations) and prepends it to the PATH of the game process
+only. If DLLs are ever bundled next to the executable, this step is skipped automatically.
 
 ---
 
@@ -170,7 +196,19 @@ Checks the executable and the runtime assets, then launches `Ikemen_GO.exe` from
 
 ```powershell
 pwsh -File scripts/test.ps1              # static smoke test
-pwsh -File scripts/test.ps1 -RuntimeTest # also launches one automated round
+pwsh -File scripts/test.ps1 -RuntimeTest # also launches the engine and checks start-up health
 ```
 
+Verified result: `29/29 checks passed`, exit code `0`.
+
 Exit code `0` = PASS, non-zero = FAIL.
+
+The runtime group launches:
+
+```text
+Ikemen_GO.exe -p1 kfm -p2 kfm -s stage0 -windowed -nosound -nomusic
+```
+
+and checks that the process starts, creates a game window and stays alive and responsive, then
+terminates it. The engine's `-rounds <num>` option is documented in its help text but is never
+read by the engine in this RC5 baseline, so an automatic quit cannot be used for unattended runs.

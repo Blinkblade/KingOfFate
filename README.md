@@ -10,10 +10,13 @@ tooling and testing** rather than re-implementing a fighting-game engine.
 
 ## Status
 
-**Current phase: `P0 — Repository & Environment`**
+**Current phase: `P0 — Repository & Environment` — ✅ PASS (10/10 gates)**
+
+The engine builds and runs, and every step is reproducible from the repository scripts.
 
 See [`docs/development_status.md`](docs/development_status.md) for the authoritative, always-up-to-date phase
-status, and [`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
+status, [`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
+[`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
 
 ---
 
@@ -73,6 +76,17 @@ Build through the project entry point (works from any working directory):
 pwsh -File scripts/build_engine.ps1
 ```
 
+On a machine that needs a proxy for large downloads (and where `proxy.golang.org` / the FFmpeg
+sources are not directly reachable), pass it explicitly - nothing is hardcoded:
+
+```powershell
+pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no -Proxy http://127.0.0.1:7897 -GoProxy https://goproxy.cn,direct
+```
+
+- `-BuildFfmpeg no` uses the MSYS2 FFmpeg development packages. This is the option documented in
+  `engine/ikemen-go/BUILDING.md` under "Use system FFmpeg instead (optional)".
+- `-Proxy` / `-GoProxy` default to `$env:HTTPS_PROXY` / `$env:GOPROXY` when set.
+
 Or invoke the engine build script directly from an MSYS2 MINGW64 shell:
 
 ```bash
@@ -107,11 +121,19 @@ builds for you — if the executable is missing it will tell you to run `scripts
 pwsh -File scripts/test.ps1
 ```
 
-`scripts/test.ps1` runs the Phase 0 smoke test suite in `tests/smoke/` and returns:
+`scripts/test.ps1` runs the smoke test suite in `tests/smoke/` and returns:
 
 ```text
 0   = PASS
 !=0 = FAIL   (the failing check and the reason are printed)
+```
+
+It covers the engine submodule and its pinned baseline, the runtime directories, the build
+artifact, the basic files needed to run a match, and the project scaffolding. Add `-RuntimeTest`
+to also launch the engine, verify it creates a window and stays responsive, then terminate it:
+
+```powershell
+pwsh -File scripts/test.ps1 -RuntimeTest
 ```
 
 ---

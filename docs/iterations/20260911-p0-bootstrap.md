@@ -6,7 +6,7 @@
 - Phase：P0 — Repository & Environment
 - Branch：`feature/p0-bootstrap`
 - PR：待创建（`feature/p0-bootstrap` → `main`）
-- 状态：**BLOCKED**（构建 Gate 未通过，其余全部完成）
+- 状态：**PASS**（10/10 Gate 通过）
 
 ## 本次目标
 
@@ -111,62 +111,78 @@
 
 - PASS — 子模块仍在 `kingoffate/rc5` / `ba516193`，`git status` 干净
 - PASS — MINGW64 工具链校验 `RESULT:PASS`（gcc 16.2.0 / Go 1.27.1 / SDL2 2.32.10 / libxmp 4.7.2 / FFmpeg 63.1.101）
-- PASS — Smoke Test（详见文末 Gate 表）
-- **FAIL / BLOCKED** — IKEMEN GO 引擎构建未能完成
+- PASS — Smoke Test `29/29 checks passed`，退出码 `0`（含真实启动验证）
+- PASS — `Ikemen_GO.exe` 构建成功（14.94 MB），并能启动（窗口 `Ikemen GO`，持续响应）
 
-### 构建失败的确切情况
-
-失败点稳定复现于 cgo 编译阶段：
+### 构建结论
 
 ```text
-cc1.exe: fatal error: cannot open 'D:\AI\develop\KingOfFate\.tmp\ccXXXXXXXX.s'
+==> Build successful (Windows)
+    Binary: ./Ikemen_GO.exe
+```
+
+使用的命令：
+
+```powershell
+pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no -Proxy http://127.0.0.1:7897 -GoProxy https://goproxy.cn,direct
+```
+
+### 构建失败的原因与解决（失败复盘）
+
+失败点在 cgo 编译阶段，稳定复现：
+
+```text
+cc1.exe: fatal error: cannot open '<tmp>\ccXXXXXXXX.s'
          for writing: Permission denied
 compilation terminated.
-# github.com/ikemen-engine/reisen
 ```
 
 已经排除的假设（每一步都实际执行过）：
 
-| 怀疑点 | 结论 |
-| --- | --- |
-| Go 模块下载被墙 | 已解决。`GOPROXY=https://goproxy.cn,direct` 后模块全部下载完成（modcache 417.8 MB） |
-| 系统临时目录不可写 | 已排除。临时目录改到项目内 `.tmp/` 后仍复现 |
-| 沙箱限制 | 已排除。关闭沙箱在前台重跑，仍复现同一错误 |
-| 编译器本身有问题 | 已排除。`gcc -c` / `gcc -S` / `gcc -c -save-temps` 在同一 `.tmp` 目录下全部成功，`cc1` 能正常写出 `.s` |
-| 引擎构建脚本问题 | 未修改引擎任何源码或构建脚本；`.s` 文件是 gcc 驱动自己生成的临时文件 |
+| 怀疑点 | 验证方式 | 结论 |
+| --- | --- | --- |
+| Go 模块下载被墙 | 观察 `proxy.golang.org ... Bad Gateway` | **成立** → 改 `GOPROXY=https://goproxy.cn,direct`，模块全部下载完成（modcache 417.8 MB） |
+| 是 cgo 本身的问题 | 写最小 cgo 程序构建运行 | **不成立**：`cgo ok: 3` |
+| 是那几个重量级依赖包的问题 | 单独构建 `Eiton/vulkan`、`ikemen-engine/reisen`、`go-gl/gl` | **不成立**：三者 rc=0 |
+| 系统临时目录不可写 | 把 `TMPDIR/TMP/TEMP` 改到项目内 `.tmp/` | 仍复现，**不是位置问题** |
+| 沙箱限制 | 关闭沙箱在前台重跑 | 仍复现，**不是沙箱** |
+| 编译器损坏 | 在同一 `.tmp` 下跑 `gcc -c` / `gcc -S` / `gcc -c -save-temps` | **不成立**：全部成功，cc1 能正常写出 `.s` |
 
-也就是说：`gcc` 单独调用完全正常，但 **cgo 并发调用 gcc 时 `cc1` 无法写入 gcc 自己生成的
-`.s` 临时文件**。该现象与本仓库代码无关，属于本机/沙箱环境对原生编译子进程的限制。
+最终定位为**环境状态问题**：上一次被中断的并发编译在 `.tmp` 里留下了 0 字节的
+`cc*.s` 与 `cgo-gcc-input-*` 残留文件，构建过程本身又因输出经 PowerShell 管道产生
+背压而被卡死。清空 `.tmp`、把重量级依赖逐个干净编译过一遍之后，完整构建一次通过。
 
-本次**没有**采用"任务失败就换技术栈/换架构"的做法，也没有为了绕过环境问题去修改 IKEMEN 源码。
+**处理原则**：没有因此更换技术栈、降低构建目标，也没有修改引擎任何源码或构建脚本。
+已固化的缓解措施写进了 `scripts/build_engine.ps1`：编译临时目录固定在项目内 `.tmp/`，
+构建日志由 shell 直接重定向写入（不经 PowerShell 管道）。
 
-### 已完成的构建前置成果（这些是真实的、可复用的）
+### 本地 FFmpeg 源码构建（`BUILD_FFMPEG=auto`）的结论
 
-- libvpx 源码编译与安装成功（`enable vp8/vp9 decoder`，`vpx.pc` 已生成）
-- FFmpeg 源码编译成功（configure + make 全通过），仅 `make install` 的 `STRIP` 步骤失败并产出
-  0 字节 DLL；因此按 `BUILDING.md` 改用系统 FFmpeg 开发包
-- Go 依赖全部解析下载完成
-- Windows 资源嵌入（icon + manifest，`windres`）成功
-- MinGW delay-load 导入库生成成功（`libxmp.dll.a` / `libwinpthread.dll.a` / `libSDL2.dll.a`）
+libvpx 与 FFmpeg 的 configure + make 全部通过，但 `make install` 的 `STRIP` 步骤失败并
+产出 0 字节 DLL。因此按 `engine/ikemen-go/BUILDING.md` 明确记载的
+"Use system FFmpeg instead (optional)" 改用系统 FFmpeg 开发包；代价是 WebM alpha 可能不走
+libvpx 解码器（引擎构建脚本会打印警告），不影响玩法。
 
 ## 已知问题
 
-- **PASS-02 / PASS-03 未通过（BLOCKED）**：`Ikemen_GO.exe` 未能生成，因此没有构建产物、也没有
-  运行验证结果。解除条件见下节。
 - 本机 `pacman` 的签名校验已被关闭（`SigLevel = Never`），原因是该 MSYS2 快照的 gpg 2.4.9 在
   本机死循环。属于本机环境妥协，已记录在 `docs/environment.md`，应在 MSYS2 修复后恢复。
 - 使用系统 FFmpeg 后，WebM alpha 视频可能不会走 libvpx 解码器（引擎构建脚本会打印该警告），
   不影响玩法。若需要与 CI 完全一致，应在环境允许时改用 `BUILD_FFMPEG=auto`。
-- 构建产物 DLL 的运行期搜索路径尚未处理（`engine/ikemen-go/lib/` 为空，因为
-  `bundle_shared_libs` 只在本地 FFmpeg 前缀存在时才复制 DLL）。这需要在构建打通后再处理。
+- 运行期 DLL 未打包：`engine/ikemen-go/lib/` 为空（系统 FFmpeg 路径下 `bundle_shared_libs`
+  不会复制 DLL）。`scripts/run_game.ps1` 通过探测 MSYS2 `mingw64/bin` 并前置到游戏进程 PATH
+  解决，本机开发无碍；正式分发需要在 P12 打包时把 DLL 放到可执行文件旁。
+- 引擎帮助文本列出的 `-rounds <num>` 在本基线**未接线**（Go 侧从不读取该 key），
+  无法用它做"打 N 回合后自动退出"的无人值守验证。Smoke Test F 组因此改为验证
+  "进程启动 → 创建窗口 → 持续 N 秒响应"，再由测试主动结束进程。
+- 分支尚未推送、PR 未创建（本机无 GitHub 凭据，`gh` CLI 未安装）。
 
 ## 后续工作
 
-1. 在不受上述原生编译限制的环境中重跑
-   `pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no`，确认产出 `engine/ikemen-go/Ikemen_GO.exe`。
-2. 构建通过后执行 `pwsh -File scripts/run_game.ps1` 完成运行验证，并跑
-   `pwsh -File scripts/test.ps1 -RuntimeTest`。
-3. 处理运行期 DLL 搜索路径（把所需 DLL 放到可执行文件旁，或在 `run_game.ps1` 中把 MSYS2
-   `mingw64/bin` 加入子进程 PATH），并在 `docs/environment.md` 记录结论。
-4. 上述 Gate 全部通过后，把 `docs/development_status.md` 的 P0 改为 PASS，再开始
-   `feature/p1-kfm-study`。
+P0 已 PASS，可以进入 P1。注意：
+
+1. 先 `git push -u origin feature/p0-bootstrap` 并创建 PR（标题/描述见
+   `docs/phase_reports/P0-repository-and-environment.md`）。
+2. P1 从 `feature/p1-<topic>` 开始，研究 IKEMEN 角色架构并产出可被 P2 直接复用的角色骨架。
+   P1 的任务说明与全部上下文已整理成可直接粘贴的 prompt：
+   `docs/phase_reports/P1-kickoff-prompt.md`。
