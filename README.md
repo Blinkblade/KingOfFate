@@ -123,6 +123,10 @@ pwsh -File scripts/run_game.ps1 -CheckOnly
 Full launch documentation — script parameters, direct-executable launch, the engine's command line
 arguments and troubleshooting — is in [`docs/running.md`](docs/running.md).
 
+Once the game is running: menu navigation, default keyboard/gamepad bindings, how to rebind keys
+and the full move list (with the files that define it) are documented in
+[`docs/controls.md`](docs/controls.md).
+
 ---
 
 ## Testing

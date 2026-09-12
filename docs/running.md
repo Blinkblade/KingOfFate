@@ -6,6 +6,7 @@
 > 适用基线：IKEMEN GO `v1.0.0-rc.5`（`ba516193bba83f13f0b63ddce314d8719793931f`）
 >
 > 相关文档：[`environment.md`](environment.md)（环境基线）、
+> [`controls.md`](controls.md)（**启动后的操作方法、键位与出招表**）、
 > [`../scripts/run_game.ps1`](../scripts/run_game.ps1)（启动脚本本体）、
 > [`../engine/ikemen-go/BUILDING.md`](../engine/ikemen-go/BUILDING.md)（引擎官方构建说明）
 
