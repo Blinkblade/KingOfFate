@@ -28,14 +28,15 @@
     Also launch the engine for one automated round.
 
 .PARAMETER RuntimeTimeoutSec
-    How long the automated round may take before it is treated as a failure.
+    How long the engine must stay alive and responsive before the launch is
+    considered healthy. The test instance is terminated afterwards.
 #>
 [CmdletBinding()]
 param(
     [string]$RepoRoot,
     [string]$ExpectedEngineCommit = 'ba516193bba83f13f0b63ddce314d8719793931f',
     [switch]$RuntimeTest,
-    [int]$RuntimeTimeoutSec = 180
+    [int]$RuntimeTimeoutSec = 20
 )
 
 Set-StrictMode -Version Latest
@@ -187,7 +188,25 @@ if ($RuntimeTest) {
         Add-Check -Group 'F' -Name 'engine launch' -Passed $false -Detail 'executable missing'
     }
     else {
-        $args = @('-p1', 'kfm', '-p2', 'kfm', '-s', 'stage0', '--rounds', '1', '--windowed', '--nosound', '--nomusic')
+        # The executable resolves SDL2/libxmp/FFmpeg from the MSYS2 mingw64 prefix when
+        # the build used the system FFmpeg (BUILD_FFMPEG=no) and did not bundle DLLs.
+        if (-not (Test-Path -LiteralPath (Join-Path $EngineDir 'SDL2.dll'))) {
+            foreach ($c in @($env:MSYS2_ROOT, $env:MSYS2_HOME, 'C:\msys64', 'D:\msys64')) {
+                if ([string]::IsNullOrWhiteSpace($c)) { continue }
+                $mb = Join-Path $c 'mingw64\bin'
+                if (Test-Path -LiteralPath (Join-Path $mb 'SDL2.dll')) {
+                    $env:PATH = "$mb;$env:PATH"
+                    Write-Host "     dll path: $mb" -ForegroundColor DarkGray
+                    break
+                }
+            }
+        }
+
+        # Quick VS flags as documented by the engine's own help text. Note that this
+        # RC5 baseline does not implement an automatic "quit after N rounds": the
+        # "-rounds" key is parsed but never read by the engine, so this test verifies
+        # start-up health and then terminates the process itself.
+        $args = @('-p1', 'kfm', '-p2', 'kfm', '-s', 'stage0', '-windowed', '-nosound', '-nomusic')
         $proc = $null
         $started = $false
         $failure = ''
@@ -200,20 +219,33 @@ if ($RuntimeTest) {
         Add-Check -Group 'F' -Name 'engine process starts' -Passed $started -Detail $(if ($started) { "pid $($proc.Id)" } else { $failure })
 
         if ($started) {
-            $deadline = (Get-Date).AddSeconds($RuntimeTimeoutSec)
-            $exited = $false
-            while ((Get-Date) -lt $deadline) {
+            # Wait for a real window to appear (the engine creates it during video init).
+            $windowDeadline = (Get-Date).AddSeconds(90)
+            $windowed = $false
+            while ((Get-Date) -lt $windowDeadline) {
                 $proc.Refresh()
-                if ($proc.HasExited) { $exited = $true; break }
+                if ($proc.HasExited) { break }
+                if ($proc.MainWindowHandle -ne 0) { $windowed = $true; break }
                 Start-Sleep -Milliseconds 500
             }
+            Add-Check -Group 'F' -Name 'engine creates a game window' -Passed $windowed -Detail $(if ($windowed) { "title '$($proc.MainWindowTitle)'" } else { 'no window created' })
 
-            if ($exited) {
-                Add-Check -Group 'F' -Name 'engine exits cleanly after the round' -Passed ($proc.ExitCode -eq 0) -Detail "exit code $($proc.ExitCode)"
+            # The engine must keep running without crashing or exiting on its own.
+            $graceDeadline = (Get-Date).AddSeconds($RuntimeTimeoutSec)
+            $crashed = $false
+            $exitCode = $null
+            while ((Get-Date) -lt $graceDeadline) {
+                $proc.Refresh()
+                if ($proc.HasExited) { $crashed = $true; $exitCode = $proc.ExitCode; break }
+                Start-Sleep -Milliseconds 500
             }
-            else {
-                try { $proc.Kill() } catch { }
-                Add-Check -Group 'F' -Name 'engine exits cleanly after the round' -Passed $false -Detail "still running after ${RuntimeTimeoutSec}s (killed)"
+            $responsive = $false
+            if (-not $crashed) { $proc.Refresh(); $responsive = $proc.Responding }
+            Add-Check -Group 'F' -Name "engine stays alive and responsive for ${RuntimeTimeoutSec}s" -Passed (-not $crashed -and $responsive) `
+                -Detail $(if ($crashed) { "exited early with code $exitCode" } elseif ($responsive) { 'ok, terminating test instance' } else { 'process not responding' })
+
+            if (-not $proc.HasExited) {
+                try { $proc.Kill(); $proc.WaitForExit(10000) | Out-Null } catch { }
             }
         }
     }
