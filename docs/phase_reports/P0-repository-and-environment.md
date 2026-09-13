@@ -246,7 +246,7 @@ compilation terminated.
 | 使用系统 FFmpeg 而非本地构建 | 与 CI 默认（`auto`）不同 | WebM alpha 解码器差异，不影响玩法；有需要时可在环境允许时切回 `auto` |
 | 运行期 DLL 未打包 | `run_game.ps1` 通过前置 `mingw64/bin` 到子进程 PATH 解决；`engine/ikemen-go/lib/` 仍为空 | 本机开发无碍；正式分发需要在 P12 打包时把 DLL 放到可执行文件旁 |
 | `-rounds` 未接线 | 引擎帮助文本列出该 CLI 参数，但 Go 侧从未读取，无法用"打 N 回合后自动退出"做无人值守验证 | Smoke Test F 组改为验证"启动 + 建窗口 + 持续响应"，再主动结束进程 |
-| PR 尚未创建 | `feature/p0-bootstrap` 已推送到 `origin`；本机无 `gh` CLI，PR 需在 GitHub 网页手工创建（`feature/p0-bootstrap` → `main`） | 不影响工程本身；仓库里已有可直接粘贴的 PR 标题与描述 |
+| PR 尚未创建 | `feature/p0-bootstrap` 已推送到 `origin`；本机无 `gh` CLI，PR 需在 GitHub 网页手工创建（`feature/p0-bootstrap` → `main`） | 不影响工程本身；可直接粘贴的 PR 标题与描述见 [`docs/P0-summary.md`](../P0-summary.md) §9 |
 
 ---
 

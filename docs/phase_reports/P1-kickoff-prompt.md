@@ -17,19 +17,23 @@
 
 1. `README.md` —— 项目定位、构建/运行/测试入口、目录结构
 2. `docs/development_status.md` —— **唯一"当前进行到哪"的答案**；Phase 总览 + P0 的 Gate 表
-3. `docs/phase_reports/P0-repository-and-environment.md` —— P0 阶段报告（交付物、环境基线、踩过的坑、遗留项）
-4. `docs/iterations/README.md` + `docs/iterations/20260911-p0-bootstrap.md` —— 迭代记录制度与 P0 实施记录
-5. `docs/environment.md` —— 本机运行环境实测值与**全部已知环境陷阱**
-6. `CONTRIBUTING.md` —— 分支模型、提交规范、目录职责、引擎改动流程、PR 要求
-7. `engine/ikemen-go/BUILDING.md` 与 `engine/ikemen-go/README.md` —— 引擎自身的构建与使用说明（官方依据）
-8. 实测命令：
+3. `docs/P0-summary.md` —— **P0 总览 + 脚本手册**（每个脚本的作用/参数/退出码/用法）、
+   P0 踩过的坑、遗留事项、（§9）可直接粘贴的 PR 信息
+4. `docs/phase_reports/P0-repository-and-environment.md` —— P0 阶段报告（逐条 Gate 证据、环境基线、失败复盘）
+5. `docs/iterations/README.md` + `docs/iterations/20260911-p0-bootstrap.md` —— 迭代记录制度与 P0 实施记录
+6. `docs/environment.md` —— 本机运行环境实测值、**全部已知环境陷阱**、**本地代理用法**（必读）
+7. `docs/running.md` + `docs/controls.md` —— 启动方法、以及启动后的操作/键位/出招表
+8. `CONTRIBUTING.md` —— 分支模型、提交规范、目录职责、引擎改动流程、PR 要求
+9. `engine/ikemen-go/BUILDING.md` 与 `engine/ikemen-go/README.md` —— 引擎自身的构建与使用说明（官方依据）
+10. 实测命令：
 
 ```powershell
 git status --short
 git branch --show-current
 git log -8 --oneline
 git submodule status
-pwsh -File scripts/test.ps1          # 期望 29/29 PASS，退出码 0
+pwsh -File scripts/test.ps1               # 默认 26/26 PASS，退出码 0
+pwsh -File scripts/test.ps1 -RuntimeTest  # 含真实启动：29/29 PASS
 ```
 
 ## 二、当前确定的事实
@@ -42,7 +46,7 @@ pwsh -File scripts/test.ps1          # 期望 29/29 PASS，退出码 0
 | 运行根 | `engine/ikemen-go/`（运行资源直接解包在这里，与引擎 `BUILDING.md` 一致） |
 | 默认画面包 | `data/ikemen1/system.def`（官方 Screenpack，已解包，子模块仍干净） |
 | 可玩素材 | `chars/kfm`、`chars/kfm_zss`、`chars/kfm720`、`chars/kfm_zaxis`、`stages/stage0.def` 等 |
-| 测试 | `pwsh -File scripts/test.ps1`（可选 `-RuntimeTest` 真实启动一轮） |
+| 测试 | `pwsh -File scripts/test.ps1`（默认 26/26；加 `-RuntimeTest` 真实启动并验证启动健康度，29/29） |
 | P0 阶段 | **PASS**（10/10 Gate） |
 
 **绝对不要做的事**：不要自动跟随引擎 upstream；不要在 `main` 上开发；不要重新设计构建方式。
@@ -57,6 +61,17 @@ pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no -Proxy http://127.0.0.1:7897
 
 - `-BuildFfmpeg no` 使用系统 FFmpeg 开发包（`BUILDING.md` 记载的可选方式）。原因是本地 FFmpeg 源码构建的 `make install` STRIP 步骤在本机产出 0 字节 DLL；`auto` 是 CI 默认，环境允许时可以切回。
 - `-Proxy` / `-GoProxy` **必须传**：本机 `pacman`/`git`/`go` 的大文件下载不走 Windows 系统代理，不传会挂死。
+
+**关于代理（重要）**：代理是**用户手动启动**的本地客户端 `http://127.0.0.1:7897`，不是脚本拉起的。
+`git push/fetch/clone`、`pacman`、Go 模块下载、拉取 FFmpeg 源码都需要它；本地构建/运行/测试不需要。
+
+- 用法（git）：`git -c http.proxy=http://127.0.0.1:7897 -c https.proxy=http://127.0.0.1:7897 push origin <branch>`
+- 代理没开时的症状：`Failed to connect to github.com:443 over proxy 127.0.0.1 after N ms: Could not connect to server`，或下载卡在 0 字节
+- **此时的动作：提醒用户"请打开 7897 代理"，然后重试**。不要静默改直连，也不要当成网络故障
+- `git push` 长时间无输出时，先查是否有凭据窗口在等用户操作：
+  `Get-Process | Where-Object { $_.ProcessName -like '*credential*' }` → 若出现
+  `git-credential-helper-selector`（窗口 `CredentialHelperSelector`），提醒用户在桌面完成它
+- 详见 `docs/environment.md` 的 "Local proxy" 一节
 - 脚本只调用引擎自带未修改的 `build/build.sh Win64`，不会执行任何 `git pull/reset/checkout/clean`。
 - 日志：`logs/build/<YYYYMMDD>/build-engine.log`。
 

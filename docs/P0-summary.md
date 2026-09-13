@@ -40,7 +40,7 @@ P0 要回答并锁死四个问题：
 | 引擎可构建 | `==> Build successful (Windows)`，产出 `Ikemen_GO.exe` **14.94 MB** |
 | 引擎可运行 | 窗口标题 `Ikemen GO`、`Responding = True`、工作集 ~320–380 MB |
 | 构建可重复 | 同一命令多次执行均成功，脚本零硬编码个人路径 |
-| 一键测试 | `scripts/test.ps1` → `smoke test: 29/29 checks passed`，退出码 `0` |
+| 一键测试 | `scripts/test.ps1` → `smoke test: 26/26 checks passed`；加 `-RuntimeTest` → `29/29`（含真实启动），退出码 `0` |
 | 状态可追溯 | `docs/development_status.md` 是唯一"现在到哪了"的答案；过程写入 `docs/iterations/` |
 
 **P0 没有做**：没有开发任何角色、`_template`、正式 UI 或 AI 素材流程（这些属于 P1 及之后）。
@@ -361,10 +361,45 @@ pwsh -File tests/smoke/smoke.ps1 -ExpectedEngineCommit <新基线commit>   # 仅
 | 运行期 DLL 未打包 | `run_game.ps1` 通过前置 `mingw64/bin` 到子进程 PATH 解决 | 正式分发需在 **P12 打包**时把 DLL 放到 exe 旁 |
 | `-rounds` 未接线 | 无法用"打 N 回合自动退出"做无人值守验证 | Smoke F 组改为启动健康度验证 |
 | 经典 `kfm` 不在选人表 | `data/select.def` 登记的是 `kfm_zss`/`kfm720`/`kfm_zaxis` | 需 `-p1 kfm` 直接参战；P1 再规范化 |
+| **PR 尚未创建** | `feature/p0-bootstrap` 已推送到 `origin`；本机无 `gh` CLI，需在 GitHub 网页手工创建 | 见 §9，标题与描述可直接粘贴 |
 
 ---
 
-## 9. 给下一个 Agent 的三条提醒
+## 9. PR 信息（可直接粘贴）
+
+P0 的全部提交已在 `origin/feature/p0-bootstrap` 上，**Pull Request 需要人工在 GitHub 网页创建**
+（本机未安装 `gh` CLI，也没有可直接调 API 的凭据）。
+
+- **创建入口**：`https://github.com/Blinkblade/KingOfFate/pull/new/feature/p0-bootstrap`
+- **合并方向**：`feature/p0-bootstrap` → `main`
+
+**PR 标题**
+
+```text
+P0: bootstrap repository, dev records and Windows build environment
+```
+
+**PR 描述**
+
+```markdown
+## Summary
+- P0（Repository & Environment）10/10 Exit Gate 全部 PASS
+- 项目骨架 + 文档体系（development_status / iterations / phase_reports / environment / running / controls / P0-summary）
+- 构建 / 运行 / 测试脚本：build_engine.ps1、run_game.ps1、test.ps1、check_build_env.sh，以及 tests/smoke/ 测试套件
+- 便携式 MSYS2 工具链文档化；引擎 submodule 锁定 v1.0.0-rc.5（ba516193bba83f13f0b63ddce314d8719793931f）
+- 引擎构建打通并实测运行：Ikemen_GO.exe 14.94 MB，窗口 `Ikemen GO` 持续响应
+- 阶段文档：docs/phase_reports/P0-repository-and-environment.md（阶段报告）、
+  docs/P0-summary.md（总览 + 脚本手册）、docs/phase_reports/P1-kickoff-prompt.md（P1 启动 prompt）
+
+## Test Plan
+- `pwsh -File scripts/test.ps1` → 26/26 PASS，exit 0
+- `pwsh -File scripts/test.ps1 -RuntimeTest` → 29/29 PASS（含真实启动：窗口创建 + 持续响应 20s）
+- `pwsh -File scripts/run_game.ps1 -CheckOnly` → 预检全绿
+```
+
+---
+
+## 10. 给下一个 Agent 的三条提醒
 
 1. **先读状态，再动手**：`README.md` → `docs/development_status.md` → 本文件 →
    P0 Phase Report。仓库是唯一真实工程状态，**不要依赖对话记忆**。

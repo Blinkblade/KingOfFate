@@ -55,7 +55,7 @@ see [`docs/P0-summary.md`](P0-summary.md).
 - Windows build environment (MSYS2 / MINGW64 toolchain verified by `scripts/check_build_env.sh`)
 - runtime assets (official screenpack) unpacked next to the executable
 - `scripts/build_engine.ps1`, `scripts/run_game.ps1`, `scripts/test.ps1`
-- smoke test suite in `tests/smoke/` (29/29 passing, including a real launch check)
+- smoke test suite in `tests/smoke/` (26/26 static; 29/29 with the real launch check)
 - engine built: `engine/ikemen-go/Ikemen_GO.exe` (14.94 MB)
 - engine verified running: window `Ikemen GO`, responsive
 - `README.md`, `CONTRIBUTING.md`, `docs/environment.md`, `docs/phase_reports/`
@@ -69,7 +69,7 @@ see [`docs/P0-summary.md`](P0-summary.md).
 | PASS-03 | the built program starts successfully | **PASS** |
 | PASS-04 | `scripts/build_engine.ps1` can repeat the build | **PASS** |
 | PASS-05 | `scripts/run_game.ps1` can launch the game | **PASS** |
-| PASS-06 | `scripts/test.ps1` basic smoke test passes | **PASS** (29/29) |
+| PASS-06 | `scripts/test.ps1` basic smoke test passes | **PASS** (26/26 static; 29/29 with `-RuntimeTest`) |
 | PASS-07 | README / environment / development_status are in sync | **PASS** |
 | PASS-08 | this iteration's Iteration Record is complete | **PASS** |
 | PASS-09 | `git status` shows no stray temporary files | **PASS** |
@@ -89,7 +89,7 @@ These do not block P0 but must not be forgotten:
   game process PATH. Release packaging (P12) must place them next to the executable.
 - `feature/p0-bootstrap` has been pushed to `origin`. The pull request itself still has to
   be opened on GitHub by hand (no `gh` CLI on this machine): `feature/p0-bootstrap` → `main`.
-  The suggested PR title/description is in `docs/P0-summary.md` and the phase report.
+  The ready-to-paste PR title and description are recorded in `docs/P0-summary.md` (§9).
 
 ---
 
