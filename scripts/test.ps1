@@ -13,7 +13,8 @@
     Exit code: 0 = PASS, non-zero = FAIL.
 
 .PARAMETER RuntimeTest
-    Also run the optional engine launch test (starts one automated round).
+    Also run the optional engine launch test (verifies start-up health: process,
+    window and responsiveness).
 
 .PARAMETER Suite
     Which suite to run. Defaults to 'smoke'.

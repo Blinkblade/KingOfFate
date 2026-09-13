@@ -12,8 +12,10 @@
       D. the basic files needed to actually run a match are present
       E. the project scaffolding / documentation exists
 
-    With -RuntimeTest it additionally launches the engine for a single automated
-    round and checks that it starts and exits cleanly.
+    With -RuntimeTest it additionally launches the engine and verifies start-up
+    health: the process starts, a game window appears, and it stays alive and
+    responsive — then the test terminates it. (This RC5 baseline does not act on
+    the "-rounds" CLI key, so a self-terminating round cannot be checked.)
 
     Exit code: 0 = PASS, non-zero = FAIL.
 
@@ -25,7 +27,7 @@
     updated (see CONTRIBUTING.md "Engine changes").
 
 .PARAMETER RuntimeTest
-    Also launch the engine for one automated round.
+    Also verify engine start-up health by launching it for real (see Group F).
 
 .PARAMETER RuntimeTimeoutSec
     How long the engine must stay alive and responsive before the launch is
@@ -183,7 +185,7 @@ foreach ($f in $scaffold) {
 # F. Optional runtime test
 # ---------------------------------------------------------------------------
 if ($RuntimeTest) {
-    Write-Host 'F. runtime test (one automated round)' -ForegroundColor Cyan
+    Write-Host 'F. runtime test (start-up health)' -ForegroundColor Cyan
     if (-not (Test-Path -LiteralPath $Executable)) {
         Add-Check -Group 'F' -Name 'engine launch' -Passed $false -Detail 'executable missing'
     }

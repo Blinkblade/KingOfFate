@@ -6,7 +6,7 @@
 > It is updated whenever a phase changes state. Never mark a phase `PASS` while any
 > of its gates is unmet.
 
-Last updated: 2026-09-12
+Last updated: 2026-09-14
 
 ---
 
@@ -37,6 +37,8 @@ Last updated: 2026-09-12
 All 10 exit gates pass. The engine builds and runs, and every step is reproducible from
 the repository scripts. See the phase report for the full account:
 [`docs/phase_reports/P0-repository-and-environment.md`](phase_reports/P0-repository-and-environment.md).
+For a one-page overview plus the script handbook (what each script does and how to use it),
+see [`docs/P0-summary.md`](P0-summary.md).
 
 ### Completed
 
@@ -85,8 +87,9 @@ These do not block P0 but must not be forgotten:
   `auto` when the environment allows.
 - Runtime DLLs are not bundled; `run_game.ps1` prepends the MSYS2 `mingw64/bin` to the
   game process PATH. Release packaging (P12) must place them next to the executable.
-- The branch has not been pushed and no PR exists yet (no GitHub credentials on this
-  machine). See the phase report for the suggested PR title/description.
+- `feature/p0-bootstrap` has been pushed to `origin`. The pull request itself still has to
+  be opened on GitHub by hand (no `gh` CLI on this machine): `feature/p0-bootstrap` → `main`.
+  The suggested PR title/description is in `docs/P0-summary.md` and the phase report.
 
 ---
 

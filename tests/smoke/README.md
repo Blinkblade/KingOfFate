@@ -28,7 +28,7 @@ Exit code:
 | **C** | the engine has been built (`engine/ikemen-go/Ikemen_GO.exe`) and the binary size is plausible |
 | **D** | the basic files needed to run a match exist (default motif, fight screen, a character, a stage) |
 | **E** | the project scaffolding and documentation exist (README, CONTRIBUTING, docs, scripts, PR template) |
-| **F** | *(opt-in, `-RuntimeTest`)* the engine launches, plays one automated round and exits cleanly |
+| **F** | *(opt-in, `-RuntimeTest`)* the engine launches, creates a game window, and stays alive and responsive (start-up health) |
 
 ## Optional runtime test
 
@@ -42,10 +42,15 @@ pwsh -File scripts/test.ps1 -RuntimeTest
 It launches:
 
 ```text
-Ikemen_GO.exe -p1 kfm -p2 kfm -s stage0 --rounds 1 --windowed --nosound --nomusic
+Ikemen_GO.exe -p1 kfm -p2 kfm -s stage0 -windowed -nosound -nomusic
 ```
 
-and checks that the process starts, finishes the round and exits with code 0.
+and checks that the process starts, a window appears, and it stays alive and responsive for
+`-RuntimeTimeoutSec` seconds (default 20). The test then terminates the instance itself.
+
+> This baseline does not act on the `-rounds` CLI key (it is parsed but never read by the
+> engine), so a self-terminating "play N rounds" check is not possible; start-up health is
+> the strongest automated signal available.
 
 ## Updating the pinned baseline
 

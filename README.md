@@ -15,7 +15,8 @@ tooling and testing** rather than re-implementing a fighting-game engine.
 The engine builds and runs, and every step is reproducible from the repository scripts.
 
 See [`docs/development_status.md`](docs/development_status.md) for the authoritative, always-up-to-date phase
-status, [`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
+status, [`docs/P0-summary.md`](docs/P0-summary.md) for the P0 summary and script handbook,
+[`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
 [`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
 
 ---
