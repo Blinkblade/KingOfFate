@@ -21,6 +21,63 @@ Verified on: 2026-09-12 (session started 2026-09-11)
 
 ---
 
+## Local proxy (`http://127.0.0.1:7897`)
+
+**This machine needs a local HTTP proxy for anything that leaves the network.** The proxy client
+is a user-run application listening on `127.0.0.1:7897`; it is **not started by any project
+script**, and nothing works until the user has started it.
+
+### Which operations need it
+
+| Operation | Needs the proxy? |
+| --- | --- |
+| `git push` / `git fetch` / `git clone` against GitHub | **Yes** |
+| `pacman` package downloads (MSYS2) | **Yes** (pacman/libcurl ignores the Windows system proxy) |
+| Go module downloads (`go build` first run) | Usually yes in practice; also set `GOPROXY` |
+| Fetching FFmpeg/libvpx sources (`BUILD_FFMPEG=auto`) | **Yes** |
+| Local builds, running the game, running tests | No |
+
+### How to use it
+
+```powershell
+# BUILD — the script exports http_proxy/https_proxy/all_proxy inside the MSYS2 shell
+pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no `
+    -Proxy http://127.0.0.1:7897 -GoProxy https://goproxy.cn,direct
+```
+
+```bash
+# GIT — pass it per invocation (do NOT rely on a global git config on a shared machine)
+git -c http.proxy=http://127.0.0.1:7897 \
+    -c https.proxy=http://127.0.0.1:7897 push origin <branch>
+```
+
+```bash
+# PACMAN (inside the MSYS2 MINGW64 shell)
+export http_proxy=http://127.0.0.1:7897
+export https_proxy=http://127.0.0.1:7897
+pacman -S --noconfirm <packages>
+```
+
+Alternatives the scripts already honour: set `$env:HTTPS_PROXY` (or `$env:MSYS2_PROXY`) before
+running `build_engine.ps1`, and `-Proxy` may be omitted. `no_proxy` is set to
+`localhost,127.0.0.1` by the build script so local traffic is never proxied.
+
+### When the proxy is not running
+
+The proxy being off looks like this:
+
+```text
+fatal: unable to access 'https://github.com/...': Failed to connect to github.com:443
+over proxy 127.0.0.1 after 2022 ms: Could not connect to server
+```
+
+or `pacman` downloads stalling at 0 bytes.
+
+**Action: ask the user to start the proxy client (port `7897`) and retry.** Do not silently fall
+back to a direct connection for large downloads, and do not treat it as a network outage.
+
+---
+
 ## Toolchain (all verified by `scripts/check_build_env.sh`)
 
 | Tool | Version |
