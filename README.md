@@ -10,13 +10,16 @@ tooling and testing** rather than re-implementing a fighting-game engine.
 
 ## Status
 
-**Current phase: `P0 — Repository & Environment` — ✅ PASS (10/10 gates)**
+**Current phase: `P1 — IKEMEN Character Architecture` — ✅ PASS (10/10 gates)**
 
-The engine builds and runs, and every step is reproducible from the repository scripts.
+The engine builds and runs, every step is reproducible from the repository scripts, and the
+IKEMEN character execution chain has been validated by measurement. P2 (Base Fighter Template)
+can start from `design/characters/_template/`.
 
 See [`docs/development_status.md`](docs/development_status.md) for the authoritative, always-up-to-date phase
-status, [`docs/P0-summary.md`](docs/P0-summary.md) for the P0 summary and script handbook,
-[`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
+status, [`docs/P1-summary.md`](docs/P1-summary.md) for the P1 summary, tool handbook and handoff notes
+([`docs/P0-summary.md`](docs/P0-summary.md) for P0's), [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md)
+for how a character is built, [`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
 [`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
 
 ---
@@ -169,11 +172,14 @@ KingOfFate/
 │   └── external/         Engine external assets (shaders, mods, scripts)
 ├── assets/               Source / reference / generated art, VFX and audio
 ├── design/               Game & combat design docs, per-character specs
+│   └── characters/
+│       └── _template/    Base fighter skeleton for P2 (copy, do not run)
 ├── tools/                Character / asset tooling
 ├── scripts/              PowerShell build, run and test entry points
 ├── tests/
 │   ├── characters/       Character tests
 │   ├── tools/            Tool tests
+│   ├── p1/               Character behaviour observation tooling (P1)
 │   └── smoke/            Phase 0 smoke tests
 ├── docs/
 │   ├── environment.md          Verified local build environment record
