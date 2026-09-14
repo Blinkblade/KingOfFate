@@ -216,3 +216,38 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ==============================================================================
+# KingOfFate project additions
+# ==============================================================================
+
+# Local logs (build / runtime evidence). The directory is kept, raw logs are local only.
+/logs/*
+!/logs/.gitkeep
+!/logs/build/
+!/logs/build/**
+
+# Local runtime distribution assembled for testing / release packaging.
+# Re-include the directory itself first: the generic "dist/" rule above excludes the
+# whole directory, which would prevent any re-inclusion of files inside it.
+!/dist/
+/dist/*
+!/dist/.gitkeep
+
+# Build temporaries (see scripts/build_engine.ps1 - some environments deny native
+# compilers write access to the system temp directory).
+/.tmp/
+
+# Local assistant/tooling state. Not part of the project deliverable; the directory
+# itself is kept on disk by the tooling, it is just never published.
+/.workbuddy/
+
+# Engine build outputs. These live inside the engine submodule (which already
+# ignores them) - repeated here so they can never be committed by accident.
+engine/ikemen-go/Ikemen_GO.exe
+engine/ikemen-go/Ikemen_GO_x86.exe
+engine/ikemen-go/lib/
+engine/ikemen-go/build/screenpack/
+engine/ikemen-go/save/
+engine/ikemen-go/debug/
+engine/ikemen-go/video/

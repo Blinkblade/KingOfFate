@@ -1,0 +1,12 @@
+==> Embedding Windows resources (icon + manifest) with windres...
+==> Using system FFmpeg (BUILD_FFMPEG=no).
+WARNING: WebM alpha requires FFmpeg to select the libvpx VP8/VP9 decoder.
+         Use BUILD_FFMPEG=yes if the system build selects the native decoder.
+==> Delay-load import libs already exist in build/delaylib, skipping generation (delete that directory to force regeneration)
+==> Building Go binary (this may take a while)...
+github.com/ikemen-engine/reisen
+github.com/veandco/go-sdl2/sdl
+github.com/ikemen-engine/Ikemen-GO/src
+==> Build successful (Windows)
+    Binary: ./Ikemen_GO.exe
+    Runtime DLLs: lib/
