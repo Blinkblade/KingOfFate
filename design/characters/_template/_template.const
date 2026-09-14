@@ -1,0 +1,110 @@
+; ============================================================================
+; KingOfFate — Base Fighter Template : 角色常量（.const）
+;
+; 这些是"数值基线"，不含逻辑。所有值都是 P2 的起点，需要按角色定位调。
+; 出处与语义：docs/ikemen_character_architecture.md §2.1 与实验 E1
+; 实测来源：game/chars/p1_kfm_zss_lab/kfm.const
+;
+; 注意：IKEMEN 下这一层没有 ZSS 等价物，必须留在 .const 文件里。
+; ============================================================================
+
+; ---------------------------------------------------------------------------
+; 战斗基础数值
+; ---------------------------------------------------------------------------
+[Data]
+life                 = 1000   ; 起始体力
+attack               = 100    ; 攻击力（越高越强，全局倍率）
+defence              = 100    ; 防御力（越高越强，全局倍率）
+fall.defence_up      = 50     ; 每次倒地后防御力提升的百分比
+liedown.time         = 60     ; 倒地后躺多久才起身（tick）
+airjuggle            = 15     ; 空中追打点数总量
+sparkno              = 2      ; 命中火花默认动画号
+guard.sparkno        = 40     ; 防御火花动画号
+KO.echo              = 0      ; 1 = KO 时回声
+volume               = 0      ; 音量偏移（负数更轻）
+IntPersistIndex      = 60     ; 该索引及以上的整型变量跨回合保留
+FloatPersistIndex    = 40     ; 该索引及以上的浮点变量跨回合保留
+
+; ---------------------------------------------------------------------------
+; 尺寸与碰撞体
+; ground.back/front 就是推挤盒（push box）——E1 里角色撞上对手被挡住的就是它
+; height 是对手判断"能不能从头顶跳过去"用的
+; ---------------------------------------------------------------------------
+[Size]
+xscale              = 1       ; 水平缩放
+yscale              = 1       ; 垂直缩放
+ground.back         = 15      ; 推挤盒：身后宽度
+ground.front        = 16      ; 推挤盒：身前宽度
+air.back            = 12      ; 空中推挤盒：身后
+air.front           = 12      ; 空中推挤盒：身前
+height              = 60      ; 身高
+attack.dist         = 160     ; 默认攻击距离（AI 会用 const(size.attack.dist) 读）
+proj.attack.dist    = 90      ; 投射物默认攻击距离
+proj.doscale        = 0       ; 1 = 投射物也跟随缩放
+head.pos            = -5,-90  ; 头部大致位置
+mid.pos             = -5,-60  ; 腰部大致位置
+shadowoffset        = 0       ; 影子垂直偏移
+draw.offset         = 0,0     ; 绘制偏移，建议 0,0
+
+; ---------------------------------------------------------------------------
+; 速度 —— 单位是"每 tick 的像素位移"
+; 这是 P1 实验 E1 直接验证过的：walk.fwd 就是每 tick 的 x 位移
+; ---------------------------------------------------------------------------
+[Velocity]
+walk.fwd                        = 2.4      ; 前进速度
+walk.back                       = -2.2     ; 后退速度
+run.fwd                         = 4.6, 0   ; 前冲（x, y）
+run.back                        = -4.5,-3.8; 后跳（x, y）
+jump.neu                        = 0,-8.4   ; 原地跳（x, y）
+jump.back                       = -2.55    ; 后跳 x 速度
+jump.fwd                        = 2.5      ; 前跳 x 速度
+runjump.back                    = -2.55,-8.1 ; 助跑后跳
+runjump.fwd                     = 4,-8.1   ; 助跑前跳
+airjump.neu                     = 0,-8.1   ; 空中跳
+airjump.back                    = -2.55    ; 空中后跳
+airjump.fwd                     = 2.5      ; 空中前跳
+air.gethit.groundrecover        = -.15,-3.5; 落地受身初速
+air.gethit.airrecover.mul       = .5,.2    ; 空中受身速度倍率
+air.gethit.airrecover.add       = 0,-4.5   ; 空中受身速度增量
+air.gethit.airrecover.back      = -1       ; 受身时按后的额外 x 速度
+air.gethit.airrecover.fwd       = 0        ; 受身时按前的额外 x 速度
+air.gethit.airrecover.up        = -2       ; 受身时按上的额外 y 速度
+air.gethit.airrecover.down      = 1.5      ; 受身时按下的额外 y 速度
+
+; ---------------------------------------------------------------------------
+; 运动与摩擦
+; ---------------------------------------------------------------------------
+[Movement]
+airjump.num                                 = 1     ; 允许的空中跳跃次数
+airjump.height                              = 35    ; 可以空中跳的最小离地高度
+yaccel                                      = .44   ; 垂直加速度
+stand.friction                              = .85   ; 站立摩擦
+crouch.friction                             = .82   ; 下蹲摩擦
+stand.friction.threshold                    = 2     ; 站立时低于此速度即停
+crouch.friction.threshold                   = .05   ; 下蹲时低于此速度即停
+air.gethit.groundlevel                      = 25    ; 落地判定高度
+air.gethit.groundrecover.ground.threshold   = -20   ; 可落地受身的最低高度
+air.gethit.groundrecover.groundlevel        = 10    ; 落地受身触地高度
+air.gethit.airrecover.threshold             = -1    ; 可空中受身的最低 y 速度
+air.gethit.airrecover.yaccel                = .35   ; 空中受身垂直加速度
+air.gethit.trip.groundlevel                 = 15    ; 绊倒状态触地高度
+down.bounce.offset                          = 0, 20 ; 落地弹起偏移
+down.bounce.yaccel                          = .4    ; 落地弹起垂直加速度
+down.bounce.groundlevel                     = 12    ; 再次触地高度
+down.friction.threshold                     = .05   ; 倒地低于此速度即停
+
+; ---------------------------------------------------------------------------
+; 胜利台词（可选）。每个语言段最多 100 条（victory0 - victory99）。
+; P2 定稿角色时填写；此处留空占位。
+; ---------------------------------------------------------------------------
+;[Quotes]
+;victory1 = "..."
+
+; ---------------------------------------------------------------------------
+; 变量台账（重要约定）：把每个 var / fvar / map 的用途写在这里。
+; 不做台账是后期最典型的"改 A 坏 B"来源 —— KFM 自己也留了这样一段。
+; ---------------------------------------------------------------------------
+; var(0)  -
+; var(1)  -
+; fvar(0) -
+; map("") -
