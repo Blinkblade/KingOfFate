@@ -138,7 +138,7 @@ For a one-page overview plus the tool handbook, see [`docs/P1-summary.md`](P1-su
 | PASS-01 | `engine/ikemen-go` still points at the pinned submodule baseline and its worktree is clean | **PASS** |
 | PASS-02 | every stage of the character execution chain is validated inside character files | **PASS** |
 | PASS-03 | the architecture document is complete and every claim is traceable to a file | **PASS** |
-| PASS-04 | every experiment has original evidence (screenshots / state readouts / run reports) | **PASS** |
+| PASS-04 | every experiment has original evidence (screenshots / state readouts / run reports / pixel measurements) | **PASS** |
 | PASS-05 | a character skeleton exists that P2 can copy directly | **PASS** |
 | PASS-06 | the boundary between "needs an engine change" and "does not" is stated explicitly | **PASS** |
 | PASS-07 | `scripts/test.ps1` still passes | **PASS** (26/26) |
@@ -154,9 +154,17 @@ These do not block P1 but must not be forgotten:
   runtime key bindings were therefore locked to `x=TAB`, `y=RETURN` for the experiments
   (`save/config.ini`, gitignored, since restored). As a result combination commands
   (`x+y`) could not be tested — E5 covers single-button routing only.
-- **E1 did not quantify the speed ratio.** The stage is too narrow: the character reaches the
-  opponent and is stopped by the push box. Fix by exposing `pos x` (e.g. `displayToClipboard`)
-  and measuring time-to-contact instead.
+- **Key injection must pass `-Ai1 0`.** The harness defaults to AI level 8, which means the AI
+  controls P1; the AI calls `changeState` directly and disables default walking
+  (`assertSpecial{flag: nowalk}`), so injected directions do nothing — silently, because the
+  character is visibly moving anyway. Self-check: if the `args` line of a run report contains
+  `-p1.ai`, that run's injection was ineffective. E1's first attempt hit exactly this.
+- **The debug overlay does not print world coordinates, and its `P1: <n>` field is the
+  character ID.** `debug.lua:183-184` shows that field is `id()`, not a position — E1's first
+  evidence read it as one and was therefore meaningless. E1 has been redone by measuring
+  on-screen name-tag centres with `tests/p1/measure_positions.ps1` (5.14× for a 5× constant),
+  and the superseded evidence was removed from `docs/evidence/p1/`. Pixel measurement is only
+  good to about ±1 px, and the two tags merge into one cluster once the characters touch.
 - **`design/characters/_template/` has no `.sff` / `.snd`.** Binary containers cannot be
   created as text. P2 must either borrow existing assets temporarily — which then have to be
   recorded in `assets/LICENSE_MANIFEST.csv` and must never ship — or wait for P5 tooling.

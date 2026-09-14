@@ -13,7 +13,7 @@
 | 文件 | 对应实验 | 说明了什么 |
 | --- | --- | --- |
 | `montage_probe1.png`<br>`e5_probe1_report.txt` | **E0** 按键通道探测 | 7 个候选虚拟键里只有 TAB / RETURN 能把输入送进引擎 |
-| `e1_base_walk_full.png`<br>`e1_mod_walk_full.png`<br>`e1_base_walk_nametag.png`<br>`e1_mod_walk_nametag.png`<br>`e1_base_walk_report.txt`<br>`e1_mod_walk_report.txt` | **E1** 常量 → 移动 | 同样 0.35 s：基线走到位置读数 56；把 `walk.fwd` 改成 12.0 后已冲到对手身前（nametag 图是放大后的位置读数） |
+| `e1_ab_positions.png`<br>`e1_ab_measure.txt`<br>`e1_base_walk_report.txt`<br>`e1_mod_walk_report.txt` | **E1** 常量 → 移动 | 同样 2.0 s：位移 **21 px → 108 px，比值 5.14 ≈ 5.0**。`positions` 是逐帧配对对比图（基线/改动 交替排列），`measure` 是名标签像素位置的逐帧测量明细。**第一版 E1 的证据已作废并移除**（它读的是角色 ID 而非位置），见 [`docs/p1_experiments.md`](../../p1_experiments.md) §3 |
 | `montage_e2_base.png`<br>`e2_base_d23_report.txt` | **E2** 伤害（基线） | `damage: 23` → `P2 LIF 1000 → 977`（Δ **23**） |
 | `montage_e2_mod.png`<br>`e2_mod_d137_report.txt` | **E2** 伤害（改动） | `damage: 137` → `P2 LIF 1000 → 863`（Δ **137**） |
 | `montage_e3_mod.png`<br>`e3_mod_e1_20_report.txt` | **E3** 动画时序 | 首元素 `2 → 20` 帧 → 动画总时长 **12 → 30**（读数 `(x/30)`），`hitDef` 触发点从第 4 推迟到第 22 tick |
@@ -32,11 +32,26 @@
 记录了那一轮运行的 args / pid / 窗口句柄 / 是否拿到前台焦点 / 发出了哪些调试键 / hold 序列与抓图结果。
 它们是"这一帧到底是怎么来的"的唯一凭证，因此从 `logs/p1/` 复制进本目录并入库。
 
+`e1_ab_measure.txt` 由 `tests/p1/measure_positions.ps1` 产出：逐帧列出各角色名标签
+白色像素簇的左右边界、中心与宽度 —— 这是 E1"位移比值 5.14"的原始数值来源。
+之所以要单独量像素，是因为调试覆盖层不输出世界坐标（详见 `docs/p1_experiments.md` §3）。
+
 `logs/p1/` 下还有大量探测期的截图与报告（`diag*`、`e0_*` 等），属于过程产物，**不入库**。
 
 ---
 
+## 本目录的构成
+
+| 类别 | 数量 | 说明 |
+| --- | --- | --- |
+| `montage_*.png` | 8 | 状态读数条带拼图（E0/E2/E3/E5/E6） |
+| 其他 `.png` | 3 | E1 的逐帧配对对比图（1 张）、E4 的判定框对比图（2 张） |
+| `*_report.txt` | 12 | 每轮运行的报告（args / pid / 焦点 / 调试键 / hold 序列 / 抓图结果） |
+| `e1_ab_measure.txt` | 1 | E1 的逐帧像素测量明细（名标签的左右边界与中心） |
+| `README.md` | 1 | 本文件 |
+
 ## 关于本目录的文件大小
 
-`*.png` 是本目录唯一有体积的内容（合计约 4 MB）。它们是不可再生的原始证据——
+`*.png` 是本目录唯一有体积的内容。它们是不可再生的原始证据——
 重新跑一次游戏也不一定能复现同样的帧，所以按"证据"而非"产物"对待，随代码一起入库。
+（纯文本的运行报告几乎不占体积，这也是当初选择把它入库的原因。）

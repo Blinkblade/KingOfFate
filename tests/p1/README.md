@@ -12,17 +12,24 @@ P2 之后做攻击判定回归时同样适用。
 
 ---
 
-## 1. 三个脚本的分工
+## 1. 四个脚本的分工
 
 ```text
 capture_match.ps1        启动一局 → 注入输入 → 抓图 + 写运行报告
         │                 输出：<OutDir>/*.png 与 *report.txt
-        ▼
-montage_states.ps1       把多张截图左下角的状态读数条带裁出来，纵向堆叠成一张图
-        │                 输出：montage_*.png —— 逐帧可读 State No / LIF / POW
-        ▼
-analyze_shots.ps1        早期的逐像素差异分析（已被 montage 取代，保留备用）
+        ├───────────────────────────┐
+        ▼                           ▼
+montage_states.ps1          measure_positions.ps1
+  状态类证据                   位置类证据
+  裁状态读数条带、纵向堆叠       量名标签像素中心 = 角色屏幕 x
+  输出：montage_*.png          输出：逐帧的 [左..右 中心 宽度]
+
+analyze_shots.ps1        早期的逐像素差异分析（已被取代，保留备用）
 ```
+
+**怎么选**：问"角色**处于什么状态**"→ `montage_states.ps1`；
+问"角色**移动了多远**"→ `measure_positions.ps1`
+（调试层不输出坐标，位置只能量像素；原因见 §6）。
 
 ---
 
@@ -49,7 +56,7 @@ analyze_shots.ps1        早期的逐像素差异分析（已被 montage 取代�
 | `-P1` / `-P2` | `p1_kfm_zss_lab` / `kfm_zss` | 双方角色 |
 | `-Stage` | `stage0` | 场景 |
 | `-RoundTime` | `30` | 回合时长，透传给引擎的 `-time` |
-| `-Ai1` / `-Ai2` | `8` | 双方 AI 等级 1–8 |
+| `-Ai1` / `-Ai2` | `8` | 双方 AI 等级 1–8。**做按键注入实验必须显式写 `-Ai1 0`**，否则 AI 接管、注入无效（见 §5） |
 | `-WarmupSec` | `14` | 进入抓图阶段前等待的秒数（等 loading / 开场动画） |
 | `-Shots` | `4` | 主循环抓图张数 |
 | `-ShotIntervalSec` | `6` | 主循环抓图间隔 |
@@ -73,20 +80,25 @@ analyze_shots.ps1        早期的逐像素差异分析（已被 montage 取代�
 
 ### 用法
 
+> **凡是"注入按键"的命令，一律带 `-Ai1 0`**，否则 P1 被 AI 接管、注入无效（见 §5）。
+> 只有"故意让 AI 打"的场景才不加。
+
 ```powershell
-# 单键按住：读一次状态读数（最常用的最短命令）
-pwsh -File tests/p1/capture_match.ps1 -Prefix e2_base -ShowDebug -HoldVK 0x09 -HoldSec 0.45
+# 走一段（人类控制 P1；P2 静止，作为距离参照）
+pwsh -File tests/p1/capture_match.ps1 -Prefix e1_base -ShowDebug -Ai1 0 -Ai2 0 `
+    -HoldSeqVK '0x27' -HoldSeqName 'walkFwd' -HoldSeqSec 2.0 -RoundTime 45
 
 # 多键序列：走一段、出轻拳、出重拳
-pwsh -File tests/p1/capture_match.ps1 -Prefix e5_base -ShowDebug `
+pwsh -File tests/p1/capture_match.ps1 -Prefix e5_base -ShowDebug -Ai1 0 `
     -HoldSeqVK '0x27,0x09,0x0D' -HoldSeqName 'walkFwd,punchX,punchY' -HoldSeqSec '2.2,0.6,0.6'
 
 # 判定框对比
-pwsh -File tests/p1/capture_match.ps1 -Prefix e4_base_clsn -ShowClsn -ShowDebug `
+pwsh -File tests/p1/capture_match.ps1 -Prefix e4_base_clsn -ShowClsn -ShowDebug -Ai1 0 `
     -HoldSeqVK '0x27,0x09' -HoldSeqSec '2.2,1.8'
 
-# 让 AI 打，读它的状态序列
-pwsh -File tests/p1/capture_match.ps1 -Prefix e6_base_ai -ShowDebug -RoundTime 99 -Shots 12 -ShotIntervalSec 0.6
+# 故意让 AI 打，读它的状态序列（这时才需要 AI）
+pwsh -File tests/p1/capture_match.ps1 -Prefix e6_base_ai -ShowDebug -RoundTime 99 `
+    -Shots 12 -ShotIntervalSec 0.6
 ```
 
 ### 输出
@@ -123,20 +135,63 @@ pwsh -File tests/p1/montage_states.ps1 -Prefix e2_base_d23 -Steps 'burst02,burst
 
 ---
 
-## 4. `analyze_shots.ps1` — 备用
+## 4. `measure_positions.ps1` —— 位置类证据
 
-早期的逐像素差异分析脚本。在发现 `LockBits` stride 问题后被 `montage_states.ps1` 取代，
-保留作为参考。**新工作请用 montage。**
+**用途**：测量每一帧里各角色在屏幕上的水平位置。
+
+**为什么需要它**：调试覆盖层**不输出世界坐标**，而且 `P1: 56` 里的 `56` 是**角色 ID**
+（`debug.lua:183-184`），不是坐标。想知道"角色移动了多远"，唯一可靠的来源就是画面本身。
+
+**原理**：角色名标签绘制在角色脚底、水平居中，所以**标签白色像素簇的中心 = 角色的屏幕 x**。
+脚本对指定横向条带做逐列扫描，找出含近白像素的列，聚成簇，输出每簇的
+`[左边界..右边界 中心 宽度]`。
+
+```powershell
+pwsh -File tests/p1/measure_positions.ps1 `
+    -Files 'runA_before.png,runA_burst02.png,runB_before.png,runB_burst02.png' `
+    -XMin 300 -XMax 1200 `
+    -OutFile docs/evidence/p1/xxx_measure.txt
+```
+
+| 参数 | 默认 | 说明 |
+| --- | --- | --- |
+| `-Files` | —（必填） | 逗号分隔的文件名，相对于 `logs/p1/shots` |
+| `-BandY` / `-BandH` | `604` / `16` | 条带位置。1280×720 下名标签在 y 604–619 |
+| `-XMin` / `-XMax` | `0` / `1280` | 横向搜索窗口 |
+| `-Gap` | `24` | 连续空白列超过这个宽度就切分成新簇 |
+| `-MinWidth` | `8` | 窄于此的簇当噪点丢弃 |
+| `-ShotsDir` | `logs/p1/shots` | 截图目录 |
+| `-OutFile` | —（必填） | 报告输出路径（**建议连同截图一起入库作为证据**） |
+
+**两个使用要点**
+
+1. **两角色靠近时名标签会并簇。** 此时一个簇的宽度约翻倍（~200 px 而不是 ~100 px）。
+   出现并簇说明两者已经贴住，那些帧不能再用于逐角色读数 —— 看宽度就能判断。
+2. **配一个静止的对手（`-Ai2 0`）会让读数好读得多。** 对手的中心恒定不变，
+   天然就是像素比例与镜头移动的参照。
 
 ---
 
-## 5. 已知约束（重要）
+## 5. `analyze_shots.ps1` — 备用
+
+早期的逐像素差异分析脚本。在发现 `LockBits` stride 问题后被 `montage_states.ps1` 取代，
+保留作为参考。**新工作请用 montage 或 measure_positions。**
+
+---
+
+## 6. 已知约束（重要）
+
+> 前四条是 P1 收尾复核时补上的，都是**踩过才知道**的。
 
 | 约束 | 说明 |
 | --- | --- |
+| **注入输入前必须加 `-Ai1 0`** | `-Ai1` 默认是 **8**，即 P1 由 AI 控制。AI 直接 `changeState`，并对默认走路下了 `assertSpecial{flag: nowalk}`（`AI.zss:37`），**注入的方向键完全不起作用**。危险之处在于它**静默失效**——画面里角色确实在动（AI 自己在动），不容易察觉。**自查**：报告 `args` 行里若出现 `-p1.ai`，说明 AI 开着，这轮注入实验无效 |
+| **调试层不输出世界坐标** | 要测"位置 / 位移"必须另想办法：按像素测量角色名标签的中心 x（名标签绘制在角色脚底、水平居中，其中心即角色屏幕 x），或用 `displayToClipboard` 把 `pos x` 导出来 |
+| **覆盖层上的 `P1: 56` 是角色 ID** | 出处 `debug.lua:183-184`，`'P%d: %d; …'` 的第二个字段是 `id()`。**它不是坐标**，不要拿它当位置读数（E1 第一版就栽在这里） |
+| 优先用 `-HoldSeqVK`，不要用 `-HoldVK` | 单键路径未经验证：E1 第一版用 0.35 s 单键得到的结果无法确认有效。序列路径在 E2–E5 中稳定可用 |
 | **按键注入只有 TAB / RETURN 可靠** | 本机的 `keybd_event` 合成输入中，字母键与导航键无法到达引擎。P1 期间把运行时键位锁为 `x=TAB`、`y=RETURN` |
 | 运行时键位不在仓库里 | 键位在 `engine/ikemen-go/save/config.ini`，该文件 gitignored。复现需自行对齐 |
-| `F1`–`F10` / `SPACE` / `PAUSE` / `SCROLLLOCK` 不可用 | 被引擎自身占用 |
+| `F1`–`F10` / `SPACE` / `PAUSE` / `SCROLLLOCK` 不可用 | 已被 Lua 调试热键占用（`debug.lua:32-48`）。它们对**人工**调试有用（充满气、结束回合、单帧步进…），但**能否被合成输入触发尚未验证** |
 | 需要**真实桌面会话** | 依赖前台焦点与窗口渲染，不能在无头环境跑 |
 | 状态读数是抽样 | burst 间隔内可能漏掉瞬态状态 |
 
