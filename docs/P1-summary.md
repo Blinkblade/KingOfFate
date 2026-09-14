@@ -5,7 +5,7 @@
 | **阶段** | P1 — IKEMEN Character Architecture |
 | **状态** | **PASS**（10/10 Exit Gate 全绿） |
 | **时间** | 2026-09-14 |
-| **分支** | `feature/p1-kfm-study`（待推送 `origin`） |
+| **分支** | `feature/p1-kfm-study`（已推送 `origin`） |
 | **详细报告** | [`docs/phase_reports/P1-ikemen-character-architecture.md`](phase_reports/P1-ikemen-character-architecture.md) |
 | **过程记录** | [`docs/iterations/20260914-p1-kfm-study.md`](iterations/20260914-p1-kfm-study.md) |
 | **核心产出** | [`docs/ikemen_character_architecture.md`](ikemen_character_architecture.md) · [`docs/p1_experiments.md`](p1_experiments.md) |
@@ -294,8 +294,13 @@ pwsh -File scripts/sync_game_content.ps1 -WhatIf    # 只看会复制什么
 
 ## 9. PR 信息（可直接粘贴）
 
-P1 的全部提交将在 `origin/feature/p1-kfm-study` 上，**Pull Request 需要人工在 GitHub 网页创建**
-（本机未安装 `gh` CLI）。
+P1 的全部提交**已推送**到 `origin/feature/p1-kfm-study`（5 个提交），
+但 **Pull Request 需要人工在 GitHub 网页创建**（本机未安装 `gh` CLI）。
+
+```text
+remote: Create a pull request for 'feature/p1-kfm-study' on GitHub by visiting:
+remote:      https://github.com/Blinkblade/KingOfFate/pull/new/feature/p1-kfm-study
+```
 
 - **创建入口**：`https://github.com/Blinkblade/KingOfFate/pull/new/feature/p1-kfm-study`
 - **合并方向**：`feature/p1-kfm-study` → `main`
