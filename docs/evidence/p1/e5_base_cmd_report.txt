@@ -1,0 +1,12 @@
+harness   : tests/p1/capture_match.ps1
+args      : -p1 p1_kfm_zss_lab -p2 kfm_zss -s stage0 -windowed -nosound -time 99
+outdir    : D:\AI\develop\KingOfFate\logs\p1\shots
+process   : pid=27828
+window    : hwnd=4784926
+focus     : foreground acquired=True
+sent      : Ctrl+D toggleDebugDisplay
+holdseq   : #1 vk=0x27 label=walkFwd hold=2.2s bursts=67 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_base_cmd_seq01_walkFwd_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_base_cmd_seq01_walkFwd_after.png
+holdseq   : #2 vk=0x09 label=btnX_TAB hold=0.6s bursts=18 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_base_cmd_seq02_btnX_TAB_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_base_cmd_seq02_btnX_TAB_after.png
+holdseq   : #3 vk=0x0D label=btnY_RETURN hold=0.6s bursts=19 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_base_cmd_seq03_btnY_RETURN_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_base_cmd_seq03_btnY_RETURN_after.png
+shot      : 1 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e5_base_cmd_01.png
+stop      : process killed by harness
