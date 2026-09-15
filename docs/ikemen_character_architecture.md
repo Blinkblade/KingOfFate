@@ -112,7 +112,7 @@ movelist = movelist.dat     ;Ikemen feature: Movelist —— 出招表（IKEMEN 
 | ④ 状态执行 | E2 / E3 | 改 `hitDef.damage` → 对手掉血精确变化；改动画时长 → 招式持续时间变化 |
 | ⑤ 判定框 | E4 | 改 `Clsn1` → 攻击范围变化，且**只有攻击框变，受击框不动** |
 | ⑥ AI | E6 | AI 走独立通道（不经命令），优先级 = 源码书写顺序 |
-| 常量 | E1 | 改 `[Velocity] walk.fwd 2.4 → 12.0` → 同样时间的位移精确变为 **5.14 倍** |
+| 常量 | E1 | 改 `[Velocity] walk.fwd 2.4 → 12.0` → 同样时间的位移变为 **5.14 倍**（理论 5.0） |
 
 ---
 
