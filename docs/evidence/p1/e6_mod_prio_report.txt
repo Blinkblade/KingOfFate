@@ -1,0 +1,21 @@
+harness   : tests/p1/capture_match.ps1
+args      : -p1 p1_kfm_zss_lab -p2 kfm_zss -s stage0 -windowed -nosound -time 99 -p1.ai 8
+outdir    : D:\AI\develop\KingOfFate\logs\p1\shots
+process   : pid=10072
+window    : hwnd=527028
+focus     : foreground acquired=True
+client    : 1280x720
+debug     : overlay ON (attempt 1)
+shot      : 1 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_01.png
+shot      : 2 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_02.png
+shot      : 3 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_03.png
+shot      : 4 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_04.png
+shot      : 5 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_05.png
+shot      : 6 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_06.png
+shot      : 7 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_07.png
+shot      : 8 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_08.png
+shot      : 9 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_09.png
+shot      : 10 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_10.png
+shot      : 11 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_11.png
+shot      : 12 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e6_mod_prio_12.png
+stop      : process killed by harness

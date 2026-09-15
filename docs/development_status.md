@@ -15,7 +15,7 @@ Last updated: 2026-09-14
 | Phase | Name | Status |
 | --- | --- | --- |
 | **P0** | Repository & Environment | **PASS** |
-| P1 | IKEMEN Character Architecture | NOT_STARTED |
+| **P1** | IKEMEN Character Architecture | **PASS** |
 | P2 | Base Fighter Template | NOT_STARTED |
 | P3 | Test Fighter A | NOT_STARTED |
 | P4 | Test Fighter B | NOT_STARTED |
@@ -95,9 +95,87 @@ These do not block P0 but must not be forgotten:
 
 ## P1 — IKEMEN Character Architecture
 
-**Status: NOT_STARTED**
+**Status: PASS**
+
+All 10 exit gates pass. The IKEMEN character execution chain is understood and validated by
+measurement, and the knowledge is written down so P2 can start without further research.
+See the phase report for the full account:
+[`docs/phase_reports/P1-ikemen-character-architecture.md`](phase_reports/P1-ikemen-character-architecture.md).
+For a one-page overview plus the tool handbook, see [`docs/P1-summary.md`](P1-summary.md).
+
+### Completed
+
+- `docs/ikemen_character_architecture.md` — character file structure, the 6-stage execution
+  chain (input → command → routing → state → hitbox → hit), state machine and state-number
+  conventions, ZSS syntax and project conventions, hitbox model, AI mechanics, Lua extension
+  points, and the change-boundary table (what needs engine changes vs. what does not)
+- `docs/p1_experiments.md` — six experiments (E1–E6) plus the input-injection probe (E0),
+  each with before/file/location/change/expectation/method/result/conclusion
+- P1 Lab character `game/chars/p1_kfm_zss_lab/` (tracked research copy of IKEMEN's KFM ZSS),
+  byte-identical to upstream apart from the display name and a licence note
+- `scripts/sync_game_content.ps1` — one-way, idempotent, offline `game/` → runtime sync
+- `tests/p1/` — behaviour observation tooling (`capture_match.ps1`, `montage_states.ps1`),
+  with `tests/p1/README.md`
+- `design/characters/_template/` — the P2 fighter skeleton (10 files + README)
+- `docs/evidence/p1/` — original evidence (montages, screenshots, run reports)
+- `docs/iterations/20260914-p1-kfm-study.md` — this phase's iteration record
+
+### What was measured (not inferred)
+
+| # | Changed | Observed |
+| --- | --- | --- |
+| E1 | `.const` `walk.fwd 2.4 → 12.0` | displacement 56 units in 0.35 s → reaches the opponent (ratio not directly readable; stated as such) |
+| E2 | `.zss` `hitDef.damage 23 → 137` | `P2 LIF` exactly `1000→977` / `1000→863`; meter and red-life move with it |
+| E3 | `.air` first element `2 → 20` frames | animation total **12 → 30**; `hitDef` trigger tick 4 → 22 |
+| E4 | `.air` `Clsn1[0]` enlarged ~10× | hitbox grows hugely; hurtbox, sprite and damage all unchanged |
+| E5 | `.cmd` `name="x"` rebound to `y` | `x` stops working entirely; `y` enters State **200** (order priority) |
+| E6 | `AI.zss` first rule → `changeState 210` | 11 of 12 sampled frames become 210; opponent never loses life |
+
+### P1 exit gates
+
+| Gate | Description | Result |
+| --- | --- | --- |
+| PASS-01 | `engine/ikemen-go` still points at the pinned submodule baseline and its worktree is clean | **PASS** |
+| PASS-02 | every stage of the character execution chain is validated inside character files | **PASS** |
+| PASS-03 | the architecture document is complete and every claim is traceable to a file | **PASS** |
+| PASS-04 | every experiment has original evidence (screenshots / state readouts / run reports / pixel measurements) | **PASS** |
+| PASS-05 | a character skeleton exists that P2 can copy directly | **PASS** |
+| PASS-06 | the boundary between "needs an engine change" and "does not" is stated explicitly | **PASS** |
+| PASS-07 | `scripts/test.ps1` still passes | **PASS** (26/26) |
+| PASS-08 | `docs/development_status.md` and `README.md` are updated truthfully; unfinished work is `BLOCKED` | **PASS** |
+| PASS-09 | the lab character matches upstream and every experiment change was reverted | **PASS** |
+| PASS-10 | this iteration's Iteration Record is complete; no unrecorded manual step | **PASS** |
+
+### Carried into later phases
+
+These do not block P1 but must not be forgotten:
+
+- **Only TAB and RETURN reach the engine through synthetic input on this machine.** The
+  runtime key bindings were therefore locked to `x=TAB`, `y=RETURN` for the experiments
+  (`save/config.ini`, gitignored, since restored). As a result combination commands
+  (`x+y`) could not be tested — E5 covers single-button routing only.
+- **Key injection must pass `-Ai1 0`.** The harness defaults to AI level 8, which means the AI
+  controls P1; the AI calls `changeState` directly and disables default walking
+  (`assertSpecial{flag: nowalk}`), so injected directions do nothing — silently, because the
+  character is visibly moving anyway. Self-check: if the `args` line of a run report contains
+  `-p1.ai`, that run's injection was ineffective. E1's first attempt hit exactly this.
+- **The debug overlay does not print world coordinates, and its `P1: <n>` field is the
+  character ID.** `debug.lua:183-184` shows that field is `id()`, not a position — E1's first
+  evidence read it as one and was therefore meaningless. E1 has been redone by measuring
+  on-screen name-tag centres with `tests/p1/measure_positions.ps1` (5.14× for a 5× constant),
+  and the superseded evidence was removed from `docs/evidence/p1/`. Pixel measurement is only
+  good to about ±1 px, and the two tags merge into one cluster once the characters touch.
+- **`design/characters/_template/` has no `.sff` / `.snd`.** Binary containers cannot be
+  created as text. P2 must either borrow existing assets temporarily — which then have to be
+  recorded in `assets/LICENSE_MANIFEST.csv` and must never ship — or wait for P5 tooling.
+- **The PR still has to be opened on GitHub by hand** (no `gh` CLI on this machine):
+  `feature/p1-kfm-study` → `main`. Ready-to-paste title and description are in
+  [`docs/P1-summary.md`](P1-summary.md) §9.
+- The observation tooling needs a real desktop session (foreground focus and window
+  rendering), so it cannot run in a headless CI.
 
 ---
+
 
 ## P2 — Base Fighter Template
 

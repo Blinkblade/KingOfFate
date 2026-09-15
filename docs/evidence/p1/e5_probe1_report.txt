@@ -1,0 +1,16 @@
+harness   : tests/p1/capture_match.ps1
+args      : -p1 p1_kfm_zss_lab -p2 kfm_zss -s stage0 -windowed -nosound -time 99
+outdir    : D:\AI\develop\KingOfFate\logs\p1\shots
+process   : pid=8720
+window    : hwnd=15862498
+focus     : foreground acquired=True
+sent      : Ctrl+D toggleDebugDisplay
+holdseq   : #1 vk=0x09 label=TAB hold=1.2s bursts=36 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq01_TAB_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq01_TAB_after.png
+holdseq   : #2 vk=0x2D label=INSERT hold=1.2s bursts=37 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq02_INSERT_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq02_INSERT_after.png
+holdseq   : #3 vk=0x2E label=DELETE hold=1.2s bursts=37 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq03_DELETE_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq03_DELETE_after.png
+holdseq   : #4 vk=0x24 label=HOME hold=1.2s bursts=37 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq04_HOME_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq04_HOME_after.png
+holdseq   : #5 vk=0x23 label=END hold=1.2s bursts=37 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq05_END_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq05_END_after.png
+holdseq   : #6 vk=0x21 label=PGUP hold=1.2s bursts=37 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq06_PGUP_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq06_PGUP_after.png
+holdseq   : #7 vk=0x4A label=letterJ hold=1.2s bursts=37 before=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq07_letterJ_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_seq07_letterJ_after.png
+shot      : 1 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e5_probe1_01.png
+stop      : process killed by harness

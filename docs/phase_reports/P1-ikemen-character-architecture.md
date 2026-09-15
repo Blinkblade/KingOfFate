@@ -1,0 +1,372 @@
+# P1 Phase Report — IKEMEN Character Architecture
+
+| | |
+| --- | --- |
+| **Phase** | P1 — IKEMEN Character Architecture |
+| **Status** | **PASS** |
+| **Date** | 2026-09-14 |
+| **Branch** | `feature/p1-kfm-study` |
+| **Iteration record** | [`docs/iterations/20260914-p1-kfm-study.md`](../iterations/20260914-p1-kfm-study.md) |
+| **Summary / handoff** | [`docs/P1-summary.md`](../P1-summary.md) |
+| **Supersedes** | nothing |
+
+---
+
+## 1. 结论
+
+P1 全部 10 个 Exit Gate 通过。项目现在具备：
+
+- **一份可追溯的角色架构文档**：`docs/ikemen_character_architecture.md`。
+  从"一个角色由哪些文件组成"到"从按键到掉血的完整执行链"，每条结论都标注了
+  仓库内的出处（文件 + 行号）。
+- **一份带硬证据的实验记录**：`docs/p1_experiments.md` + `docs/evidence/p1/`。
+  6 个独立实验（E1–E6）全部在真实运行的引擎里完成"修改 → 观测 → 还原"闭环，
+  结论是数值化的，不是"看起来变了"。
+- **一套可复用的角色行为观测工具**：`tests/p1/`。
+  无人值守开局、输入注入、抓帧、状态读数拼接。P2 之后做判定回归时直接可用。
+- **一个 P2 可直接复制的角色骨架**：`design/characters/_template/`。
+- **一个清晰且被验证过的改动边界**：本阶段研究涉及的全部角色行为
+  **100% 可以在角色文件（+ 画面包数据）内完成，没有任何一条需要触碰引擎源码**。
+
+P1 期间**没有**实现任何正式角色、**没有**产出任何美术、**没有**修改引擎任何一行。
+引擎 submodule 全程保持字节级干净。
+
+---
+
+## 2. Exit Gate 结果
+
+| Gate | 判据 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| PASS-01 | `engine/ikemen-go` 仍指向钉死的 submodule 基线，且工作区干净 | **PASS** | `git submodule status` → ` ba516193bba83f13f0b63ddce314d8719793931f engine/ikemen-go (v1.0.0-rc.5)`；submodule 内 `git status --short` 为空 |
+| PASS-02 | 角色执行链的每一环都在角色文件内验证通过 | **PASS** | E1 常量 / E2 伤害 / E3 动画时序 / E4 判定框 / E5 命令路由 / E6 AI，见 `docs/p1_experiments.md` |
+| PASS-03 | 架构文档齐备，且每条结论可追溯到仓库内的具体文件 | **PASS** | `docs/ikemen_character_architecture.md`（11 节 + 状态号映射表），每条结论标注文件与行号 |
+| PASS-04 | 每个实验都有原始证据（截图 / 状态读数 / 运行报告 / 像素测量） | **PASS** | `docs/evidence/p1/`：11 张图（8 张 montage + 3 张对比图）+ 12 份 `*_report.txt` + 1 份像素测量明细 + 判读说明，合计约 3.73 MB |
+| PASS-05 | 存在可被 P2 直接复制的角色骨架目录 | **PASS** | `design/characters/_template/`（10 个文件 + README，含复制步骤） |
+| PASS-06 | 明确列出"必须改引擎"与"不必改引擎"的分界 | **PASS** | `docs/ikemen_character_architecture.md` §9 的改动边界表；结论是本阶段无任何需求越过该边界 |
+| PASS-07 | `scripts/test.ps1` 仍然全绿 | **PASS** | `26/26 checks passed`，退出码 `0` |
+| PASS-08 | `docs/development_status.md` 与 `README.md` 的阶段状态如实同步更新，未完成项写 `BLOCKED` | **PASS** | P1 状态已由 `NOT_STARTED` 改为 `PASS`（两处）；本阶段无 `BLOCKED` 项，未完成事项以遗留项形式列在 §8 |
+| PASS-09 | 研究用角色与上游一致，实验改动全部还原 | **PASS** | 逐文件比对：全部 `IDENTICAL`；运行时副本全部 `IN SYNC`；`save/config.ini` 已从备份还原 |
+| PASS-10 | 本阶段 Iteration Record 完整，无未记录的人工步骤 | **PASS** | `docs/iterations/20260914-p1-kfm-study.md`；唯一的本机前提（键位映射）已明确记录在 `tests/p1/README.md` 与实验文档 §2.3 |
+
+---
+
+## 3. 交付物清单
+
+### 3.1 文档
+
+| 文件 | 作用 |
+| --- | --- |
+| `docs/ikemen_character_architecture.md` | **本阶段核心产出**。文件构成、执行链、状态机与状态号映射、ZSS 语法与项目约定、判定框、AI 机制、Lua 扩展点、改动边界、对 P2 的输入 |
+| `docs/p1_experiments.md` | 6 个实验 + 1 个前置探测，每个含修改前/文件/位置/内容/预期/运行方式/实际结果/结论与证据强度标注 |
+| `docs/P1-summary.md` | 一页总览 + 工具手册 + 交接说明（与 P0-summary 同构） |
+| `docs/phase_reports/P1-ikemen-character-architecture.md` | 本文件 |
+| `docs/iterations/20260914-p1-kfm-study.md` | 本阶段的 Iteration Record |
+| `docs/evidence/p1/README.md` | 证据清单与实验对应关系、判读方式 |
+| `tests/p1/README.md` | 观测工具的用法、参数、已知约束 |
+| `design/characters/_template/README.md` | 骨架的使用步骤与依据索引 |
+
+### 3.2 内容与代码
+
+| 文件 | 作用 |
+| --- | --- |
+| `game/chars/p1_kfm_zss_lab/` | P1 Lab 研究用角色（16 个文件），与上游 `kfm_zss` 逐字节一致（仅 `name`/`displayname` 与许可证说明不同） |
+| `scripts/sync_game_content.ps1` | `game/` → 引擎运行目录 的单向、幂等、离线同步 |
+| `tests/p1/capture_match.ps1` | 无人值守开局 + 输入注入 + 抓帧 + 运行报告 |
+| `tests/p1/montage_states.ps1` | 状态读数条带拼接（证据生成） |
+| `tests/p1/analyze_shots.ps1` | 早期的像素差异分析（已弃用保留） |
+| `design/characters/_template/` | P2 可直接复制的角色骨架（10 个文件） |
+| `docs/evidence/p1/` | 全部原始证据 |
+
+### 3.3 修改
+
+| 文件 | 改动 |
+| --- | --- |
+| `docs/development_status.md` | P1：`NOT_STARTED` → `PASS`，补完成项与 Exit Gate 表 |
+
+---
+
+## 4. 环境基线
+
+P1 复用了 P0 已经验证过的环境，**没有重新构建引擎**。
+
+| 项 | 值 |
+| --- | --- |
+| 引擎 | IKEMEN GO `v1.0.0-rc.5` = `ba516193bba83f13f0b63ddce314d8719793931f` |
+| 引擎位置 | submodule `engine/ikemen-go`，分支 `kingoffate/rc5` |
+| 可执行文件 | `engine/ikemen-go/Ikemen_GO.exe`（14.94 MB，P0 构建产物） |
+| 工具链 | MSYS2 / MINGW64：gcc/g++ 16.2.0、make 4.4.1、NASM 3.02、pkg-config 3.0.7、Go 1.27.1、SDL2 2.32.10、libxmp 4.7.2、系统 FFmpeg 63.1.101 |
+| 运行根 | `engine/ikemen-go/`（运行资源已解包） |
+| 画面包 | `data/ikemen1/system.def`，公共状态 `data/common1.cns.zss` |
+| 操作系统 | Windows，桌面会话（观测工具依赖前台焦点与窗口渲染） |
+| 运行时键位（临时） | `save/config.ini`：`x = TAB`、`y = RETURN`（实验前提，已还原） |
+
+---
+
+## 5. 构建 / 运行 / 测试 结果
+
+### 5.1 测试
+
+```text
+$ pwsh -File scripts/test.ps1
+smoke test: 26/26 checks passed
+exit code: 0
+```
+
+### 5.2 引擎完整性
+
+```text
+$ git submodule status
+ ba516193bba83f13f0b63ddce314d8719793931f engine/ikemen-go (v1.0.0-rc.5)
+
+$ cd engine/ikemen-go && git status --short
+（无输出）
+```
+
+### 5.3 研究用角色的纯净度
+
+```text
+AI.zss        src=IDENTICAL  runtime=IN SYNC
+command.zss   src=IDENTICAL  runtime=IN SYNC
+kfm.air       src=IDENTICAL  runtime=IN SYNC
+kfm.cmd       src=IDENTICAL  runtime=IN SYNC
+kfm.const     src=IDENTICAL  runtime=IN SYNC
+kfm.sff       src=IDENTICAL  runtime=IN SYNC
+kfm.snd       src=IDENTICAL  runtime=IN SYNC
+kfm.zss       src=IDENTICAL  runtime=IN SYNC
+hits.zss      src=IDENTICAL  runtime=IN SYNC
+movelist.dat  src=IDENTICAL  runtime=IN SYNC
+intro.def / ending.def / intro.sff / ending.sff   src=IDENTICAL  runtime=IN SYNC
+p1_kfm_zss_lab.def   src=lab-only   runtime=IN SYNC
+config.ini restored from backup
+```
+
+### 5.4 实验（真实运行的游戏进程）
+
+| # | 运行方式 | 结果 |
+| --- | --- | --- |
+| E1 | `-Ai1 0`，hold 前进键 2.0 s | 同时间位移 **21 px → 108 px（比值 5.14 ≈ 5.0）**；改动后撞上对手停住（第一版作废，已重做，见 §7.5） |
+| E2 | hold `x` 0.45 s，14 帧 burst | `P2 LIF` 1000→977（Δ23）/ 1000→863（Δ137） |
+| E3 | hold `x` 1.2 s，37 帧 burst | 动画总时长读数 `(x/12)` → `(x/30)` |
+| E4 | `Ctrl+C` + `Ctrl+D`，hold `x` 1.8 s | 攻击框巨大化，受击框不变 |
+| E5 | hold `walkFwd` / `x` / `y` 各 0.6 s | 命令重路由被精确复现 |
+| E6 | `-p1.ai 8`，`-time 99`，12 帧 burst | 基线 7 种状态 → 改动后 11/12 帧为单一状态 |
+
+---
+
+## 6. 关键决策
+
+### 6.1 不改引擎（这是本阶段最重要的决策）
+
+面对"要研究角色架构"这个目标，最直接的冲动是去读引擎 Go 源码、甚至加日志。
+P1 明确选择**不碰引擎**，理由是：
+
+- `CONTRIBUTING.md` 的优先级规定：配置 → 角色 ZSS → Lua → 外部工具 → 引擎源码。
+- 反过来验证"角色文件是否足够"本身就是 P1 要回答的问题（Gate PASS-06）。
+  如果一开始就改引擎，这个问题就永远得不到答案。
+- 引擎一旦被改，submodule 就不再干净，后续所有阶段都要背这个债。
+
+**结果：本阶段全部 6 个实验都在角色文件内完成，引擎 submodule 全程干净。**
+
+### 6.2 建立"跟踪副本"而不是直接改上游素材
+
+Lab 角色放在 `game/chars/`（本仓库跟踪），运行时由
+`scripts/sync_game_content.ps1` 单向同步到引擎目录。
+
+理由：`engine/ikemen-go` 是 submodule，直接改它会污染引擎工作区，
+且改动进不了 PR 评审。跟踪副本则让每次改动都在 git 历史里，实验后可以干净还原。
+
+### 6.3 用"裁条带拼图"作为证据形式，而不是自动化数值提取
+
+最初尝试过逐像素 diff 自动提取状态，但 GDI+ 的 `LockBits` 裁剪返回整图 stride，
+跨帧比较不可靠。改为把状态读数条带裁出来拼成一张图、人工判读。
+
+这个选择看起来"退步"，但实际上更好：**证据就是图像本身，不可能读错，
+而且可以直接附在 PR 里被人复核。** 自动化提取留给后续阶段用引擎自身的
+`displayToClipboard` / `printToConsole` 去做（已列入后续工作）。
+
+### 6.4 骨架放 `design/` 而不是 `game/`
+
+`scripts/sync_game_content.ps1` 会把 `game/chars/*` 同步进引擎运行目录。
+骨架若放在 `game/chars/` 会被引擎加载（且因缺 `.sff`/`.snd` 而失败）。
+放 `design/characters/_template/` 表示"这是设计产物"，P2 复制到 `game/chars/` 后才进入运行链路。
+
+### 6.5 实验改动全部还原
+
+Lab 角色的价值在于"可以改"，但**改完必须还原**，否则它会逐渐漂移成一个
+无法与上游对照的私有角色。P1 结束时已逐文件比对确认全部还原（§5.3）。
+
+---
+
+## 7. 遇到的问题与解决过程
+
+### 7.1 合成按键注入大面积失效（本阶段最大的障碍）
+
+**现象**：`keybd_event` 发出的字母键、方向导航键、COMMA 都无法让角色产生任何反应
+（状态恒为 `0`）。
+
+**排查**：把 `save/config.ini` 的按钮逐个绑到不同虚拟键上，逐个 hold 并读状态，
+得到一张"哪些键可达"的表（`montage_probe1.png`）。
+
+**结论**：本机只有 **TAB(0x09)** 与 **RETURN(0x0D)** 能可靠送达引擎。
+`F1`–`F10`、`SPACE`、`PAUSE`、`SCROLLLOCK` 则被引擎自身占用。
+
+**处置**：把运行时键位锁为 `x = TAB`、`y = RETURN`，并在文档中把它写成一条**明确的前提**
+而不是隐藏假设。实验结束后键位已还原。
+
+**未解决**：仍无法在一次运行内注入组合键（`x+y`），所以 E5 未能测到组合键路由。
+已记入已知限制。
+
+### 7.2 `Ctrl+D` 覆盖层静默漏触发
+
+**现象**：第一次 AI 实验抓到的 montage 里完全没有状态读数，整轮数据作废。
+
+**根因**：脚本发出 `Ctrl+D` 后没有校验覆盖层是否真的出现。窗口焦点抖动或
+按键被吞都会导致静默失败。
+
+**处置**：在 `capture_match.ps1` 里增加覆盖层像素检测（扫描左下角近白文本像素），
+发出后最多重试 3 次。
+
+**验证**：重跑时报告里出现：
+
+```text
+debug     : overlay not detected (attempt 1)
+debug     : overlay ON (attempt 2)
+```
+
+证明修复有效。
+
+### 7.3 `pwsh -File` 无法绑定数组参数
+
+**现象**：`-HoldSeqVK 0x09,0x2D,...` 报"无法将值转换为 System.Int32[]"。
+
+**处置**：把参数类型改成字符串，在脚本内自行 split 并解析（支持 `0x` 十六进制前缀）。
+这是一个 PowerShell 的行为限制，已在 `tests/p1/README.md` 中标注"不要改回数组"。
+
+### 7.4 GDI+ `LockBits` 裁剪返回整图 stride
+
+**现象**：`analyze_shots.ps1` 的逐字节跨帧比较始终报告"有大差异"，无法用于判定状态变化。
+
+**处置**：放弃自动 diff，改用 `montage_states.ps1` 裁条带 + 人工判读（见 §6.3）。
+
+### 7.5 E1 的第一版证据是无效的（收尾复核时发现并重做）
+
+**发现过程**：P1 收尾复核时逐条核对文档结论，把 E1 的"位置读数"拿去和调试层的输出格式对照，
+读了 `debug.lua` 的源码：
+
+```lua
+-- debug.lua:183-184
+'P%d: %d; LIF:%4d; POW:%4d; ATK:%4d; DEF:%4d; RED:%4d; GRD:%4d; STN:%4d',
+playerNo(), id(), life(), power(), attack(), defence(), redLife(), guardPoints(), dizzyPoints()
+```
+
+第二个 `%d` 是 **`id()`，即角色 ID**，与坐标毫无关系。
+E1 第一版把 `P1: 56` / 改动后的 `9x` 当成了"位置读数"，而**那是两个不同运行里的角色 ID**——
+不同运行 ID 本来就会变。**第一版的全部结论都是无意义的。**
+
+**为什么当时没发现**：第一版的观测手段只有"读名标签上的数字"，
+而名标签恰好复用了同一个字段，于是"数字变了"就被当成了"位置变了"。
+这是一个**把引擎内部标识符误读成物理量**的错误。
+
+**重做**：
+1. 前提修正 —— 注入输入前显式加 `-Ai1 0`（见 §7.6），确认 P1 进入 `State 20`（走路）；
+2. 测量方法修正 —— 调试层不输出世界坐标，改为**按像素测量角色名标签的中心 x**
+   （名标签绘制在角色脚底、水平居中，其中心即角色屏幕 x）；
+3. 用 `-Ai2 0` 让 P2 全程静止作为对照（它的 862 px 中心始终不变）。
+
+**重做结果**：同样时间下位移 **21 px → 108 px，比值 5.14**，
+与 `walk.fwd 12.0 / 2.4 = 5.0` 相差 2.8%（偏差方向可由"起步阶段占比"解释）；
+基线位移**完全线性**——后四个采样点的间隔恰好都是 72 px——说明没有加速段、采样时序稳定。
+（见 `docs/p1_experiments.md` §3）
+
+**处置**：第一版的 6 份证据文件已从 `docs/evidence/p1/` 移除，
+替换为重做后的证据（`e1_ab_positions.png`、`e1_ab_measure.txt` 与两份新报告）。
+
+> **这条被完整保留在文档里**，因为它比"E1 通过了"更有价值：
+> 它说明**读数必须能追溯到它的真实含义**，而不是"看起来在变"。
+
+**第二轮验证**（要求确认"发现的是真问题、不是看错"）——结论成立，
+并**又修正了一处自己引入的过度陈述**：
+
+| 待确认的结论 | 验证方式 | 结果 |
+| --- | --- | --- |
+| E1 第一版的读数不是位置 | 同一运行内的两帧对比：`…_walkFwd_before.png` 是 `P1: 56` 且角色在屏幕左侧；`…_burst30.png` 也是 **`P1: 56`** 而角色已走到右侧贴住对手 | **成立** —— 画面上角色移动了约 360 px，该数字纹丝不动，它不可能是坐标 |
+| `id()` 与坐标是两回事 | 源码：`debug.lua:183-184` 的第二个参数是 `id()`；`script.go:8688` 的 `case "id": lv = lua.LNumber(e.id)` 与 `script.go:8694` 的 `case "pos x":` 并存 | **成立** —— 引擎把两者当不同字段 |
+| 注入会被 AI 接管 | 对照实验：默认运行 `args` 含 `-p1.ai 8`、截图里 P1 在 `State 810`（投技）；显式 `-Ai1 0` 后 `args` 不含 `-p1.ai`、P1 进入 `State 20`（走路） | **成立** —— 只差一个参数，行为完全不同 |
+| 名标签中心 = 角色位置 | 在 `before` 截图上目视核对：`KFM P1 Lab` / `Kung Fu Man` 确实水平居中于各自角色脚下 | **成立** —— `measure_positions.ps1` 的前提可靠 |
+| 我自己的重写稿 | 逐句检查论证链 | **发现一处过度陈述并已删除**：原稿用"5 burst ≈ 10 tick"的假设推出换算比例，再用它回算采样点的 tick 数，属于**循环论证**（假设 → 推导 → 拿推导去"验证"假设）。现改为只声明**比值**（对 tick 数不敏感），并注明绝对位移未独立定标 |
+
+### 7.6 注入的输入被 AI 静默接管（收尾复核时发现）
+
+**现象**：重做 E1 的第一次运行里，按住"前进键"却看不到走路，
+截图显示 P1 处于 `State 810`（投技后续）——它在和 P2 摔跤。
+
+**根因**：`capture_match.ps1` 的 `-Ai1` **默认值是 8**，也就是 P1 由 AI 控制。
+而 AI（`AI.zss`）直接 `changeState`，并且显式对默认走路下了
+`assertSpecial{flag: nowalk; flag2: nobrake}`（`AI.zss:37`），
+**注入的方向键对 AI 控制的角色完全不起作用**。
+
+**为什么危险**：这个失败是**静默的** —— 画面里角色确实在动（AI 自己在动），
+不容易看出"我的输入其实没被采纳"。
+
+**处置**：所有注入类实验显式加 `-Ai1 0`。快速自查方法是看报告里的 `args` 行：
+若出现 `-p1.ai`，说明 AI 开着，注入实验无效。
+
+**影响面核对**：E2 / E3 / E4 / E5 的报告里 `args` 都没有 `-p1.ai`（即 `-Ai1 0`，人类控制），
+且它们观测到的行为与预期**精确吻合**（掉血 Δ23/Δ137、动画 12→30、状态号精确改判），
+因此这些实验不受影响。E0 与 E6 是**有意**用 AI 的（E6 就是测 AI 优先级）。
+
+---
+
+## 8. 已知限制与遗留事项
+
+| 项 | 说明 | 影响 |
+| --- | --- | --- |
+| 合成输入只有 TAB / RETURN 可达 | 无法测试组合键（`x+y`）路由 | E5 只覆盖了单键；组合键路由待后续验证 |
+| 依赖本机运行时键位设置 | `save/config.ini` 是 gitignored 的 | 他人复现需自行对齐键位；已在文档中明确 |
+| 观测工具需要真实桌面会话 | 依赖前台焦点与窗口渲染 | 无法在无头 CI 中运行 |
+| 状态读数靠 burst 抽样 | burst 间隔内可能漏掉瞬态状态 | E6 中出现过 1 帧 State 0 被采到但相邻帧未采到的情况，不影响结论 |
+| **调试层不输出世界坐标** | 位置类实验只能按像素测量：精度约 ±1 px，且两角色靠近时名标签会并簇、无法再分辨 | 用 `displayToClipboard` 导出 `pos x`（`kfm.zss:2564` 有官方写法示例） |
+| **注入必须显式 `-Ai1 0`** | 忘了传就被 AI 静默接管（见 §7.6） | 已写入文档与 §7 第 8 条；可考虑把脚本 `-Ai1` 默认值改为 0 |
+| 单键路径 `-HoldVK` 未经验证 | E1 第一版用的是它（见 §7.5） | 一律改用 `-HoldSeqVK` |
+| 判定框的"生效边界"未定量 | 只证明"框变大、伤害不变" | 未回答"框要多大才刚好够到对手" |
+| Lua 调试热键大多未验证可注入 | 只有 `Ctrl+C`/`Ctrl+D` 实测可用，其余 9 个只是读源码得知 | 见架构文档 §8.2 |
+| **PR 尚未创建** | 本机无 `gh` CLI | 需人工在 GitHub 网页创建，见 `docs/P1-summary.md` §9 |
+
+> 以上均不阻塞 P1 的 Gate，但**必须带进 P2**，不要当成已完成。
+
+---
+
+## 9. 对下一阶段的输入
+
+### 9.1 P2 可以直接假设为真的事情
+
+- **不必读引擎源码就能做角色。** 角色文件（`.def` / `.cmd` / `.const` / `.zss` /
+  `.air` / `.sff` / `.snd` / `movelist.dat`）足以覆盖全部战斗行为。
+- **改动的影响是可预测的**：伤害看 `hitDef.damage`、范围看 `Clsn1`、
+  快慢看 `.air` 帧数、进哪个状态看 `command.zss`、AI 行为看 `AI.zss` 顺序、
+  移动速度看 `.const` 的 `[Velocity]`（全部为实测，见 `docs/p1_experiments.md`）。
+- **`design/characters/_template/` 是可用的起点**，命名与编号段约定已固定（架构文档 §4.1 / §5.4）。
+- **`tests/p1/` 的观测工具可以直接复用**，用来做"改完之后行为对不对"的回归。
+
+### 9.2 P2 必须自己决定的事情
+
+1. 4 键命令表的最终形态（骨架给的是起点，不是定稿）。
+2. 模板角色的范围：只做"最小可跑"，还是带一套完整普通技。
+   （建议：先最小可跑，把招式留给 P3/P4。）
+3. 公共状态是否沿用画面包的 `common1.cns.zss`，还是复制一份到 `game/data/` 自行维护。
+   （建议延续沿用，直到确实需要改动——沿用意味着 submodule 继续干净。）
+4. `.sff` / `.snd` 的来源路径（临时借用 vs 等 P5 工具链）。
+   **若临时借用，必须登记 `assets/LICENSE_MANIFEST.csv`，且不得进入发布。**
+
+### 9.3 带进后续阶段的工具改进
+
+- 把 `pos x` 观测固化进 `capture_match.ps1`，让位置类实验可以数值化。
+- 加一条"AI 行为未塌缩"的自动化断言（跑一局 AI vs AI，检查状态号序列的多样性），
+  服务于 P8。
+- 探索组合键注入通道，补齐 E5 未覆盖的部分。
+
+### 9.4 仍然成立的红线
+
+- 不在 `main` 上开发；一个 PR 至少配一份 `docs/iterations/YYYYMMDD-<topic>.md`。
+- 引擎基线不漂移；要动就走 `CONTRIBUTING.md` 的完整流程。
+- 未完成的事写 `BLOCKED`，不写 `PASS`。

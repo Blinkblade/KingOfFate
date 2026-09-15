@@ -1,0 +1,11 @@
+harness   : tests/p1/capture_match.ps1
+args      : -p1 p1_kfm_zss_lab -p2 kfm_zss -s stage0 -windowed -nosound -time 99
+outdir    : D:\AI\develop\KingOfFate\logs\p1\shots
+process   : pid=23672
+window    : hwnd=329702
+focus     : foreground acquired=True
+sent      : Ctrl+D toggleDebugDisplay
+holdseq   : #1 vk=0x27 label=walkFwd hold=2.2s bursts=66 before=D:\AI\develop\KingOfFate\logs\p1\shots\e2_base_d23_seq01_walkFwd_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e2_base_d23_seq01_walkFwd_after.png
+holdseq   : #2 vk=0x09 label=punchX hold=0.45s bursts=14 before=D:\AI\develop\KingOfFate\logs\p1\shots\e2_base_d23_seq02_punchX_before.png after=D:\AI\develop\KingOfFate\logs\p1\shots\e2_base_d23_seq02_punchX_after.png
+shot      : 1 ok=True -> D:\AI\develop\KingOfFate\logs\p1\shots\e2_base_d23_01.png
+stop      : process killed by harness

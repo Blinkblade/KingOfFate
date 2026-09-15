@@ -1,0 +1,60 @@
+; P1 Lab character definition - IKEMEN Character Architecture study
+;
+; This is a KingOfFate-tracked research copy of the IKEMEN GO bundled KFM ZSS
+; sample character (chars/kfm_zss). Its purpose is Phase P1: understand and
+; validate the IKEMEN character execution chain in a copy that can be modified,
+; tracked in git, reviewed in a PR and deleted again.
+;
+; It is NOT a KingOfFate character and NOT the P2 `_template`.
+; The runtime copy is produced by `scripts/sync_game_content.ps1`; the source of
+; truth is this file under `game/chars/p1_kfm_zss_lab/`.
+;
+; Upstream origin : Ikemen-GO official screenpack, chars/kfm_zss (Kung Fu Man, (c) 2009 Elecbyte,
+;                   Creative Commons Noncommercial). See readme-original-kfm.txt.
+; Structure note  : the file map below is byte-for-byte the upstream one - only the
+;                   character name/displayname were changed so the lab can be
+;                   told apart from the original in the match.
+
+; Player information
+[Info]
+name = "KFM P1 Lab"         ;Name of character
+displayname = "KFM P1 Lab"  ;Name of character to display
+versiondate = 09,30,2009    ;Version date of character (MM-DD-YYYY or X.XX)
+mugenversion = 1.0          ;Version of M.U.G.E.N character works on (X.XX)
+author = "Elecbyte (P1 lab copy by KingOfFate)" ;Character author name
+pal.defaults = 1,2,3,4      ;Default palettes in order of preference (up to 4)
+
+; Files for the player
+[Files]
+cmd     = kfm.cmd           ;Command set
+cns     = kfm.const         ;Constants
+st      = kfm.zss           ;States
+st2 = hits.zss
+st3 = command.zss
+st4 = AI.zss
+stcommon = common1.cns.zss  ;Common states (from data/ or motif)
+sprite  = kfm.sff           ;Sprite
+anim    = kfm.air           ;Animation
+sound   = kfm.snd           ;Sound
+ai      = kfm.ai            ;AI hints data (not used)
+movelist = movelist.dat     ;Ikemen feature: Movelist
+
+; Maps character selection buttons to palette numbers.
+[Palette Keymap]
+x = 1 ;Press button X to select palette 1, etc.
+y = 2
+z = 3
+a = 4
+b = 5
+c = 6
+x2 = 7 ;Hold Start and press button X for palette 7, etc.
+y2 = 8
+z2 = 9
+a2 = 10
+b2 = 11
+c2 = 12
+
+; Arcade mode
+[Arcade]
+intro.storyboard = intro.def
+ending.storyboard = ending.def

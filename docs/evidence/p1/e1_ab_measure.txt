@@ -1,0 +1,18 @@
+# measure_positions.ps1 - on-screen character positions from name tags
+# band y 604..619; search x 0..1280; cluster gap 24; min width 8
+# columns found are reported as [left..right centre=<px> width=<px>], left to right
+
+e1c_base_seq01_walkFwd_before.png              [392..491 centre=442 width=99] [807..917 centre=862 width=110]
+e1c_base_seq01_walkFwd_burst02.png             [413..513 centre=463 width=100] [807..917 centre=862 width=110]
+e1c_base_seq01_walkFwd_burst05.png             [464..564 centre=514 width=100] [807..917 centre=862 width=110]
+e1c_base_seq01_walkFwd_burst10.png             [536..636 centre=586 width=100] [807..917 centre=862 width=110]
+e1c_base_seq01_walkFwd_burst15.png             [608..708 centre=658 width=100] [807..917 centre=862 width=110]
+e1c_base_seq01_walkFwd_burst20.png             [680..780 centre=730 width=100] [807..917 centre=862 width=110]
+e1c_base_seq01_walkFwd_after.png               [836..1037 centre=936 width=201]
+e1d_mod_seq01_walkFwd_before.png               [392..491 centre=442 width=99] [807..917 centre=862 width=110]
+e1d_mod_seq01_walkFwd_burst02.png              [500..600 centre=550 width=100] [807..917 centre=862 width=110]
+e1d_mod_seq01_walkFwd_burst05.png              [716..917 centre=816 width=201]
+e1d_mod_seq01_walkFwd_burst10.png              [885..1086 centre=986 width=201]
+e1d_mod_seq01_walkFwd_burst15.png              [930..1129 centre=1030 width=199]
+e1d_mod_seq01_walkFwd_burst20.png              [930..1129 centre=1030 width=199]
+e1d_mod_seq01_walkFwd_after.png                [941..1142 centre=1042 width=201]

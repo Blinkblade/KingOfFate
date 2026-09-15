@@ -1,1 +1,2 @@
 ﻿asset_id,path,type,source,author,license,usage,notes
+kfm_zss_p1_lab,game/chars/p1_kfm_zss_lab/,character,IKEMEN GO bundled sample chars/kfm_zss (Kung Fu Man classic ver),Elecbyte,CC-BY-NC,"Creative Commons Noncommercial",prototype_only,"P1 research copy only. Byte-identical to upstream apart from [Info] name/displayname and an added readme-original-kfm.txt. Used to validate the IKEMEN character execution chain; it is NOT a KingOfFate character and must never ship in a release."
