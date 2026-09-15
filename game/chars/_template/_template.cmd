@@ -60,12 +60,13 @@ buffer.time = 14
 [Command]
 name = "FF"                ; 前冲（Required，不要删）
 command = F, F
-time = 10
+time = 25                  ; 与必杀一致的宽松窗口（KFM 用 10 = 90 年代手感）；
+                           ; 现代手感 + 模板阶段优先保证链路可被观测
 
 [Command]
 name = "BB"                ; 后跳（Required，不要删）
 command = B, B
-time = 10
+time = 25
 
 ; ===========================================================================
 ; 组合键 —— recovery 是引擎要求的固定名
