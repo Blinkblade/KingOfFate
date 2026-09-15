@@ -314,7 +314,7 @@ pwsh -File scripts/sync_game_content.ps1 -WhatIf    # 只看会复制什么
 
 ## 9. PR 信息（可直接粘贴）
 
-P1 的全部提交**已推送**到 `origin/feature/p1-kfm-study`（5 个提交），
+P1 的全部提交**已推送**到 `origin/feature/p1-kfm-study`（相对 `main` 领先 10 个提交），
 但 **Pull Request 需要人工在 GitHub 网页创建**（本机未安装 `gh` CLI）。
 
 ```text
