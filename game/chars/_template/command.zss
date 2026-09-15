@@ -7,7 +7,7 @@
 #   [StateDef -1] 从上到下逐条判断，**先命中者生效，后面的全部跳过**。
 #   因此：条件更"窄"的规则必须写在更"宽"的规则前面。
 #
-#   反例：如果把 `if command = "x"`（单按轻拳）写在
+#   反例：如果把 `if command = "x"`（单按 A）写在
 #         `if command = "QCF_x"`（波动拳，也以 x 结束）前面，
 #         那么波动拳永远轮不到 —— 每次都会被单按规则抢走。
 #
@@ -15,9 +15,13 @@
 #   "State entry with a certain command must come before another
 #    state entry with a command that is the subset of the first."
 #
-# 输出顺序约定（照抄，不要随意调换）：
-#   超必杀 → 消耗气槽的必杀 → 普通必杀 → 防御 → 前冲/后跳 → 投技
-#   → 站立普通技 → 嘲讽 → 下蹲普通技 → 空中普通技
+# 本模板的实际顺序（T —— 改顺序等于改优先级，必须重跑 Runtime 验证）：
+#   ① EX 必杀（QCF_y，需 500 气）   ← 最窄：多了气量条件
+#   ② 必杀   （QCF_x）
+#   ③ 投技   （贴身 + 前/后 + C/D） ← 比单按 C/D 窄，必须在其前面
+#   ④ 前冲 / 后跳（FF / BB）
+#   ⑤ 站立普通技 A / B / C / D
+#   ⑥ 嘲讽（start）
 #
 # 依据：docs/ikemen_character_architecture.md §4.3 / §5.3
 # 实测对照：game/chars/p1_kfm_zss_lab/command.zss
@@ -25,19 +29,34 @@
 
 
 # ============================================================================
-# 工具函数：连段条件
+# 工具函数：可取消窗口（T7）
 #
-# $canCombo = 1 表示"现在可以接必杀技"。把重复的条件集中在这里，
+# $canCombo = 1 表示"现在可以出必杀技"。把重复的条件集中在这里，
 # 避免每个招式各写一遍。
+#
+# 两种进入方式：
+#   a) 完全自由：在地面且有控制权
+#   b) 取消（Cancel）：正处于**轻**普通技（200 轻拳 A / 230 轻脚 B）的
+#      攻击帧之后（animElemTime(3) >= 0），且本次还没取消过（var(0) = 0）
+#
+# 注意 b) 不要求命中（moveContact）。这是模板阶段刻意放宽的：
+# 让"取消窗口"在空挥时也能被观测到。正式角色若要"确认命中才能取消"，
+# 在下面两个分支里补上 && moveContact 即可。
+#
+# ★ 语法坑（P2 实测踩到）：`animElem` 裸触发器只支持 = / !=。
+#   写 `animElem >= 3` 会在加载时抛 `Missing '=' or '!='`（引擎直接 Panic）。
+#   要表达"进入第 3 个元素之后"必须用函数形式 `animElemTime(3) >= 0`
+#   —— 这正是 KFM command.zss 的写法（kfm command.zss:241）。
 #
 # 这是"函数跨状态复用"的样板：let 声明、if 判断、返回值。
 # ============================================================================
 [Function Combo() ret]
 let ret = 0;
-# 可以自由出招，或正处于可取消的普通技中且已命中，或刚从防御中出来
+# 取消窗口用"平铺的 ||" 表达，不嵌套括号 —— 一眼就能看出哪些 State 可取消。
+# （ZSS 的解析器对嵌套括号的容错很差，KFM 自己也是平铺写法。）
 if (stateType != A && ctrl) ||
-    ((stateNo = [200, 299] || stateNo = [400, 499]) && stateNo != 440 && moveContact) ||
-    (stateNo = 1310 || stateNo = 1330) {
+    (stateNo = 200 && var(0) = 0 && animElemTime(3) >= 0) ||
+    (stateNo = 230 && var(0) = 0 && animElemTime(3) >= 0) {
     let ret = 1;
 }
 
@@ -55,36 +74,40 @@ if roundState = 2 && !aiLevelF {
     ignoreHitPause{mapSet{map:"canCombo"; value: $canCombo}}
 
     # ========================================================================
-    # 【① 超必杀】消耗 1 条气（1000）。P2 之后填充。
+    # 【① EX 必杀技】236 + C，消耗 500 气
+    # 气量检查在这里（路由层），扣气在 _template.zss 的 State 1010 里。
+    # 必须排在 ② 前面：两者方向输入相同，只有结束键不同，条件互不包含，
+    # 但把"有额外资源条件"的放前面是本项目固定习惯。
     # ========================================================================
-    #if command = "Super_Example" && power >= 1000 && stateType != A && $canCombo {
-    #    changeState{value: 3000}
-    #}
+    if command = "QCF_y" && power >= 500 && $canCombo {
+        changeState{value: 1010}
+    }
 
     # ========================================================================
-    # 【② 必杀技】窄条件的写在宽条件之前
-    # 例：QCF_xy（EX 版，同时按两个键）必须写在 QCF_x / QCF_y 前面
+    # 【② 必杀技】236 + A，不耗气
     # ========================================================================
-    #if command = "QCF_xy" && power >= 500 && $canCombo {
-    #    changeState{value: 1020}
-    #}
-    #if command = "QCF_x" && $canCombo {
-    #    changeState{value: 1000}
-    #}
-    #if command = "QCF_y" && $canCombo {
-    #    changeState{value: 1010}
-    #}
+    if command = "QCF_x" && $canCombo {
+        changeState{value: 1000}
+    }
 
     # ========================================================================
-    # 【③ 防御】
+    # 【③ 投技】KOF 惯例：贴身 + 前/后 + C 或 D
+    # 必须排在 ⑤ 的单按 y / b 前面，否则永远轮不到。
+    # 条件（T4 的"触发条件"）：
+    #   - 站立、有控制权
+    #   - 按住前或后（KOF 的前投/后投）
+    #   - 对手在地面且不在受击硬直（p2MoveType != H）
+    #   - 距离够近
     # ========================================================================
-    #if command = "blocking" && command != "holddown" &&
-    #    (ctrl && stateType != A) {
-    #    changeState{value: 1300}
-    #}
+    if (command = "y" || command = "b") && stateType = S && ctrl &&
+        (p2StateType = S || p2StateType = C) && p2MoveType != H &&
+        ((command = "holdfwd" && p2BodyDist X < 3) ||
+            (command = "holdback" && p2BodyDist X < 5)) {
+        changeState{value: 800}
+    }
 
     # ========================================================================
-    # 【④ 双击方向：前冲 / 后跳】
+    # 【④ 双击方向：前冲 / 后跳】均由公共状态提供（State 100 / 105）
     # ========================================================================
     if command = "FF" && stateType = S && ctrl {
         changeState{value: 100}
@@ -94,63 +117,30 @@ if roundState = 2 && !aiLevelF {
     }
 
     # ========================================================================
-    # 【⑤ 投技】要求贴身 + 对手站或蹲 + 对手不在受击硬直
-    # 注意：投技用 y 键，所以它必须写在单按 y（重拳）之前，否则永远进不来
+    # 【⑤ 站立普通技】KingOfFate 四键
+    #   x = A 轻拳 → 200      a = B 轻脚 → 230
+    #   y = C 重拳 → 210      b = D 重脚 → 240
+    # command != "holddown" 保证"下+键"不会误触发站立技（下蹲技留给后续角色）
     # ========================================================================
-    #if command = "y" && stateType = S && ctrl && stateNo != 100 &&
-    #    (p2StateType = S || p2StateType = C) && p2MoveType != H &&
-    #    ((command = "holdfwd" && p2BodyDist X < 3) ||
-    #     (command = "holdback" && p2BodyDist X < 5)) {
-    #    changeState{value: 800}
-    #}
-
-    # ========================================================================
-    # 【⑥ 站立普通技】4 键核心
-    # ========================================================================
-    # 站立轻拳（LP）
-    if command = "x" && command != "holddown" &&
-        (stateType = S && ctrl) {
+    if command = "x" && command != "holddown" && stateType = S && ctrl {
         changeState{value: 200}
     }
-
-    # 站立重拳（HP）—— P2 实现 State 210 后启用
-    #if command = "y" && command != "holddown" &&
-    #    (stateType = S && ctrl) {
-    #    changeState{value: 210}
-    #}
-
-    # 站立轻脚（LK）—— P2 实现 State 230 后启用
-    #if command = "a" && command != "holddown" &&
-    #    (stateType = S && ctrl) {
-    #    changeState{value: 230}
-    #}
-
-    # 站立重脚（HK）—— P2 实现 State 240 后启用
-    #if command = "b" && command != "holddown" &&
-    #    (stateType = S && ctrl) {
-    #    changeState{value: 240}
-    #}
+    if command = "a" && command != "holddown" && stateType = S && ctrl {
+        changeState{value: 230}
+    }
+    if command = "y" && command != "holddown" && stateType = S && ctrl {
+        changeState{value: 210}
+    }
+    if command = "b" && command != "holddown" && stateType = S && ctrl {
+        changeState{value: 240}
+    }
 
     # ========================================================================
-    # 【⑦ 嘲讽】
+    # 【⑥ 嘲讽】
     # ========================================================================
     if command = "start" && command != "holddown" && stateType != A && ctrl {
         changeState{value: 195}
     }
-
-    # ========================================================================
-    # 【⑧ 下蹲普通技】先判断 holddown，再判断按键
-    # ========================================================================
-    #if command = "x" && command = "holddown" && stateType = C && ctrl {
-    #    changeState{value: 400}
-    #}
-
-    # ========================================================================
-    # 【⑨ 空中普通技】
-    # ========================================================================
-    #if command = "x" && stateType = A && ctrl {
-    #    changeState{value: 600}
-    #}
 
 # End of file: roundState = 2
 # =============================================================================

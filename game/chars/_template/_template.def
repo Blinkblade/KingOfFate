@@ -2,11 +2,8 @@
 ; KingOfFate — Base Fighter Template
 ; 角色定义文件（.def）：文件名映射 + 角色元信息。本文件不含任何战斗逻辑。
 ;
-; 用法：把整个 _template/ 目录复制成 game/chars/<你的角色名>/，然后：
-;   1) 把所有 `_template` 前缀替换成你的角色名
-;   2) 改下面的 name / displayname / author
-;   3) 用 P5 的工具链产出 <角色名>.sff 与 <角色名>.snd
-;   4) pwsh -File scripts/sync_game_content.ps1   → 同步到引擎运行目录
+; 这是 P2 交付的**唯一可执行角色模板真值**，位于 game/chars/_template/。
+; 复制方式见本目录 README.md 的 "How to clone"。
 ;
 ; 依据：docs/ikemen_character_architecture.md §2（文件构成）与 §11（对 P2 的输入）
 ; 实测来源：game/chars/p1_kfm_zss_lab/p1_kfm_zss_lab.def
@@ -14,46 +11,47 @@
 
 ; ---------------------------------------------------------------------------
 ; 角色信息
+; name 必须与目录名一致（引擎用 -p1 <name> 定位角色）
 ; ---------------------------------------------------------------------------
 [Info]
-name         = "KOF Template"      ; 内部名，参战命令行 -p1 <name> 用它
-displayname  = "KOF Template"      ; 画面上显示的名字
-versiondate  = 01,01,2026          ; MM-DD-YYYY 或 X.XX
-mugenversion = 1.0                 ; 兼容的 M.U.G.E.N 版本，IKEMEN 下保持 1.0
+name         = "_template"        ; 内部名，命令行 -p1 _template 用它
+displayname  = "KOF Template"     ; 画面上显示的名字
+versiondate  = 09,15,2026         ; MM,DD,YYYY
+mugenversion = 1.0                ; IKEMEN 下保持 1.0
 author       = "KingOfFate"
-pal.defaults = 1,2,3,4             ; 默认调色板优先级
+pal.defaults = 1,2,3,4            ; 默认调色板优先级
 
 ; ---------------------------------------------------------------------------
 ; 文件映射 —— 这是本文件唯一的实质内容
-; 注意：引擎的 stcommon 搜索路径包含 data/，所以 common1.cns.zss 来自画面包，
-;       属于"公共状态"，不是这个角色自己的文件。
+; 注意：stcommon = common1.cns.zss 是**公共状态**，引擎会在
+;       {角色目录, "", motif 目录, "data/"} 里搜索，不需要随角色分发。
+;       不要为了"补齐文件"把它复制到角色目录。
 ; ---------------------------------------------------------------------------
 [Files]
 cmd      = _template.cmd       ; 命令定义：物理按键 → 命令名
-cns      = _template.const     ; 常量：体力/尺寸/速度/位移（IKEMEN 下仍是独立文件）
+cns      = _template.const     ; 常量：体力/尺寸/速度/位移/变量台账
 st       = _template.zss       ; 主体状态脚本（ZSS）
-st2      = hits.zss            ; 额外状态：受击方 / 特殊状态
+st2      = hits.zss            ; 额外状态：投技受击方
 st3      = command.zss         ; 命令路由：命令名 → 状态号
 st4      = AI.zss              ; CPU AI 脚本
-stcommon = common1.cns.zss     ; 公共状态（来自 data/ 或画面包）——所有角色共用
-sprite   = _template.sff       ; 精灵图容器（需 P5 工具链产出）
+stcommon = common1.cns.zss     ; 公共状态（画面包 data/）——所有角色共用
+sprite   = _template.sff       ; 精灵图容器（★ PLACEHOLDER，见 README）
 anim     = _template.air       ; 动画 + 判定框
-sound    = _template.snd       ; 音效容器（需 P5 工具链产出）
+sound    = _template.snd       ; 音效容器（★ PLACEHOLDER，见 README）
 movelist = movelist.dat        ; 出招表（IKEMEN 特有，纯展示）
 
 ; ---------------------------------------------------------------------------
 ; 选人画面的按键 → 调色板映射
-; KingOfFate 定位为 4 键：x = 轻拳, y = 重拳, a = 轻脚, b = 重脚
-; 这里的按键名是角色按钮名（不是物理键），与 _template.cmd 的 [Remap] 对应。
+; KingOfFate 四键：x = A 轻拳, a = B 轻脚, y = C 重拳, b = D 重脚
 ; ---------------------------------------------------------------------------
 [Palette Keymap]
-x = 1                          ; 按轻拳选调色板 1
-y = 2                          ; 按重拳选调色板 2
-a = 3                          ; 按轻脚选调色板 3
-b = 4                          ; 按重脚选调色板 4
+x = 1                          ; A 轻拳 → 调色板 1
+a = 2                          ; B 轻脚 → 调色板 2
+y = 3                          ; C 重拳 → 调色板 3
+b = 4                          ; D 重脚 → 调色板 4
 
 ; ---------------------------------------------------------------------------
-; Arcade 模式的剧情板（可选）。没有对应素材时整段删掉。
+; Arcade 模式的剧情板（可选）。模板没有对应素材，整段保持注释。
 ; ---------------------------------------------------------------------------
 ;[Arcade]
 ;intro.storyboard  = intro.def

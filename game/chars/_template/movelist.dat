@@ -1,18 +1,20 @@
 <#f0f000>:Normal Attacks:</>
-Light Punch									^X
-Heavy Punch									^Y
-Light Kick									^A
-Heavy Kick									^B
+Light Punch (A)									^X
+Light Kick  (B)									^A
+Heavy Punch (C)									^Y
+Heavy Kick  (D)									^B
+Taunt											^S
+
 
 <#f0f000>:Throws:</>
-Forward Throw								_F_+^Y
+Forward Throw									_F_+^Y
+Forward Throw									_F_+^B
 
-<#f0f000>:Command Moves:</>
-											
-											
+
 <#f0f000>:Special Moves:</>
-											
-											
+Placeholder Special								_D_, _DF_, _F_, ^X
+Placeholder EX Special (500 Power)				_D_, _DF_, _F_, ^Y
+
 
 <#f0f000>:Super Moves:</>
-											
+(none in this template)

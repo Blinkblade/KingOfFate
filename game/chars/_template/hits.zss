@@ -7,32 +7,63 @@
 # 命名约定：KFM 把"某招式对应的受击状态"放在贴近该招式编号的号段里：
 #     招式 200（站立轻拳）  →  对手进入普通受击状态（公共状态，无需定义）
 #     招式 800/810（投技）  →  对手进入 820 / 821
-#     招式 1000-1020（金刚掌）→  对手进入 1025 - 1028
 #
-# 也就是说：**普通技靠公共受击状态，投技/需要特殊表现的招式才需要在这里定义。**
+# 也就是说：**普通技靠公共受击状态（common1.cns.zss 的 5000+），
+# 只有投技这种"需要被抓住"的表现才需要在这里定义。**
 #
-# P2 起点：本文件为空骨架 —— 普通技的受击完全由 common1.cns.zss 提供。
+# 本模板只实现投技的两个受击状态。
 #
 # 依据：docs/ikemen_character_architecture.md §2.1 / §4.1
-# 实测对照：game/chars/p1_kfm_zss_lab/hits.zss（820 / 821 / 1025-1028）
+# 实测对照：game/chars/p1_kfm_zss_lab/hits.zss（820 / 821）
 # ============================================================================
 
 
 # ============================================================================
-# 投技受击状态样板（未启用）
+# Thrown by Basic Throw —— 被抓住（等待被甩出）
 #
-# 投技的受击方需要被"抓住"而不是被击退，所以必须有独立状态。
-# 关键点：用 bindToParent / target 把对手锁在攻击方身上，然后用 posSet
-# 把他摆到正确位置。
+# 关键点：
+#   1) changeAnim2（不是 changeAnim）—— 切换到**攻击方** AIR 里的 Action 820。
+#      这是投技受害者必须用 changeAnim2 的原因（架构文档 hits.zss 注释）。
+#   2) 用 getHitVar(IsBound) 兜底：一旦被解除绑定（例如攻击方被打断），
+#      立即回到自己的受击流程，避免永久卡死。
 # ============================================================================
-#[StateDef 820;
-#type: S; movetype: H; physics: S;
-#anim: 820; ctrl: 0;
-#velset: 0, 0;]
+[StateDef 820;
+type: A; movetype: H; physics: N;
+velset: 0, 0;]
 
-# 被抓者不可操作、不可被其他攻击打到
-#notHitBy{value: SCA, AA, AP, AT; time: 1}
+if time = 0 {
+    changeAnim2{value: 820}
+}
 
-# ...按投技动画摆位...
+# 兜底：失去绑定就回到自己的倒地流程
+if !getHitVar(IsBound) {
+    selfState{value: 5050}
+}
 
-#call EndState(0);
+
+# ============================================================================
+# Thrown by Basic Throw —— 被甩到空中，落地
+#
+# 由 State 810 的 targetState{value: 821} 进入。
+# 触地后 selfState 5100（自己的倒地状态，由公共状态提供）。
+# ============================================================================
+[StateDef 821;
+type: A; movetype: H; physics: N;
+velset: 2.8, -7; poweradd: 40;]
+
+# 重力
+velAdd{y: .4}
+
+# 受身：玩家按 recovery（A+C），或 AI 按概率受身
+if vel y > 0 && alive && canRecover && (command = "recovery" || random % 5 = 0 && aiLevelF) {
+    if pos y >= -20 {
+        changeState{value: 5200}    # HITFALL_RECOVER（地面受身）
+    } else {
+        selfState{value: 5210}      # HITFALL_AIRRECOVER（空中受身）
+    }
+}
+
+# 触地 → 回到自己的倒地流程
+if pos y >= 0 && vel y > 0 {
+    selfState{value: 5100}
+}
