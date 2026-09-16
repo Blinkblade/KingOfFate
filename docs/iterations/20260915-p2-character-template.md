@@ -1,67 +1,74 @@
-# Iteration — 2026-09-15 — P2: Base Fighter Template
+# Iteration — 2026-09-15 — P2: Base Fighter Template（基础格斗模板）
 
-Branch: `feature/p2-character-template`
-Contract: P2 agent prompt (T1–T9, V01–V24, GATE-01..10)
+- 分支：`feature/p2-character-template`
+- 依据：P2 执行合同（T1–T9、V01–V24、GATE-01..10）
+- 本记录含 **2026-09-16 的审计补充**（见 §"审计"）
 
-## What this iteration did
+## 这一轮做了什么
 
-Turned the P1 design skeleton (`design/characters/_template/`) into a real,
-loadable, runnable, cloneable 4-button base fighter at `game/chars/_template/`,
-with runtime evidence for every claim that can be observed on this machine.
+把 P1 的设计骨架（`design/characters/_template/`）变成真实可加载、可运行、
+可复制的四键基础格斗角色，落在 `game/chars/_template/`，并对**每一条能被本机
+观测到的结论**留下运行时证据。
 
-## Work log (order of events)
+## 工作顺序（按发生次序）
 
-1. **Baseline re-verified**: submodule HEAD `ba51619...` (rc.5, clean), P1 merged
-   to `main` (`99add4d`). Branch created off `main`.
-2. **Single source of truth**: `git mv design/characters/_template →
-   game/chars/_template` (10 renames). Placeholder SFF/SND copied from the P1
-   KFM lab (CC-BY-NC, Elecbyte), registered in `assets/LICENSE_MANIFEST.csv`.
-   → commit `6d8afb0`.
-3. **T1–T9 implementation**: states 195/200/210/230/240/800/810/1000/1010,
-   command routing, AI, const/velocity, AIR actions, meter, cancel.
-   → commit `8a54618`.
-4. **ZSS parser bug found & fixed** (was blocking V01): a bare `animElem`
-   trigger only supports `=` / `!=`. `animElem >= 3` panics the engine with
-   `Missing '=' or '!='`. The correct idiom for "at/after element 3" is the
-   function form `animElemTime(3) >= 0` — exactly what KFM's command.zss does.
-   Recorded inline in `command.zss`.
-5. **Runtime harness extended**: `tests/p2/inject_phases.ps1` — phases of
-   simultaneous keys (throw = F+y) and motion inputs (QCF). Double-channel
-   injection (`keybd_event` + `PostMessage`) was mandatory: single-channel
-   phases were silently dropped.
-6. **Key bindings restored for testing**: `save/config.ini [Keys_P1]` had been
-   reset to defaults after P1 (`x=a, y=s`), so injected TAB/RETURN did nothing.
-   Re-applied the P1 test mapping (`x=TAB, y=RETURN, start=Not used`) for the
-   validation runs; **restored to defaults afterwards** (gitignored file).
-7. **Meter semantics corrected** (T6): `const power` is the meter **cap**
-   (`c.powerMax = gi.data.power`, char.go:3740), not the starting amount. The
-   engine zeroes power every round — KFM (cap 3000) also shows `POW: 0` at
-   round start. Fixed the wrong comment in `_template.const`; template behavior
-   (hit-gain + `poweradd` income, `power >= 500` gate, `powerAdd -500` spend)
-   was already correct and is now runtime-proven.
-8. **Validation matrix executed** (see phase report for the V-table):
-   V01 load, V03 directions, V04 guard (State 130 + guard meter gain),
-   V07 FF/BB, V09 A=25 dmg, V10 C=70 dmg, V11 throw=90 dmg + 810 flow,
-   V12 QCF+A→1000=95 dmg, V13 EX→1010 & power 1000→500, V14 cancel 200→1000,
-   V15 AI (normals + special), V16 Clsn on-screen, V17 hit/down/recover chain.
-9. **QCF timing lesson**: phase gaps of 0.3 s blew the 25-tick command window —
-   motion inputs need `-SettleSec 0.02` with 0.06 s phases (跨度 ≈15 ticks).
+1. **重新确认基线**：submodule HEAD `ba51619…`（rc.5，干净），P1 已合入 `main`
+   （`99add4d`）。从 `main` 开分支。
+2. **确立单一真源**：`git mv design/characters/_template → game/chars/_template`
+   （10 个 rename）。占位 SFF/SND 取自 P1 的 KFM 实验室（Elecbyte，CC-BY-NC），
+   在 `assets/LICENSE_MANIFEST.csv` 登记两行。→ 提交 `6d8afb0`。
+3. **T1–T9 实现**：状态 195/200/210/230/240/800/810/1000/1010、命令路由、AI、
+   常量与速度、AIR 动作、气槽、取消。→ 提交 `8a54618`。
+4. **踩到并修掉 ZSS 解析坑**（当时 V01 卡住）：裸 `animElem` 触发器**只支持
+   `=` / `!=`**，写 `animElem >= 3` 会让引擎直接 Panic（`Missing '=' or '!='`）。
+   表达"第 N 个元素之后"必须用函数形式 `animElemTime(3) >= 0` —— 与 KFM
+   `command.zss:241` 的写法一致。已就地写进注释。
+5. **扩展验证装置**：新增 `tests/p2/inject_phases.ps1` —— 支持"同相位多键"
+   （投技 = 前+C）与"指令序列"（QCF）。**必须双通道注入**
+   （`keybd_event` + `PostMessage`）：只用单通道时整段相位会被静默丢弃。
+6. **恢复测试键位**：`save/config.ini` 的 `[Keys_P1]` 在 P1 收尾时已还原为默认
+   （`x=a, y=s`），因此注入 TAB/RETURN 毫无反应 —— 这是 V09 第一次失败的**静默**
+   原因。测试期间临时改为 `x=TAB, y=RETURN, start=Not used`，**测完已还原**。
+7. **气槽语义修正**（T6）：`const power` 是气槽**上限**（`char.go:3740`
+   `c.powerMax = gi.data.power`），不是起始值；对局起点为 0，且**跨回合保留**
+   （V18/V19 实验）。收入 = 命中给气 + `poweradd`，支出 = 路由层 `power >= 500`
+   + 状态内 `powerAdd{value: -500}`。
+8. **跑验证矩阵**：V01 加载、V03 四方向、V04 防御、V05 蹲、V06 跳、V07 前冲/后跳、
+   V09 A=25、V10 C=70、V11 投技 90、V12 必杀 95、V13 EX（扣 500 气、伤害 130）、
+   V14 取消 2 段、V15 AI、V16 Clsn、V17 受击倒地起身。
+9. **QCF 注入时序的教训**：相位间隔 0.3 s（18 tick）会让 25 tick 的命令窗口超时，
+   搓招退化成普通技。正确姿势：`-SettleSec 0.02` + 相位 0.06 s（跨度 ≈15 tick）。
 
-## Decisions
+## 决策
 
-- Crouch attacks (400–440) / air attacks (600–640) / supers (3000+) are
-  **explicitly out of template scope**; numbers reserved, routing includes a
-  `command != "holddown"` guard so 400s can be added without touching standing
-  normals.
-- Cancel window deliberately does not require `moveContact` (observability);
-  the tightening hook (`&& moveContact`) is documented in place.
-- Debug hotkeys (F3 = fill meter) ARE reachable by synthetic injection — used
-  by V13 to stage the EX gate test. This was "unverified" in P1 notes.
-- `Buffer.time` for QCF = 14 ticks (KOF-style), FF/BB `time = 25` (observability
-  over 90s feel) — both documented at the definition site.
+- 蹲攻（400–440）/ 跳攻（600–640）/ 超杀（3000+）**明确不在模板范围**：状态号已
+  预留；路由里加 `command != "holddown"` 守卫，将来加蹲攻不必碰站立技。
+- 取消窗口**刻意不要求 `moveContact`**（空挥也能取消），降低联调门槛；
+  收紧写法（`&& moveContact`）已在注释里给出。
+- 调试热键（F3 充满气、F1 击杀、F5 计时归零）**可以被合成注入触发** ——
+  P1 笔记里记的是"未验证"，本轮验证为"可以"，并据此让 V13 的攒气、V18/V19 的
+  回合结束都能自动化。
+- QCF 的 `buffer.time = 14`（KOF 风格缓冲）、FF/BB 的 `time = 25`（可观测性优先），
+  两组值都在定义处注明了理由。
 
-## Follow-ups
+## 审计（2026-09-16）
 
-- Replace placeholder art/audio per clone (hard requirement, CC-BY-NC).
-- Real-human verification list: B/D buttons, taunt (start), fine frame feel.
-- `config.ini` test mapping was restored; re-apply when running injection tests.
+收尾后对全部结论做回溯审计（代码 → 原始帧 → 必要时实测），修正 11 处
+文档/注释与事实不符之处（清单见 Phase Report §4）。要点：
+
+- **数值类**：B 轻脚 30、D 重脚 75、EX 130、必杀 1000 为"近 95 / 远 85"、
+  投技受害方是 `hits.zss` 的 **820/821**（且 821 已实现受身）。
+- **读数类**：V13 的 EX 伤害最初记成 70，是**在连拍帧上读错了**（把 State 210
+  的 70 混了进来）；改看事后静态帧得到 870（−130）。**教训：读数值要用事后静态帧。**
+- **机制类**：最初写"引擎每回合清零气量"，属于**用业界常识替代实测**的推断；
+  实测（V18/V19）证明气量**跨回合保留**。**教训：机制性结论必须实测。**
+- **真缺陷**：缺少胜利姿势 `State 180` → 回合结束时引擎报
+  `WARNING: _template (56) in state 180: changed to invalid state 180 (from state 0)`。
+  补占位 `StateDef 180` + Action 180 后复跑，告警消失、胜者正常播姿势、回合正常推进。
+- **台账/注释**：`var(2)`（投技方向）补登记；AIR 里 210 的"轻拳 12 tick"改为 20。
+
+## 后续
+
+- 每个克隆角色必须替换占位美术/音频（CC-BY-NC，硬要求）。
+- 需真人键盘验证的清单：B/D 键普通技、嘲讽（start 键）、精细手感帧数。
+- 注入类实验前记得重新套用 `[Keys_P1]` 测试映射（gitignored，不套会静默失败）。

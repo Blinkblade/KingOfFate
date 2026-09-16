@@ -36,5 +36,8 @@ pwsh -File tests/p2/inject_phases.ps1 -Prefix v11_throw `
 
 ## 验证矩阵索引
 
-V01–V20 各项与证据文件的对应关系见
-`docs/phase_reports/P2-base-fighter-template.md` 的验证矩阵表。
+V01–V19 各项与证据文件的对应关系见
+`docs/phase_reports/P2-base-fighter-template.md` 的"运行时验证矩阵"一节。
+
+读数值时的经验（P2 审计踩过）：**优先看事后静态帧**（`<Prefix>_01.png` 之类），
+连拍帧（`*_burstNN.png`）里的小字号读数容易看错。
