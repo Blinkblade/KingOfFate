@@ -5,7 +5,7 @@
 | **阶段** | P3 — Test Fighter A |
 | **状态** | **PASS**（10/10 Exit Gate 全绿） |
 | **时间** | 2026-09-16 |
-| **分支** | `feature/p3-test-fighter-a` |
+| **分支** | `feature/p3-test-fighter-a`（已推送 `origin`；PR 待用户手动开） |
 | **详细报告** | [`docs/phase_reports/P3-test-fighter-a.md`](phase_reports/P3-test-fighter-a.md) |
 | **过程记录** | [`docs/iterations/20260916-p3-test-fighter-a.md`](iterations/20260916-p3-test-fighter-a.md) |
 | **核心产出** | [`game/chars/test_fighter_a/`](../game/chars/test_fighter_a/)（角色本体 · [手册](../game/chars/test_fighter_a/README.md)） |

@@ -6,8 +6,8 @@
 | --- | --- |
 | **日期** | 2026-09-16 |
 | **Phase** | P3 — Test Fighter A |
-| **Branch** | `feature/p3-test-fighter-a` |
-| **PR** | 待开（本机无 `gh`，见 §13 的目标分支与标题） |
+| **Branch** | `feature/p3-test-fighter-a`（已推送 `origin`，首个提交 `b8a320f`） |
+| **PR** | 待用户手动开（本机无 `gh`）：<https://github.com/Blinkblade/KingOfFate/pull/new/feature/p3-test-fighter-a> → `main` |
 | **状态** | PASS（10/10 Exit Gate） |
 | **基线** | `main` @ `8407bb0`（P2 已合入，PR #3） |
 | **引擎** | IKEMEN GO `v1.0.0-rc.5`（`ba516193bba83f13f0b63ddce314d8719793931f`），未改动 |
