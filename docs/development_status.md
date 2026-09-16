@@ -196,7 +196,7 @@ implemented; placeholder SFF/SND are the P1 KFM lab files (CC-BY-NC,
 prototype-only, registered) and must be replaced by every clone.
 
 Audit revision (2026-09-16): every P2 claim was re-checked against the code and
-the original frames. 11 doc/comment errors were corrected and one real defect
+the original frames. 13 doc/comment errors were corrected and one real defect
 was fixed — the missing win-pose `State 180` (the engine logged
 `changed to invalid state 180` at round end). No functional defect remains;
 see Phase Report §4 for the full list and the method.

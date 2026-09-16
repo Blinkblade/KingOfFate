@@ -25,9 +25,13 @@ Copy-Item -Recurse game\chars\_template game\chars\<mychar>
 
 # 2) 全目录把 "_template" 前缀替换成 "<mychar>"（文件名 + 文件内引用）
 #    改名点清单：
-#    - 8 个文件名前缀：_template.def/.cmd/.const/.zss/.air/.sff/.snd
+#    - 7 个带前缀的文件名：
+#        _template.def / .cmd / .const / .zss / .air / .sff / .snd
+#    - 另外 5 个文件**没有**前缀，不要改名：
+#        command.zss / hits.zss / AI.zss / movelist.dat / README.md
+#      （它们的文件名由 _template.def 的 [Files] 段引用，改的是 def 里的引用）
 #    - _template.def [Info] name（必须 = 目录名，-p1 用它定位）
-#    - _template.def [Files] 里 11 个文件引用
+#    - _template.def [Files] 里的 11 条文件引用
 #    - 各 .zss/.cmd/.air/.const 顶部注释里的文件自引用（纯注释，但保持一致）
 
 # 3) 同步到引擎运行目录并试跑
