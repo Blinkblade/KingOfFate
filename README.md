@@ -10,15 +10,19 @@ tooling and testing** rather than re-implementing a fighting-game engine.
 
 ## Status
 
-**Current phase: `P1 — IKEMEN Character Architecture` — ✅ PASS (10/10 gates)**
+**Current phase: `P3 — Test Fighter A` — ✅ PASS (10/10 gates)**
 
-The engine builds and runs, every step is reproducible from the repository scripts, and the
-IKEMEN character execution chain has been validated by measurement. P2 (Base Fighter Template)
-can start from `design/characters/_template/`.
+P1 validated the character execution chain by measurement, P2 turned it into a cloneable
+4-button template (`game/chars/_template/`), and P3 cloned that template into the project's
+first independent, playable fighter: `game/chars/test_fighter_a/` — full normal set
+(standing / crouching / jumping), two specials, an EX upgrade, the first Super, a
+three-level cancel chain and its own CPU AI, all validated in real matches (V01–V29 in the
+phase report). The engine baseline is unchanged.
 
 See [`docs/development_status.md`](docs/development_status.md) for the authoritative, always-up-to-date phase
-status, [`docs/P1-summary.md`](docs/P1-summary.md) for the P1 summary, tool handbook and handoff notes
-([`docs/P0-summary.md`](docs/P0-summary.md) for P0's), [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md)
+status, [`docs/P3-summary.md`](docs/P3-summary.md) for the current handoff notes
+([`docs/P2-summary.md`](docs/P2-summary.md), [`docs/P1-summary.md`](docs/P1-summary.md) and
+[`docs/P0-summary.md`](docs/P0-summary.md) for the earlier ones), [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md)
 for how a character is built, [`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
 [`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
 
@@ -173,13 +177,16 @@ KingOfFate/
 ├── assets/               Source / reference / generated art, VFX and audio
 ├── design/               Game & combat design docs, per-character specs
 │   └── characters/
-│       └── _template/    Base fighter skeleton for P2 (copy, do not run)
+│       ├── _template/    Base fighter skeleton for P2 (copy, do not run)
+│       └── test_fighter_a/  Frame data for the first independent fighter (P3)
 ├── tools/                Character / asset tooling
 ├── scripts/              PowerShell build, run and test entry points
 ├── tests/
 │   ├── characters/       Character tests
 │   ├── tools/            Tool tests
 │   ├── p1/               Character behaviour observation tooling (P1)
+│   ├── p2/               Multi-key phase injection harness (P2)
+│   ├── p3/               Unattended match + engine crash-log watch (P3)
 │   └── smoke/            Phase 0 smoke tests
 ├── docs/
 │   ├── environment.md          Verified local build environment record

@@ -17,7 +17,7 @@ Last updated: 2026-09-15
 | **P0** | Repository & Environment | **PASS** |
 | **P1** | IKEMEN Character Architecture | **PASS** |
 | **P2** | Base Fighter Template | **PASS** |
-| P3 | Test Fighter A | NOT_STARTED |
+| **P3** | Test Fighter A | **PASS** |
 | P4 | Test Fighter B | NOT_STARTED |
 | P5 | Character Asset Tooling | NOT_STARTED |
 | P6 | First Final-Art Character | NOT_STARTED |
@@ -205,7 +205,31 @@ see Phase Report §4 for the full list and the method.
 
 ## P3 — Test Fighter A
 
-**Status: NOT_STARTED**
+**Status: PASS**
+
+`_template` was proven to be a real production start: cloning it produced
+`game/chars/test_fighter_a/` — a complete 4-button fighter with the full normal
+set (standing / crouching / jumping), two specials, a real EX upgrade, the
+project's first Super, a three-level cancel chain and its own CPU AI. Runtime
+matrix V01–V29 all green (14 of 16 attack damage values measured on frames and
+equal to the configured `damage:`), engine baseline unchanged and submodule clean.
+
+- Phase report: [`docs/phase_reports/P3-test-fighter-a.md`](phase_reports/P3-test-fighter-a.md)
+- One-pager: [`docs/P3-summary.md`](P3-summary.md)
+- Character handbook: [`game/chars/test_fighter_a/README.md`](../game/chars/test_fighter_a/README.md)
+- Frame data: [`design/characters/test_fighter_a/moves.csv`](../design/characters/test_fighter_a/moves.csv)
+- Iteration log: [`docs/iterations/20260916-p3-test-fighter-a.md`](iterations/20260916-p3-test-fighter-a.md)
+- New harness: [`tests/p3/run_match_watch.ps1`](../tests/p3/run_match_watch.ps1) (unattended run + crash-log watch)
+
+Notable findings: `call` statements need semicolons and cannot be used inline in
+an `if` condition (load-time panic, invisible to `scripts/test.ps1`); `pwsh -File`
+cannot bind comma lists to array parameters (silent wrong-argument binding);
+the engine's console is not capturable via redirect, so engine-level evidence is
+the crash log at `engine/ikemen-go/save/logs/` plus in-game console text in
+screenshots; guarding is engine-level (states 150/152) and needs no character
+routing. Template gaps found while cloning (missing `displayname` and README
+steps, no clone-verification step) were fixed in the template's documentation;
+its combat logic was deliberately left untouched.
 
 ---
 

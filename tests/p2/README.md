@@ -15,12 +15,26 @@ P2 阶段的运行时验证工具。P1 的 `tests/p1/` 仍是主装置（`captur
 相位之间有短暂的间隔。相位写成 `键:秒` 的列表，`+` 表示同时按：
 
 ```powershell
+# ★ 多个相位必须写成**一个逗号连接的字符串**（下面这条就是正确写法）
 pwsh -File tests/p2/inject_phases.ps1 -Prefix v11_throw `
-    -Phases '0x27:2.8','0x27+0x0D:1.0' -ShowDebug -ShowClsn
+    -Phases '0x27:2.8,0x27+0x0D:1.0' -ShowDebug -ShowClsn
+
+# 相位顺序就是注入顺序：下 → 下前 → 前 → A（236+A 搓招）
+pwsh -File tests/p2/inject_phases.ps1 -Prefix qcf `
+    -Phases '0x28:0.06,0x28+0x27:0.06,0x27:0.06,0x09:0.7' -SettleSec 0.02 -ShowDebug
 ```
+
+> **坑（P3 实测，两个 harness 都会踩）**：不要写成
+> `-Phases '0x27:2.8','0x27+0x0D:1.0'`（PowerShell 会当成两个参数）。
+> `pwsh -File` 会把多出来的那个按位置绑到**下一个未绑定的参数**上
+> —— 实测里 `0x27+0x0D:1.0` 被绑到了 `-RoundTime`，脚本直接报
+> `无法将值 "…" 转换为类型 "System.Int32"` 并退出；如果那个参数恰好是
+> `-Stage`，则会**静默**用错误的场景名启动，跑出来的结果全是废的。
+> 所以：**一个字符串，逗号分隔**。
 
 产出（默认 `logs/p2/shots/`）：每个相位的 before / burst / after 截图 +
 一份 `<Prefix>_report.txt`（含实际传给引擎的完整参数）。
+**报告里的 `args` 行要逐字核对** —— 它是唯一能发现"参数被错绑"的地方。
 
 ## 硬约束（继承自 P1，违反 = 结果无效）
 

@@ -1,0 +1,34 @@
+<#f0f000>:Normal Attacks:</>
+Light Punch (A)									^X
+Light Kick  (B)									^A
+Heavy Punch (C)									^Y
+Heavy Kick  (D)									^B
+Crouch Light Punch (A)							_D_+^X
+Crouch Light Kick  (B)							_D_+^A
+Crouch Heavy Punch (C)							_D_+^Y
+Crouch Heavy Kick  (D)							_D_+^B
+Jump Light Punch  (A)							_U_+^X
+Jump Light Kick   (B)							_U_+^A
+Jump Heavy Punch  (C)							_U_+^Y
+Jump Heavy Kick   (D)							_U_+^B
+Taunt											^S
+
+
+<#f0f000>:Throws:</>
+Forward Throw									_F_+^Y
+Forward Throw									_F_+^B
+
+
+<#f0f000>:Special Moves:</>
+Dash Straight (突进直拳)						_D_, _DF_, _F_, ^X
+Rising Kick  (升龙踢 · 对空)					_D_, _DB_, _B_, ^X
+EX Dash Straight (500 Power)					_D_, _DF_, _F_, ^Y
+
+
+<#f0f000>:Super Moves:</>
+Super Dash Straight (1000 Power)				_D_, _DF_, _F_, _D_, _DF_, _F_, ^X
+
+
+<#f0f000>:Cancels:</>
+Light normal -> Heavy normal -> Special -> EX / Super
+(i.e. A/B -> C/D -> 236+A or 214+A -> 236+C or 236236+A)

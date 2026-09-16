@@ -102,7 +102,8 @@ foreach ($dir in $contentDirs) {
 }
 
 Write-Host ''
-Write-Host ("[sync ] done: {0} item(s) copied, {1} skipped (-WhatIf)" -f $copied, $skipped)
+$mode = if ($WhatIfPreference) { ' (-WhatIf: nothing was copied)' } else { '' }
+Write-Host ("[sync ] done: {0} item(s) copied, {1} skipped{2}" -f $copied, $skipped, $mode)
 Write-Host '[sync ] note : runtime content is git-ignored inside the engine submodule;'
 Write-Host '               the tracked source of truth stays under game/.'
 exit 0

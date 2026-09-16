@@ -1,0 +1,58 @@
+; ============================================================================
+; KingOfFate — Test Fighter A（P3）
+; 角色定义文件（.def）：文件名映射 + 角色元信息。本文件不含任何战斗逻辑。
+;
+; 由 game/chars/_template/ 克隆而来（P3，克隆流程见 _template/README.md §2）。
+; 本目录是 Test Fighter A 的独立真值，不依赖 _template。
+;
+; 依据：docs/ikemen_character_architecture.md §2（文件构成）
+; 实测来源：game/chars/p1_kfm_zss_lab/p1_kfm_zss_lab.def
+; ============================================================================
+
+; ---------------------------------------------------------------------------
+; 角色信息
+; name 必须与目录名一致（引擎用 -p1 <name> 定位角色）
+; ---------------------------------------------------------------------------
+[Info]
+name         = "test_fighter_a"        ; 内部名，命令行 -p1 test_fighter_a 用它
+displayname  = "Test Fighter A"        ; 画面上显示的名字
+versiondate  = 09,16,2026              ; MM,DD,YYYY
+mugenversion = 1.0                     ; IKEMEN 下保持 1.0
+author       = "KingOfFate"
+pal.defaults = 1,2,3,4                 ; 默认调色板优先级
+
+; ---------------------------------------------------------------------------
+; 文件映射 —— 这是本文件唯一的实质内容
+; 注意：stcommon = common1.cns.zss 是**公共状态**，引擎会在
+;       {角色目录, "", motif 目录, "data/"} 里搜索，不需要随角色分发。
+;       不要为了"补齐文件"把它复制到角色目录。
+; ---------------------------------------------------------------------------
+[Files]
+cmd      = test_fighter_a.cmd       ; 命令定义：物理按键 → 命令名
+cns      = test_fighter_a.const     ; 常量：体力/尺寸/速度/位移/变量台账
+st       = test_fighter_a.zss       ; 主体状态脚本（ZSS）
+st2      = hits.zss            ; 额外状态：投技受击方
+st3      = command.zss         ; 命令路由：命令名 → 状态号
+st4      = AI.zss              ; CPU AI 脚本
+stcommon = common1.cns.zss     ; 公共状态（画面包 data/）——所有角色共用
+sprite   = test_fighter_a.sff       ; 精灵图容器（★ PLACEHOLDER，见 README）
+anim     = test_fighter_a.air       ; 动画 + 判定框
+sound    = test_fighter_a.snd       ; 音效容器（★ PLACEHOLDER，见 README）
+movelist = movelist.dat        ; 出招表（IKEMEN 特有，纯展示）
+
+; ---------------------------------------------------------------------------
+; 选人画面的按键 → 调色板映射
+; KingOfFate 四键：x = A 轻拳, a = B 轻脚, y = C 重拳, b = D 重脚
+; ---------------------------------------------------------------------------
+[Palette Keymap]
+x = 1                          ; A 轻拳 → 调色板 1
+a = 2                          ; B 轻脚 → 调色板 2
+y = 3                          ; C 重拳 → 调色板 3
+b = 4                          ; D 重脚 → 调色板 4
+
+; ---------------------------------------------------------------------------
+; Arcade 模式的剧情板（可选）。模板没有对应素材，整段保持注释。
+; ---------------------------------------------------------------------------
+;[Arcade]
+;intro.storyboard  = intro.def
+;ending.storyboard = ending.def

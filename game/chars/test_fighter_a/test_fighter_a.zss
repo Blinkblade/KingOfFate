@@ -1,0 +1,1145 @@
+# ============================================================================
+# KingOfFate — Test Fighter A : 主体状态脚本（ZSS）
+#
+# 本文件是 Test Fighter A（P3）的状态主体：每个 [StateDef N] 是一个状态。
+# 命令名 → 状态号的映射在 command.zss，不在本文件。
+# 由 game/chars/_template/ 克隆（P3）后扩展而来。
+#
+# 本角色实现的状态：
+#   180   胜利姿势        —— 回合结束时引擎要求的状态（占位，继承自模板）
+#   195   嘲讽            —— 非攻击状态样板（继承自模板）
+#   200   站立轻拳 A      —— lv1 轻普通技
+#   210   站立重拳 C      —— lv2 重普通技
+#   230   站立轻脚 B      —— lv1 轻普通技
+#   240   站立重脚 D      —— lv2 重普通技（最长距离）
+#   400   蹲轻拳 A        —— lv1 轻普通技（P3 新增，T1）
+#   410   蹲重拳 C        —— lv2 重普通技（P3 新增，T1）
+#   430   蹲轻脚 B        —— lv1 轻普通技（P3 新增，T1）
+#   440   蹲重脚 D        —— lv2 重普通技，扫腿击倒（P3 新增，T1）
+#   600   跳轻拳 A        —— lv1 空中轻普通技（P3 新增，T2）
+#   610   跳重拳 C        —— lv2 空中重普通技（P3 新增，T2）
+#   630   跳轻脚 B        —— lv1 空中轻普通技（P3 新增，T2）
+#   640   跳重脚 D        —— lv2 空中重普通技（P3 新增，T2）
+#   800   投技起手        —— hitDef 抓人，成功后 p1stateno 810 / p2stateno 820
+#   810   投技执行        —— targetBind + targetLifeAdd + targetState 821
+#   1000  Special 1「突进直拳」  236 + A           不耗气
+#   1100  Special 2「升龙踢」    214 + A（对空）    不耗气（P3 新增，T4）
+#   1010  EX Special 1          236 + C           耗 500 气、击倒（P3 改造，T5）
+#   3000  Super「超必杀直拳」    236236 + A        耗 1000 气、击倒（P3 新增，T6）
+#
+# 由 hits.zss（受击方，本角色自己的状态）实现的：
+#   820  被抓住（等待被甩出）   —— changeAnim2 播攻击者的 AIR
+#   821  被甩到空中 → 触地 5100，含受身（recovery → 5200 / 5210）
+#
+# 由 IKEMEN Common State 提供、本角色**不重复实现**的：
+#   0/10/11/12  站立 / 站↔蹲
+#   20/21       走前 / 走后
+#   40-52       跳跃（起跳 / 上升 / 空中 / 下落 / 落地）★ 52 = 落地
+#   100/105     前冲 / 后跳
+#   120/130-155 防御（起手 / 站防 / 蹲防 / 空防 / 防御结束 / 防御后退）
+#   5000-5210   受击 / 倒地 / 起身 / 受身
+#   出处：engine/ikemen-go/data/common1.cns.zss
+#
+# ★★★ P3 新增：普攻取消链（T7）★★★
+#   每个攻击状态在 time = 0 调用 AtkInit(lv) 登记自己的"链等级"，并在
+#   首个判定帧把 var(4) 置 1（= 取消窗口开启）。路由侧的放行条件是
+#   **严格的等级递增**：
+#
+#       lv1 轻普通技（200/230/400/430/600/630）
+#         ↓
+#       lv2 重普通技（210/240/410/440/610/640）
+#         ↓
+#       lv3 必杀技（1000/1100）
+#         ↓
+#       lv4 EX（1010）/ Super（3000）
+#
+#   因为等级只增不减，连段长度天然有上限（最长 4 段），不会无限循环。
+#   等级表与放行逻辑见 command.zss 的 [Function CanChain]。
+#
+# 语法硬规则（架构文档 §5.2）：
+#   * sctrl 的左花括号必须与控制器名同行：  hitDef{   ✅   hitDef   ❌
+#   * [StateDef N; ...] 头部用分号分隔、] 收尾
+#   * 触发器就是 if <表达式> { ... }，不用 trigger1 = 的旧写法
+#   * 范围匹配：[a, b] 闭区间，[a, b) 半开区间
+#
+# 实测对照：game/chars/p1_kfm_zss_lab/kfm.zss
+# ============================================================================
+
+
+# ============================================================================
+# 函数
+# ============================================================================
+# EndState(type)：状态结束后回到站立（type=0）或下蹲（type=1）。
+# 每个攻击状态都必须用它收尾，否则状态无法退出（架构文档 §5.4 第 5 条）。
+[Function EndState(type)]
+if animTime = 0 {
+    changeState{value: 11 * $type; ctrl: roundState > 1}
+}
+
+# CSnd(bank, sound, channel)：播放本角色 .snd 里的音效。
+# 参数语义见 IKEMEN 的 playSnd sctrl；S 前缀表示"角色自己的 sound"。
+[Function CSnd(bank, sound, c)]
+playSnd{value: S $bank, $sound; channel: $c}
+
+# AtkInit(lv)：攻击状态进入时统一登记"我是谁、能不能取消"（T7）。
+#   var(3) = 链等级（1 轻 / 2 重 / 3 必杀 / 4 EX·Super）
+#   var(4) = 取消窗口是否已开启（0 关闭 / 1 开启），在首个判定帧置 1
+#   var(0) = 本次攻击是否已经取消过一次（进状态时清零）
+# 每个攻击状态的 time = 0 调用一次；不要在状态中途重复调用。
+[Function AtkInit(lv)]
+var(3) := $lv;
+var(4) := 0;
+var(0) := 0;
+
+
+# ============================================================================
+# 胜利姿势（Win Pose）—— 回合结束时引擎会把胜者切到这个状态
+#
+# ★ 为什么"必须有"：回合结束（KO / 时间到）后，引擎会尝试把胜者切换进
+#   State 180。如果角色与公共服务态都没有 180，引擎会打印：
+#     WARNING: <char> (nn) in state 180: changed to invalid state 180 (from state 0)
+#   （P2 审计时实测踩到；KFM 也是在 kfm.zss 里自己定义 180/181 的。）
+#
+# 这里是**占位实现**：只播一段胜利姿势动画，不做姿势选择。
+# 多姿势（181-189）、胜利台词、按条件选姿势等表现层内容属于
+# P7（Character Skills & Presentation），不在 P2 范围。
+#
+# 注意：本状态**不调用 EndState** —— 胜者要一直保持姿势，
+#       直到引擎的回合结束计时把对局推进到下一回合。
+# ============================================================================
+[StateDef 180;
+type: S; movetype: I; physics: S;
+anim: 180; ctrl: 0;
+velset: 0, 0;
+sprpriority: 1;]
+
+notHitBy{value: SCA; time: 1}
+
+
+# ============================================================================
+# 嘲讽（Taunt）—— 非攻击状态的最小样板
+# 要点：有明确时长（time）、结束时把控制权还回去（ctrlSet + EndState）
+# ============================================================================
+[StateDef 195;
+type: S; movetype: I; physics: S;
+anim: 195; ctrl: 0;
+velset: 0, 0;
+sprpriority: 2;]
+
+# 40 tick 后恢复可操作
+if time = 40 {
+    ctrlSet{value: 1}
+}
+
+# 状态结束 → 回到站立
+call EndState(0);
+
+
+# ============================================================================
+# 站立轻拳 A（Stand Light Punch）—— 攻击状态的标准样板
+#
+# ★ 这是"每加一个新招式就复制一份"的模板。它展示了攻击状态的全部必备结构：
+#   1) 状态头：type/movetype/physics/anim/ctrl/velset/poweradd/sprpriority
+#   2) time = 0 调 AtkInit(lv)：登记链等级、关闭取消窗口（T7）
+#   3) 在明确的 animElem 上触发 hitDef（P3 起同帧打开取消窗口）
+#   4) 出招音效
+#   5) EndState 收尾
+#
+# ★ Fighter A 的技能表定位（T3）：**最快、范围最小**的轻拳（25 伤害，
+#   范围到 x=61）。起手最快，用来贴身抢先手 / 起连段。
+#
+# ★ Cancel（T7）：本状态是 lv1（轻普通技）——
+#   可取消进 lv2 重普通技、lv3 必杀、lv4 EX/Super。
+#   取消窗口 = 首个判定帧之后（animElem = 3 起），命中与否都可以取消。
+# ============================================================================
+[StateDef 200;
+type: S;                              # S-站立 / C-下蹲 / A-空中 / L-倒地
+movetype: A;                          # A-攻击 / I-待机 / H-受击
+physics: S;                           # S-站立 / C-下蹲 / A-空中
+juggle: 1;                            # 本招消耗的空中追打点数
+velset: 0, 0;                         # 出招期间不移动
+ctrl: 0;                              # 出招期间不可操作
+anim: 200;                            # 播放动画 200（定义在 test_fighter_a.air）
+poweradd: 20;                         # 出招集气量（T6：普通攻击获得 Power）
+sprpriority: 2;]                      # 绘制层级：2 = 在对手前面
+
+# T7：登记链等级 lv1（轻普通技），并关闭取消窗口
+if time = 0 {
+    call AtkInit(1);
+}
+
+# 动画推进到第 3 个元素时产生攻击判定。
+# 注意：这个时点由 test_fighter_a.air 里 Action 200 的帧数决定 ——
+#       想改"出招快慢"，改 .air 的帧数，不用改这里（P1 实验 E3）。
+if animElem = 3 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: S, NA;                  # 属性：S-站姿, NA-普通攻击
+        damage: 25, 0;                # 伤害, 防御伤害  ← E2 验证：掉血精确等于此值
+        animtype: Light;              # 受击动画类型：Light/Medium/Heavy/Back
+        guardflag: MA;                # 可被防住的方式
+        hitflag: MAF;                 # 可命中的目标状态
+        priority: 3, Hit;             # 攻击优先级 0-7（默认 4）
+        pausetime: 8, 8;              # 命中停顿：攻击方, 防守方
+        sparkno: 0;                   # 命中火花动画号
+        sparkxy: -10, -76;            # 火花偏移
+        hitsound: 5, 0;               # 命中音效
+        guardsound: 6, 0;             # 防御音效
+        ground.type: High;            # 地面受击类型
+        ground.slidetime: 5;          # 地面滑动时间
+        ground.hittime: 11;           # 地面受击硬直
+        ground.velocity: -4;          # 地面击退速度
+        airguard.velocity: -1.9, -.8; # 空中防御击退
+        air.type: High;               # 空中受击类型
+        air.velocity: -1.4, -3;       # 空中击退
+        air.hittime: 15;              # 空中受击硬直
+    }
+}
+
+# 第 1 tick 播报出招音效
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+# 状态结束 → 回到站立
+call EndState(0);
+
+
+# ============================================================================
+# 站立重拳 C（Stand Heavy Punch）
+# 与 200 的差异即"轻 vs 重"的差异：伤害更高、出招更慢、收招更长、集气更多。
+#
+# ★ Fighter A 技能表定位（T3）：**高伤害重拳**（70 伤害，范围到 x=79）。
+#   起手 10 tick，是全套站立普通技里最慢的一招 —— 打中才划算。
+#
+# ★ T7：lv2。不能再取消回 lv1 轻普通技（等级只增不减），
+#   但可以取消进 lv3 必杀、lv4 EX/Super。
+# ============================================================================
+[StateDef 210;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 210;
+poweradd: 35;
+sprpriority: 2;]
+
+# T7：登记链等级 lv2（重普通技）
+if time = 0 {
+    call AtkInit(2);
+}
+
+# 重拳慢：命中判定在第 5 个元素（animElem = 5）
+if animElem = 5 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: S, NA;
+        damage: 70, 5;                # 伤害 70，防御伤害 5（重技有chip）
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;            # 重技停顿更久 → 手感更"重"
+        sparkno: 0;
+        sparkxy: -10, -76;
+        hitsound: 5, 1;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 8;
+        ground.hittime: 17;
+        ground.velocity: -8;          # 击退更远
+        airguard.velocity: -2.6, -1.1;
+        air.type: High;
+        air.velocity: -2.4, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 1, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 站立轻脚 B（Stand Light Kick）
+# ★ Fighter A 技能表定位（T3）：**稍长距离轻攻击**（30 伤害，范围到 x=69）。
+#   比轻拳慢一点点、远一点点，用来在中距离抢先。
+# ★ T7：lv1。
+# ============================================================================
+[StateDef 230;
+type: S; movetype: A; physics: S;
+juggle: 1; velset: 0, 0; ctrl: 0;
+anim: 230;
+poweradd: 20;
+sprpriority: 2;]
+
+# T7：登记链等级 lv1（轻普通技）
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 3 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: S, NA;
+        damage: 30, 0;
+        animtype: Light;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 8, 8;
+        sparkno: 0;
+        sparkxy: -10, -70;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 6;
+        ground.hittime: 12;
+        ground.velocity: -5;          # 比轻拳踢得远一点
+        airguard.velocity: -2, -.9;
+        air.type: High;
+        air.velocity: -1.6, -3.1;
+        air.hittime: 16;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 站立重脚 D（Stand Heavy Kick）
+# ★ Fighter A 技能表定位（T3）：**最长距离重攻击**（75 伤害）。
+#   判定框在 .air 里被拉长到 x=84（比 KFM 原型的 67 远），
+#   代价是收招最长（15 tick 收招）—— 远距离赌招用。
+# ★ T7：lv2。
+# ============================================================================
+[StateDef 240;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 240;
+poweradd: 40;
+sprpriority: 2;]
+
+# T7：登记链等级 lv2（重普通技）
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 3 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: S, NA;
+        damage: 75, 5;
+        animtype: Heavy;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 13, 13;
+        sparkno: 0;
+        sparkxy: -10, -66;
+        hitsound: 5, 2;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 19;
+        ground.velocity: -9;
+        airguard.velocity: -2.8, -1.2;
+        air.type: High;
+        air.velocity: -2.6, -4.2;
+        air.hittime: 22;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 3, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 蹲轻拳 A（Crouching Light Punch）—— State 400 / Anim 400   [P3 · T1]
+#
+# 状态号约定（P3 补充，与站立位一一对应）：
+#   400 = 蹲 A 轻拳   410 = 蹲 C 重拳   430 = 蹲 B 轻脚   440 = 蹲 D 重脚
+#   规律：+0 = A 轻拳 / +10 = C 重拳 / +30 = B 轻脚 / +40 = D 重脚，
+#   与站立位的 200/210/230/240 完全同构（KFM 也用同一套编号）。
+#
+# 关键点：下蹲攻击是 **type: C**（不是 S）—— 这一条错了会导致对手
+# 站防能防住下段攻击、或者角色出招时站起来（P1 架构文档 §5.4）。
+# 退出用 EndState(1) → 回公共状态 11（下蹲）。
+# ============================================================================
+[StateDef 400;
+type: C; movetype: A; physics: C;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 400;
+poweradd: 15;
+sprpriority: 2;]
+
+# T7：登记链等级 lv1（轻普通技）
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 2 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: C, NA;              # ★ C = 蹲姿（下段攻击），NA = 普通攻击
+        damage: 25, 0;
+        animtype: Light;
+        guardflag: L;             # ★ L = 只能下防（站防挡不住）
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 8, 8;
+        sparkno: 0;
+        sparkxy: -10, -42;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: Low;         # 受击方用"下段受击"动画
+        ground.slidetime: 5;
+        ground.hittime: 11;
+        ground.velocity: -4;
+        airguard.velocity: -1.9, -.8;
+        air.type: Low;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# 蹲重拳 C（Crouching Heavy Punch）—— State 410 / Anim 410   [P3 · T1]
+# 与 400 的差异：伤害 25 → 60、起手 5 → 7 tick、判定框更大更高、
+# 收招更长、集气更多。**单段判定**（KFM 原型是两段，这里刻意简化：
+# 单段更容易逐帧验证伤害数字）。
+# ============================================================================
+[StateDef 410;
+type: C; movetype: A; physics: C;
+juggle: 4; velset: 0, 0; ctrl: 0;
+anim: 410;
+poweradd: 30;
+sprpriority: 2;]
+
+# T7：登记链等级 lv2（重普通技）
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 3 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: C, NA;
+        damage: 60, 5;
+        animtype: Medium;
+        guardflag: L;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -55;
+        hitsound: 5, 2;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 12;
+        ground.hittime: 17;
+        ground.velocity: -5;
+        airguard.velocity: -2.6, -1.1;
+        air.type: Low;
+        air.velocity: -3, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 1, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# 蹲轻脚 B（Crouching Light Kick）—— State 430 / Anim 430   [P3 · T1]
+# 比蹲轻拳略远、略慢；同样是下段、lv1。
+# ============================================================================
+[StateDef 430;
+type: C; movetype: A; physics: C;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 430;
+poweradd: 18;
+sprpriority: 2;]
+
+# T7：登记链等级 lv1（轻普通技）
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 3 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: C, NA;
+        damage: 30, 0;
+        animtype: Light;
+        guardflag: L;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 9, 9;
+        sparkno: 0;
+        sparkxy: -10, -14;
+        hitsound: 5, 1;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 6;
+        ground.hittime: 12;
+        ground.velocity: -5;
+        airguard.velocity: -2, -.9;
+        air.type: Low;
+        air.velocity: -2, -3;
+        air.hittime: 16;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# 蹲重脚 D（Crouching Heavy Kick / 扫腿）—— State 440 / Anim 440   [P3 · T1]
+#
+# 本角色的**唯一下段击倒招**：
+#   ground.type: Trip + fall: 1 → 对手被扫倒（走公共倒地链路 5050 → 5100 → 5110）
+#   hitflag: MAFD 里的 **D** = 连倒地的对手也能打到（KFM 原型同款）
+#   guardflag: L → 只能下防
+# 代价：起手 9 tick、收招最长（全套蹲技里最重的一招）。
+# ============================================================================
+[StateDef 440;
+type: C; movetype: A; physics: C;
+juggle: 5; velset: 0, 0; ctrl: 0;
+anim: 440;
+poweradd: 35;
+sprpriority: 2;]
+
+# T7：登记链等级 lv2（重普通技）
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: C, NA;
+        damage: 70, 5;
+        animtype: Hard;
+        guardflag: L;
+        hitflag: MAFD;            # D = 倒地目标也可命中
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -5, -10;
+        hitsound: 5, 2;
+        guardsound: 6, 0;
+        ground.type: Trip;        # ★ 绊倒：对手走"被扫倒"动画
+        ground.slidetime: 10;
+        ground.hittime: 17;
+        ground.velocity: -1.5, -2;
+        air.velocity: -1.2, -3;
+        guard.velocity: -5;
+        fall: 1;                  # ★ 强制倒地
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 3, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# 跳轻拳 A（Jumping Light Punch）—— State 600 / Anim 600   [P3 · T2]
+#
+# ★ 空中攻击的退出机制（与地面招不同，必须理解）：
+#   空中攻击**不调用 EndState**，动画末帧用 `-1` 循环（保持出招姿势），
+#   角色靠 physics: A 的自身重力落地；**落地时引擎自动切换到公共状态 52
+#   （Jump Land）**，再由 52 回到 0 / 11。KFM 的空中普通技就是这个行为
+#   （kfm.zss:600-746 全程没有落地逻辑）。
+#   → 所以"攻击结束但仍在空中"时角色保持姿势继续下落，这是**预期行为**；
+#     真正的落地清理由引擎负责。实测见 Phase Report 的 V10 组。
+#
+# ★ 空中普通技**不可取消**：command.zss 的取消放行条件含
+#   `stateType != A`（P2 模板约定）—— 空中没有对应的空中必杀技，
+#   放行会导致角色在空中切进地面必杀状态。
+#
+# ★ 空中招不写 velset：要保留跳跃惯性（垂直速度由起跳时决定）。
+# ============================================================================
+[StateDef 600;
+type: A; movetype: A; physics: A;
+juggle: 2; ctrl: 0;
+anim: 600;
+poweradd: 10;
+sprpriority: 2;]
+
+# T7：登记链等级 lv1（空中轻普通技）
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 2 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;              # ★ A = 空中攻击
+        damage: 25, 0;
+        animtype: Light;
+        guardflag: HA;            # 空中攻击可站防 / 空防
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 7, 8;
+        sparkno: 0;
+        sparkxy: -10, -58;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 10;
+        ground.velocity: -4;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.3, -3;
+        air.hittime: 14;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+
+# ============================================================================
+# 跳重拳 C（Jumping Heavy Punch）—— State 610 / Anim 610   [P3 · T2]
+# ============================================================================
+[StateDef 610;
+type: A; movetype: A; physics: A;
+juggle: 4; ctrl: 0;
+anim: 610;
+poweradd: 25;
+sprpriority: 2;]
+
+# T7：登记链等级 lv2（空中重普通技）
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 3 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;
+        damage: 70, 5;
+        animtype: Medium;
+        guardflag: HA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -55;
+        hitsound: 5, 3;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 14;
+        ground.velocity: -6;
+        airguard.velocity: -2.6, -1.1;
+        air.type: High;
+        air.velocity: -3, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 2 {
+    call CSnd(0, 1, 1);
+}
+
+
+# ============================================================================
+# 跳轻脚 B（Jumping Light Kick）—— State 630 / Anim 630   [P3 · T2]
+# ============================================================================
+[StateDef 630;
+type: A; movetype: A; physics: A;
+juggle: 3; ctrl: 0;
+anim: 630;
+poweradd: 12;
+sprpriority: 2;]
+
+# T7：登记链等级 lv1（空中轻普通技）
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 2 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;
+        damage: 30, 0;
+        animtype: Light;
+        guardflag: HA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 8, 8;
+        sparkno: 1;
+        sparkxy: -5, -35;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 6;
+        ground.hittime: 10;
+        ground.velocity: -4;
+        airguard.velocity: -2, -.9;
+        air.type: High;
+        air.velocity: -2, -3;
+        air.hittime: 14;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+
+# ============================================================================
+# 跳重脚 D（Jumping Heavy Kick）—— State 640 / Anim 640   [P3 · T2]
+# 角色空中射程最长的一招（判定框到 x=69）。
+# ============================================================================
+[StateDef 640;
+type: A; movetype: A; physics: A;
+juggle: 4; ctrl: 0;
+anim: 640;
+poweradd: 30;
+sprpriority: 2;]
+
+# T7：登记链等级 lv2（空中重普通技）
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 2 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;
+        damage: 75, 5;
+        animtype: Medium;
+        guardflag: HA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -40;
+        hitsound: 5, 3;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 15;
+        ground.velocity: -7;
+        airguard.velocity: -2.8, -1.2;
+        air.type: High;
+        air.velocity: -3, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 2 {
+    call CSnd(0, 1, 1);
+}
+
+
+# ============================================================================
+# 基础投技（T4） —— 起手：抓人
+#
+# 结构（照抄 KFM 的投技组织，见 kfm.zss:765）：
+#   hitDef 的 attr 必须是 **S, NT**（Normal Throw）
+#   priority 必须是 Miss 或 Dodge，且数值要低（1），否则会压过普通攻击
+#   p1stateno / p2stateno 指定"抓到之后"双方各自进入的状态
+#   guard.dist: 0 —— 贴身时不允许对手进入防御
+#
+# 触发条件在 command.zss §⑤：贴身 + 对手在地面 + 对手不在受击硬直。
+# 抓不到时 moveContact = 0，EndState 直接回站立。
+# ============================================================================
+[StateDef 800;
+type: S; movetype: A; physics: S;
+juggle: 0; velset: 0, 0; ctrl: 0;
+anim: 800;
+poweradd: 10;
+sprpriority: 2;]
+
+if time = 0 {
+    hitDef{
+        attr: S, NT;            # Standing, Normal Throw
+        hitflag: M-;            # 只影响"没在被打"的地面目标 —— 防止投技接进连段
+        priority: 1, Miss;      # 投技优先级必须低，且必须是 Miss/Dodge
+        sparkno: -1;            # 无火花
+        p1sprpriority: 1;       # 投技时把自己画在对手前面
+        p1facing: 1;
+        p2facing: 1;            # 强制对手面向自己
+        p1stateno: 810;         # 抓到 → 自己进 810
+        p2stateno: 820;         # 抓到 → 对手进本角色 hits.zss 的 820
+        guard.dist: 0;          # 贴身时禁止对手防御
+        fall: 1;                # 对手最终倒地
+    }
+}
+
+if time = 1 {
+    call CSnd(800, 0, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 基础投技 —— 执行：把对手甩出去
+#
+# 三个必备环节：
+#   1) targetBind —— 每个动画元素都必须把对手绑在身上（否则对手会卡住）
+#   2) targetLifeAdd —— 投技伤害（不经过 hitDef.damage）
+#   3) targetState —— 放开对手，让他进自己的受击/倒地流程
+# ============================================================================
+[StateDef 810;
+type: S; movetype: A; physics: N;
+anim: 810;
+poweradd: 0;
+sprpriority: 1;]
+
+# var(2) 记录投技开始时是否按住前 —— 决定把对手甩向哪边
+if time = 0 {
+    var(2) := command = "holdfwd";
+}
+
+# 抬起：把对手绑在身前
+if animElemTime(1) < 0 {
+    targetBind{pos: 28, 0}
+}
+if animElemTime(2) >= 0 && animElemTime(5) < 0 {
+    targetBind{pos: 52, -10}
+}
+if animElemTime(5) >= 0 && animElemTime(6) < 0 {
+    targetBind{pos: 44, -40}
+}
+if animElemTime(6) >= 0 && animElemTime(7) < 0 {
+    targetBind{pos: 36, -70}
+}
+
+# 若起手时按住前，则转身并把对手甩到身后
+if var(2) && animElem = 6 {
+    turn{}
+    posAdd{x: -30}
+    targetFacing{value: -1}
+}
+
+# 甩出：脱手 + 结算伤害 + 让对手回到他自己的倒地流程（821 → 5100）
+if animElem = 7 {
+    targetBind{pos: -30, -50}
+    targetLifeAdd{value: -90}
+    targetState{value: 821}
+}
+
+if animElem = 7 {
+    call CSnd(800, 1, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# Special 1「突进直拳」(Dash Straight) —— State 1000 / Anim 1000   [P3 · T4]
+#
+#   236 + A（命令 QCF_x），**不耗气**。
+#
+# 定位：**近距离突进技** —— 向前突进约 22 px 打出一记直拳。
+#   用途：从普通技取消接进来（lv1/lv2 → lv3），把对手压住。
+#
+# 帧数据（判定帧 = animElem 6）：起手 9 tick / 判定 4 tick / 收招 21 tick，总 34 tick。
+# 伤害 85（单段）。
+#
+# 与 P2 占位版的差异：
+#   1) 近/远两套 hitDef 合并成一套（单段、固定 85）—— 减少"同一招两个数字"
+#      带来的验证负担；P2 的 95/85 分支记在 P2 文档里，不再保留。
+#   2) 登记链等级 lv3（T7）→ 可被普通技取消进来，也可再取消进 lv4（EX / Super）。
+# ============================================================================
+[StateDef 1000;
+type: S; movetype: A; physics: S;
+juggle: 4; velset: 0, 0; ctrl: 0;
+anim: 1000;
+poweradd: 40;
+sprpriority: 2;]
+
+# T7：登记链等级 lv3（必杀技）
+if time = 0 {
+    call AtkInit(3);
+}
+
+# 前冲一小段：让"突进技"真的在位移（总计 22 px）
+if animElem = 2 {
+    posAdd{x: 14}
+}
+if animElem = 3 {
+    posAdd{x: 8}
+}
+
+if animElem = 6 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口（可接 Super / EX）
+    hitDef{
+        attr: S, SA;              # SA = Special Attack
+        damage: 85, 6;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 15, 15;
+        sparkno: 1;
+        sparkxy: -10, -60;
+        hitsound: 5, 4;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 12;
+        ground.hittime: 17;
+        ground.velocity: -7;
+        airguard.velocity: -2.8, -1.2;
+        air.velocity: -4, -3;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 3, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# Special 2「升龙踢」(Rising Kick) —— State 1100 / Anim 1100   [P3 · T4]
+#
+#   214 + A（命令 QCB_x），**不耗气**。
+#
+# 定位：**中距离对空技** —— 原地起脚向上踢（判定框高到 y=-131），
+#   把空中的对手打飞并强制倒地。用途：对手跳进来时反击。
+#
+# 帧数据（判定帧 = animElem 7）：起手 12 tick / 判定 5 tick / 收招 24 tick，总 41 tick。
+# 伤害 70（单段）。**收招很长** —— 挥空就是大破绽，这是它和 Special 1 的取舍。
+#
+# ★ 两个必杀技并存时靠这三样东西区分（T4 的验证重点）：
+#   命令（QCF_x / QCB_x）、状态号（1000 / 1100）、动画（1000 / 1100）各自独立；
+#   路由侧两者都是 lv3、条件互不包含，因此**不存在互相吞掉的问题**。
+# ★ 物理上保持 physics: S（不真的跳起来）—— 借 KFM 的 "Smash Kung Fu Upper"
+#   表现方式：**判定框向上延伸**，角色本体不离地。这样落地/起身链路
+#   完全走原有公共状态，不必额外处理空中物理。
+# ============================================================================
+[StateDef 1100;
+type: S; movetype: A; physics: S;
+juggle: 3; velset: 0, 0; ctrl: 0;
+anim: 1100;
+poweradd: 35;
+sprpriority: 2;]
+
+# T7：登记链等级 lv3（必杀技）
+if time = 0 {
+    call AtkInit(3);
+}
+
+# 起手时做一个极小的前压（8 px）：避免贴身时判定框完全包住自己
+if animElem = 3 {
+    posAdd{x: 8}
+}
+
+if animElem = 7 {
+    var(4) := 1;                  # T7：判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: S, SA;
+        damage: 70, 6;
+        animtype: Up;             # 受击方播"向上飞出"的动画
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 14, 14;
+        sparkno: 3;
+        sparkxy: 0, -110;         # 火花位置高 —— 在头顶
+        hitsound: 5, 4;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 22;
+        ground.hittime: 24;
+        ground.velocity: -1.5, -12;   # 地面命中 → 把对手挑起来
+        airguard.velocity: -3, -4;
+        air.velocity: -1.5, -12;      # 空中命中 → 直接打飞
+        air.hittime: 26;
+        yaccel: .55;
+        fall: 1;                  # ★ 强制倒地（对空技的标准收尾）
+        fall.recover: 1;          # 允许受身（对手可以 recovery，属于公平性设计）
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# EX Special 1「EX 突进直拳」—— State 1010 / Anim 1010   [P3 · T5]
+#
+#   236 + C（命令 QCF_y），**耗 500 气**。
+#
+# ★ 气量的"检查 → 扣除"分工（沿用 P2 约定，是本项目唯一写法）：
+#   检查在路由层（command.zss：`power >= 500`）
+#   扣除在本状态 time = 0 的 powerAdd{value: -500}
+#   不把检查放在状态里，否则会先进状态再退出，观感上"抖一下"。
+#
+# 相对 Special 1 的**明确强化点**（T5 要求至少一项，这里给了三项）：
+#   伤害 85 → 130（+53%）
+#   突进距离 22 → 32 px
+#   新增 fall: 1 强制击倒（普通版打不倒人）
+# 代价：气 500 + 收招更长。
+# ============================================================================
+[StateDef 1010;
+type: S; movetype: A; physics: S;
+juggle: 5; velset: 0, 0; ctrl: 0;
+anim: 1010;
+poweradd: 0;                    # 出招本身不集气（它要花气）
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -500}       # ★ 气量扣除在这里
+    call AtkInit(4);             # T7：lv4（EX / Super 同层，最高链级）
+}
+
+if animElem = 2 {
+    posAdd{x: 20}
+}
+if animElem = 3 {
+    posAdd{x: 12}
+}
+
+if animElem = 6 {
+    var(4) := 1;
+    hitDef{
+        attr: S, SA;
+        damage: 130, 10;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 18, 18;
+        sparkno: 2;
+        sparkxy: -10, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 16;
+        ground.hittime: 22;
+        ground.velocity: -6, -5;
+        air.velocity: -5, -4;
+        air.hittime: 24;
+        fall: 1;                # ★ 强制倒地
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# Super「超必杀直拳」(Super Dash Straight) —— State 3000 / Anim 3000   [P3 · T6]
+#
+#   236236 + A（命令 QCF2_x），**耗 1000 气**（气槽上限 2000）。
+#
+# ★ 这是本项目的第一个 Super。刻意保持简单，只验证这条链：
+#     复杂命令 → 气量检查（路由层）→ 气量扣除（本状态）→ 状态 → 动画 → 命中 → 退出
+#
+#   刻意**不做**的东西（属后续阶段）：
+#     不做 superPause 定格、不做镜头/闪光/暗转、不做多段连击、
+#     不做成功/失败分身状态（KFM 的 3051 那种）。
+#
+# 相对 EX 的强化：伤害 130 → 200，突进 32 → 44 px，起手更长（18 tick），
+#   并且**命中后不可受身**（fall.recover: 0）—— 这是 Super 应有的压制力。
+#
+# 帧数据（判定帧 = animElem 7）：起手 18 tick / 判定 6 tick / 收招 25 tick，总 49 tick。
+# ============================================================================
+[StateDef 3000;
+type: S; movetype: A; physics: S;
+juggle: 6; velset: 0, 0; ctrl: 0;
+anim: 3000;
+poweradd: 0;                    # 出招本身不集气（它要花气）
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -1000}      # ★ 气量扣除在这里（Super 的代价）
+    call AtkInit(4);             # T7：lv4
+}
+
+# 蓄力段的微小位移 + 突进
+if animElem = 3 {
+    posAdd{x: -6}               # 先微微后坐（蓄力感）
+}
+if animElem = 4 {
+    posAdd{x: 18}
+}
+if animElem = 5 {
+    posAdd{x: 16}
+}
+if animElem = 6 {
+    posAdd{x: 10}
+}
+
+if animElem = 7 {
+    var(4) := 1;
+    hitDef{
+        attr: S, HA;            # HA = Hyper Attack
+        damage: 200, 12;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 22, 22;
+        sparkno: 2;
+        sparkxy: -10, -66;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 26;
+        ground.hittime: 30;
+        ground.velocity: -8, -6;
+        guard.velocity: -12;
+        air.velocity: -6, -5;
+        air.hittime: 30;
+        fall: 1;                # ★ 强制倒地
+        fall.recover: 0;        # ★ 不可受身（Super 专属压制）
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# [StateDef -3] —— 每 tick 执行，且只在角色自己的状态文件内生效
+# （与 -1 的区别见架构文档 §4.3）。KFM 用它放落地音效，这里保留同一个位置，
+# 供后续角色直接扩展（例如：落地扬灰、脚步声）。
+# 模板阶段为空 —— 不为了"看起来完整"塞无意义内容。
+# ============================================================================
+[StateDef -3]
