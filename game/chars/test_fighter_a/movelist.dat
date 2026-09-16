@@ -17,6 +17,8 @@ Taunt											^S
 <#f0f000>:Throws:</>
 Forward Throw									_F_+^Y
 Forward Throw									_F_+^B
+Back Throw										_B_+^Y
+Back Throw										_B_+^B
 
 
 <#f0f000>:Special Moves:</>
