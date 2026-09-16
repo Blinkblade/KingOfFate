@@ -13,14 +13,15 @@
 ; ---------------------------------------------------------------------------
 [Data]
 life                 = 1000   ; 起始体力
-power                = 1000   ; ★ 气槽上限（不是起始气量！T6 实测复核：引擎每回合
-                              ;      开始把当前气量清零，debug overlay 的 POW 起手
-                              ;      就是 0，KFM（上限 3000）同样如此。char.go:3740
-                              ;      `c.powerMax = gi.data.power`，kfm.const 注释原文
-                              ;      "Maximum power character is allowed to have"。
-                              ;      起手攒气靠 hitDef 命中给气 + poweradd；EX 需要
-                              ;      500，先命中约 5 次普通技才够。不写此行默认上限
-                              ;      也是 3000（char.go:292），写 1000 只是收窄上限。）
+power                = 1000   ; ★ 气槽**上限**（不是起始气量！2026-09-16 审计实测复核：
+                              ;      char.go:3740 `c.powerMax = gi.data.power`；kfm.const
+                              ;      注释原文 "Maximum power character is allowed to have"。
+                              ;      对局开始时气量为 0，且**跨回合保留** —— 实测：第 1
+                              ;      回合充满到 1000，击杀对手结束回合后，第 2 回合开局
+                              ;      仍是 1000（logs/p2/shots/v18_powcarry_04.png、
+                              ;      v19_winpose_04.png 两轮独立复现）。起手攒气靠命中给气
+                              ;      + poweradd；EX 需要 500，先打中几次才够。
+                              ;      不写此行默认上限是 3000（char.go:292）。）
 attack               = 100    ; 攻击力（越高越强，全局倍率）
 defence              = 100    ; 防御力（越高越强，全局倍率）
 fall.defence_up      = 50     ; 每次倒地后防御力提升的百分比
@@ -128,6 +129,9 @@ down.friction.threshold                     = .05   ; 倒地低于此速度即�
 ;                         取消进两个必杀。进入 200/230 时清零（见 _template.zss）。
 ; var(1)   aiCooldown   = AI 的必杀技冷却计数（tick）。>0 时 AI 不出必杀。
 ;                         在 AI.zss 递减。
+; var(2)   throwDirFwd  = 1 表示本次投技起手时按的是"前"（前投），
+;                         0 表示按的是"后"（后投）。由 State 810 的 time = 0
+;                         写入，决定把对手甩向哪一侧（见 _template.zss 810）。
 ; --- 角色私有（留给 Fighter A / B）-----------------------------------------
 ; var(10)  -（未占用）
 ; var(11)  -（未占用）

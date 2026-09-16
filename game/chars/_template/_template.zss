@@ -5,6 +5,7 @@
 # 命令名 → 状态号的映射在 command.zss，不在本文件。
 #
 # 本模板实现的状态（T2/T4/T5）：
+#   180   胜利姿势        —— 回合结束时引擎要求的状态（占位）
 #   195   嘲讽            —— 非攻击状态样板
 #   200   站立轻拳 A      —— 可取消（Cancel）
 #   210   站立重拳 C
@@ -14,6 +15,10 @@
 #   810   投技执行        —— targetBind + targetLifeAdd + targetState 821
 #   1000  Placeholder Special（QCF + A）      不耗气
 #   1010  Placeholder EX Special（QCF + C）   耗 500 气，击倒
+#
+# 由 hits.zss（受击方，本角色自己的状态）实现的：
+#   820  被抓住（等待被甩出）   —— changeAnim2 播攻击者的 AIR
+#   821  被甩到空中 → 触地 5100，含受身（recovery → 5200 / 5210）
 #
 # 由 IKEMEN Common State 提供、本模板**不重复实现**的（T1/T3）：
 #   0/10/11/12  站立 / 站↔蹲
@@ -48,6 +53,30 @@ if animTime = 0 {
 # 参数语义见 IKEMEN 的 playSnd sctrl；S 前缀表示"角色自己的 sound"。
 [Function CSnd(bank, sound, c)]
 playSnd{value: S $bank, $sound; channel: $c}
+
+
+# ============================================================================
+# 胜利姿势（Win Pose）—— 回合结束时引擎会把胜者切到这个状态
+#
+# ★ 为什么"必须有"：回合结束（KO / 时间到）后，引擎会尝试把胜者切换进
+#   State 180。如果角色与公共服务态都没有 180，引擎会打印：
+#     WARNING: <char> (nn) in state 180: changed to invalid state 180 (from state 0)
+#   （P2 审计时实测踩到；KFM 也是在 kfm.zss 里自己定义 180/181 的。）
+#
+# 这里是**占位实现**：只播一段胜利姿势动画，不做姿势选择。
+# 多姿势（181-189）、胜利台词、按条件选姿势等表现层内容属于
+# P7（Character Skills & Presentation），不在 P2 范围。
+#
+# 注意：本状态**不调用 EndState** —— 胜者要一直保持姿势，
+#       直到引擎的回合结束计时把对局推进到下一回合。
+# ============================================================================
+[StateDef 180;
+type: S; movetype: I; physics: S;
+anim: 180; ctrl: 0;
+velset: 0, 0;
+sprpriority: 1;]
+
+notHitBy{value: SCA; time: 1}
 
 
 # ============================================================================
