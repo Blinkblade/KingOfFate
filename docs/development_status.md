@@ -6,7 +6,7 @@
 > It is updated whenever a phase changes state. Never mark a phase `PASS` while any
 > of its gates is unmet.
 
-Last updated: 2026-09-14
+Last updated: 2026-09-15
 
 ---
 
@@ -16,7 +16,7 @@ Last updated: 2026-09-14
 | --- | --- | --- |
 | **P0** | Repository & Environment | **PASS** |
 | **P1** | IKEMEN Character Architecture | **PASS** |
-| P2 | Base Fighter Template | NOT_STARTED |
+| **P2** | Base Fighter Template | **PASS** |
 | P3 | Test Fighter A | NOT_STARTED |
 | P4 | Test Fighter B | NOT_STARTED |
 | P5 | Character Asset Tooling | NOT_STARTED |
@@ -179,7 +179,27 @@ These do not block P1 but must not be forgotten:
 
 ## P2 — Base Fighter Template
 
-**Status: NOT_STARTED**
+**Status: PASS**
+
+All ten exit gates pass. The P1 skeleton is now a runnable, cloneable 4-button
+fighter at `game/chars/_template/`, validated in real RC5 matches (damage
+numbers, meter gate/spend, cancel, throw flow, AI usage all captured on
+frames). IKEMEN baseline unchanged; submodule clean.
+
+- Phase report: [`docs/phase_reports/P2-base-fighter-template.md`](phase_reports/P2-base-fighter-template.md)
+- One-pager: [`docs/P2-summary.md`](P2-summary.md)
+- Template handbook: [`game/chars/_template/README.md`](../game/chars/_template/README.md)
+- Iteration log: [`docs/iterations/20260915-p2-character-template.md`](iterations/20260915-p2-character-template.md)
+
+Scope notes: crouch/air attacks and supers are reserved numbers, not
+implemented; placeholder SFF/SND are the P1 KFM lab files (CC-BY-NC,
+prototype-only, registered) and must be replaced by every clone.
+
+Audit revision (2026-09-16): every P2 claim was re-checked against the code and
+the original frames. 13 doc/comment errors were corrected and one real defect
+was fixed — the missing win-pose `State 180` (the engine logged
+`changed to invalid state 180` at round end). No functional defect remains;
+see Phase Report §4 for the full list and the method.
 
 ---
 
