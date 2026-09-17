@@ -74,11 +74,15 @@ contains a virus or potentially unwanted software
    在签名修正之前，本机（以及任何用同样引擎的机器）都必须靠排除项运行。
 2. 排除项需要管理员权限，且降低了对应路径的防护 —— 是权衡，不是无代价。
 3. 引擎 `data/select.def` 花名册里**不含** `test_fighter_a`（该文件在 submodule 中被
-   `data/*` 忽略）。本轮只在**运行时**临时加了一行，方便立刻试玩；
-   正式的"菜单里可选"方案（`game/data/select.def` 交给同步脚本）尚未实施。
+   `data/*` 忽略）—— 角色在菜单里选不到，只能靠命令行进入。**本 PR 已实施正式方案**：
+   新增 `game/data/select.def`（真源）交给 `sync_game_content.ps1` 同步
+   （同步脚本只覆盖同名文件、不删除，引擎自带 system.def / fight.def 不受影响）；
+   已验证引擎以新花名册启动、0 崩溃日志。运行时那份临时加入的行随之被同步版本取代。
 
 ## 后续工作
 
 - 向微软提交误报；签名修正后可 `Remove-MpPreference` 撤掉排除项。
-- （待用户拍板）把 `game/data/select.def` 纳入仓库，使新角色在菜单中自动可选。
+- ~~（待用户拍板）把 `game/data/select.def` 纳入仓库~~ → **已在本次一并实施**
+  （见"已知问题"第 3 条）。以后**每新增一个角色都要在 `game/data/select.def`
+  里加一行**，否则菜单里选不到。
 - P4（Fighter B）起步前，把本条环境坑与 `save/logs` 判据写进新角色的自检清单。
