@@ -77,6 +77,17 @@ if (-not (Test-Path -LiteralPath $Executable)) {
     Write-Host '       Build the engine first:' -ForegroundColor Yellow
     Write-Host '           pwsh -File scripts/build_engine.ps1' -ForegroundColor Yellow
     Write-Host ''
+    # If the executable used to exist, the most likely explanation on this
+    # machine is that Windows Defender quarantined it: the engine binary is
+    # flagged as a false positive and the running process is killed first.
+    # Point that out instead of leaving the user guessing.
+    Write-Host '       If it was there before, Windows Defender may have quarantined it' -ForegroundColor Yellow
+    Write-Host '       (this engine is flagged as a false positive). Check with:' -ForegroundColor Yellow
+    Write-Host '           Get-MpThreatDetection | Select-Object InitialDetectionTime, ThreatID, Resources' -ForegroundColor Yellow
+    Write-Host '       and, in an ELEVATED shell, exclude it before rebuilding:' -ForegroundColor Yellow
+    Write-Host ("           Add-MpPreference -ExclusionPath '{0}'" -f $RuntimeRoot) -ForegroundColor Yellow
+    Write-Host '       See docs/environment.md (environment quirk: Defender quarantine).' -ForegroundColor Yellow
+    Write-Host ''
     exit 2
 }
 $exe = Get-Item -LiteralPath $Executable

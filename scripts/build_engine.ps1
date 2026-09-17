@@ -341,6 +341,43 @@ Write-Host ''
 if ($buildRc -ne 0) {
     Write-Err "engine build failed (exit code $buildRc)"
     if ($logFile) { Write-Host "       See the full log: $logFile" -ForegroundColor Yellow }
+
+    # -----------------------------------------------------------------------
+    # Windows Defender can block the Go linker itself, long before the final
+    # binary exists. It then reports:
+    #   open <tmp>\go-buildNNN\b001\exe\a.out.exe: Operation did not complete
+    #   successfully because the file contains a virus or potentially
+    #   unwanted software
+    # The engine binary is flagged as a false positive (Trojan:Win32/...!cl),
+    # so this is an antivirus problem, not a code problem. Say so explicitly.
+    # -----------------------------------------------------------------------
+    $blocked = $false
+    try {
+        if ($logFile -and (Test-Path -LiteralPath $logFile)) {
+            $blocked = [bool](Select-String -Path $logFile -SimpleMatch -Quiet `
+                -Pattern 'virus or potentially unwanted software', 'Operation did not complete successfully')
+        }
+        if (-not $blocked) {
+            $hits = @(Get-MpThreatDetection -ErrorAction Stop |
+                Where-Object { $_.InitialDetectionTime -gt (Get-Date).AddMinutes(-15) })
+            if ($hits.Count -gt 0) { $blocked = $true }
+        }
+    }
+    catch { $blocked = $blocked }
+
+    if ($blocked) {
+        Write-Host ''
+        Write-Host '[antivirus] This failure looks like Windows Defender blocking the build,' -ForegroundColor Yellow
+        Write-Host '            not a defect in the code: the freshly linked engine binary is' -ForegroundColor Yellow
+        Write-Host '            flagged as a false positive and gets killed while it is written.' -ForegroundColor Yellow
+        Write-Host '            Check the detections:' -ForegroundColor Yellow
+        Write-Host '                Get-MpThreatDetection | Select-Object InitialDetectionTime, ThreatID, Resources' -ForegroundColor Yellow
+        Write-Host '            Then, in an ELEVATED shell, exclude both the build temp dir and the' -ForegroundColor Yellow
+        Write-Host '            runtime directory, and rebuild:' -ForegroundColor Yellow
+        Write-Host ("                Add-MpPreference -ExclusionPath '{0}'" -f (Join-Path $RepoRoot '.tmp')) -ForegroundColor Yellow
+        Write-Host ("                Add-MpPreference -ExclusionPath '{0}'" -f $EngineDir) -ForegroundColor Yellow
+        Write-Host '            See docs/environment.md (environment quirk: Defender quarantine).' -ForegroundColor Yellow
+    }
     exit 1
 }
 

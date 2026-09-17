@@ -1,0 +1,61 @@
+; ---------------------------------------------------------------------------
+; KingOfFate — 角色花名册（roster）
+;
+; 这是**本项目**维护的花名册，由 scripts/sync_game_content.ps1 从 game/data
+; 复制到引擎运行时目录 engine/ikemen-go/data/select.def。
+; 引擎的 data/ 目录在它自己的 .gitignore 里被忽略（data/*），所以**这里才是
+; 受版本管理的唯一真源**；同步脚本是"只覆盖同名文件、不删任何东西"的，
+; 因此把本文件放进来不会动到引擎自带的 system.def / fight.def 等。
+;
+; 为什么要有这个文件：
+;   上游 IKEMEN GO 自带的 select.def 只列了 KFM 的几种变体。我们的角色默认
+;   **不会出现在菜单里**，只能靠命令行 -p1 <角色名> 进入对战 —— P3 的验证
+;   全部走命令行，就是这个原因。**每新增一个角色都要在这里加一行**，否则
+;   single / arcade / team 等模式里都选不到它（V01-V29 也不会覆盖到）。
+;
+; 参数语法与完整说明见引擎自带模板的注释，或
+;   https://github.com/ikemen-engine/Ikemen-GO/wiki/Miscellaneous-Info
+; ---------------------------------------------------------------------------
+
+[Characters]
+
+ ; --- 引擎自带的 KFM 变体（保留）---
+ ; 它们是 P1/P2 研究的参考实现与对比基准，也用来确认"改的是角色而不是引擎"。
+kfm_zss, stages/kfm.def
+kfm720, stages/kfm.def, order=0
+kfm_zaxis, stages/kfm.def, order=0
+
+ ; --- KingOfFate 角色 ---
+ ; Test Fighter A（P3）—— 由 game/chars/_template 克隆后扩展的第一个独立角色
+test_fighter_a, stages/stage0.def
+
+ ; 基础模板 _template **不要**加进来：它是用来复制的骨架，不是可玩角色
+ ; （见 game/chars/_template/README.md）。确实要试玩模板时再取消下面这行注释：
+ ;_template, stages/stage0.def
+
+ ; 随机选择图标（独占一行）
+randomselect
+
+; ---------------------------------------------------------------------------
+[ExtraStages]
+ ; 需要时能手动选择的额外舞台
+stages/stage1.def
+stages/stage3d.def
+stages/stage3d_outline.def
+stages/stageZ.def
+stages/interactivestage.def
+stages/kfm.def
+stages/stage0.def
+stages/stage0-720.def
+
+; ---------------------------------------------------------------------------
+[Options]
+ ; 每个 order 优先级最多打几场；与角色行的 order 参数配合决定 arcade 流程
+arcade.maxmatches = 6,1,1,0,0,0,0,0,0,0
+team.maxmatches = 4,1,1,0,0,0,0,0,0,0
+timeattack.maxmatches = 6,1,1,0,0,0,0,0,0,0
+survival.maxmatches = -1,0,0,0,0,0,0,0,0,0
+
+; ---------------------------------------------------------------------------
+[StoryMode]
+ ; 暂未使用：Story Mode 的 arc 在这里声明（见引擎注释与 wiki）
