@@ -119,15 +119,27 @@ pwsh -File tests/p1/capture_match.ps1 -Prefix e6_base_ai -ShowDebug -RoundTime 9
 放大后纵向堆叠成一张 `montage_*.png`。左边标注来源文件名，右边是要读的文本。
 
 ```powershell
-pwsh -File tests/p1/montage_states.ps1 -Prefix e2_base_d23 -Steps 'burst02,burst04'
+# -Image 支持通配符；-Steps 过滤 burst 号（留空 = 全部拼进来）
+pwsh -File tests/p1/montage_states.ps1 `
+    -Image 'logs/p2/shots/v12b_special_p05_09_burst*.png' `
+    -Steps '1,2,3,4,5' -OutFile 'logs/p2/montage_v12b.png'
 ```
 
 | 参数 | 说明 |
 | --- | --- |
-| `-Prefix` | 输入文件名前缀（对应 `capture_match.ps1` 的 `-Prefix`） |
-| `-Steps` | 只拼接指定的步骤；留空表示全部 |
+| `-Image` | 截图路径或通配符。**可传多个**：`-Image 'a*.png','b*.png'` |
+| `-Steps` | 只拼接指定的 burst 号，逗号分隔字符串（`'1,2,3'` 或 `'burst02,burst04'`）；留空表示全部 |
+| `-OutFile` | 输出 PNG。**不传则写到 `logs/p1/shots/montage_states.png`** |
 | `-CropX/CropY/CropW/CropH` | 裁剪窗口。默认值对应 1280×720 下状态读数所在的位置 |
 | `-Region2Y/Region2H` | 可选：额外拼一条顶部状态条（体力条区域） |
+
+> **两个坑（P3 实测补记）**
+> 1. 本脚本**没有** `-Prefix` 参数（早期文档写错过）。输入用 `-Image`。
+> 2. `-Steps` 在 P3 之前声明为 `[int[]]`，而 `pwsh -File` **无法把逗号列表
+>    绑成数组** —— `-Steps 1,2,3` 会被当成数字 **123**（逗号被当作千位分隔符），
+>    过滤结果为空、脚本只打印 `[warn] nothing selected`。
+>    现在 `-Steps` 改成字符串并在脚本内自行 split（与 `-HoldSeqVK`/`-Phases`
+>    同样的处理方式）。**传参一律用 `-Steps '1,2,3'` 这种单字符串形式。**
 
 > **为什么用"裁条带 + 人工判读"而不是自动 OCR / 像素 diff**：
 > GDI+ 的 `LockBits` 裁剪会返回整图 stride，跨帧逐字节比较不可靠（曾导致误判）。

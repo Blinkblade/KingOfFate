@@ -21,6 +21,8 @@ P2 交付的**可运行、可加载、可复制**的四键基础格斗角色模�
 
 ```powershell
 # 1) 复制（Git 真源在本目录；复制体才是你自己的角色）
+#    注意：目标目录必须尚不存在 —— Copy-Item -Recurse 到已存在的目录
+#    会嵌套成 <mychar>/_template/。
 Copy-Item -Recurse game\chars\_template game\chars\<mychar>
 
 # 2) 全目录把 "_template" 前缀替换成 "<mychar>"（文件名 + 文件内引用）
@@ -30,9 +32,14 @@ Copy-Item -Recurse game\chars\_template game\chars\<mychar>
 #    - 另外 5 个文件**没有**前缀，不要改名：
 #        command.zss / hits.zss / AI.zss / movelist.dat / README.md
 #      （它们的文件名由 _template.def 的 [Files] 段引用，改的是 def 里的引用）
-#    - _template.def [Info] name（必须 = 目录名，-p1 用它定位）
+#    - _template.def [Info] **name**（必须 = 目录名，-p1 用它定位）
+#    - _template.def [Info] **displayname**（画面上显示的名字，别漏）
+#    - _template.def [Info] versiondate（改成你的日期）
 #    - _template.def [Files] 里的 11 条文件引用
 #    - 各 .zss/.cmd/.air/.const 顶部注释里的文件自引用（纯注释，但保持一致）
+#    - **README.md**：本文件是"_template 的手册"，不是新角色的手册。
+#      克隆体必须把它改写成自己角色的说明（Fighter A 的做法见
+#      game/chars/test_fighter_a/README.md）。
 
 # 3) 同步到引擎运行目录并试跑
 pwsh -File scripts/sync_game_content.ps1
@@ -40,6 +47,32 @@ pwsh -File scripts/run_game.ps1 -ExtraArgs '-p1','<mychar>','-p2','kfm_zss','-s'
 ```
 
 改名后**必须跑** `pwsh -File scripts/test.ps1` 确认仓库回归仍是绿的。
+
+### 2.1 克隆后自检（3 项，别跳）
+
+克隆过程中最容易漏的是"文件改名了但 def 里还指着旧名字"，而这类错误
+**不会让脚本失败** —— 只有引擎加载时才会报。所以按顺序做：
+
+```powershell
+# ① 同步输出里必须出现新角色目录
+pwsh -File scripts/sync_game_content.ps1
+#   期望看到：  dir  <mychar>
+
+# ② 运行时目录里必须真的是改名后的文件
+Get-ChildItem engine\ikemen-go\chars\<mychar> | Select-Object Name
+#   期望：<mychar>.def/.cmd/.const/.zss/.air/.sff/.snd + 5 个无前缀文件
+
+# ③ 引擎控制台里必须没有加载错误
+#   tests/p1/capture_match.ps1 只截画面、看不到引擎控制台输出，
+#   所以 P3 补了 tests/p3/run_engine_capture.ps1：
+pwsh -File tests/p3/run_engine_capture.ps1 -P1 <mychar> -P2 kfm_zss -RunSec 25
+#   期望：日志里没有 "New char load failed" / "WARNING" / "invalid state"
+#   并且画面里出现 <mychar> 的 displayname
+```
+
+> 背景：P3 实际克隆 Fighter A 时，上面的 ② ③ 两项是**新补的步骤** ——
+> 原版说明只写到"改名 + 同步 + 跑 test.ps1"，而 `scripts/test.ps1`
+> 是**仓库静态检查**，它不会加载角色。缺了 ② ③ 就只能靠肉眼发现"角色没加载成功"。
 
 ## 3. 四键映射（合同 §9）
 
@@ -119,6 +152,24 @@ EX(QCF_y) → 必杀(QCF_x) → 投技 → FF/BB → 站立四键 → 嘲讽。
 `hits.zss` 只放"投技这种需要被抓住的特殊受击表现" —— 普通技的受击完全交给
 公共状态 5000+，不要在这里重复实现。
 
+### 5.1 参考实现：Fighter A 已经把预留区间填满了
+
+模板**只留了号**，真正把它们实现出来的是 P3 的
+[`game/chars/test_fighter_a/`](../test_fighter_a/)（可运行、已实测）。
+做扩展动作时**直接读它**，不要从零摸索：
+
+| 预留区间 | Fighter A 的实现 | 规律 |
+| --- | --- | --- |
+| 400–440 蹲攻 | 400 蹲A / 410 蹲C / 430 蹲B / 440 蹲D(扫腿) | `+0=A轻拳 +10=C重拳 +30=B轻脚 +40=D重脚`，与站立位 200/210/230/240 同构 |
+| 600–640 跳攻 | 600 跳A / 610 跳C / 630 跳B / 640 跳D | 同上；空中招**不写落地逻辑**，靠引擎进公共状态 52 |
+| 1000+ 必杀 | 1000 突进直拳 / 1100 升龙踢（对空） | 每个必杀独立状态号 + 独立动画号 |
+| 1010 EX | 1010 EX 突进直拳 | 路由层查 `power >= 500`，状态内 `powerAdd{value: -500}` |
+| 3000+ 超杀 | 3000 超必杀直拳 | 路由层查 `power >= 1000`，状态内 `powerAdd{value: -1000}` |
+
+它同时给出两个模板没有的样板：
+**取消链**（`command.zss` 的 `CanChain(lv)` 等级系统）
+与**独立角色 AI**（`AI.zss`：Normal / 两个必杀 / EX / Super / 投技）。
+
 ## 6. 变量台账（先登记再占用）
 
 | 变量 | 用途 | 生命周期 |
@@ -157,7 +208,8 @@ EX(QCF_y) → 必杀(QCF_x) → 投技 → FF/BB → 站立四键 → 嘲讽。
 # 玩家侧（可注入按键）：TAB(0x09)=A、RETURN(0x0D)=C、方向键可达
 #   本机只有这些键能通过合成注入到达引擎（P1 E0；字母键不可达）
 pwsh -File tests/p1/capture_match.ps1 -P1 _template -P2 kfm_zss -Ai1 0 ...
-pwsh -File tests/p2/inject_phases.ps1 -Phases '0x27:2.8,0x28:0.06,0x28+0x27:0.06,0x27:0.06,0x09:0.35' ...
+# 多键相位：相位列表必须是**一个逗号连接的字符串**（见 tests/p2/README.md 的坑）
+pwsh -File tests/p2/inject_phases.ps1 -Phases '0x28:0.06,0x28+0x27:0.06,0x27:0.06,0x09:0.35' ...
 # AI 侧（验证 AI 接口）
 pwsh -File tests/p1/capture_match.ps1 -P1 _template -P2 kfm_zss -Ai1 8 ...
 ```

@@ -20,17 +20,27 @@
 
 .PARAMETER Steps
     For a series like <tag>_burstNN.png, which burst numbers to include.
+    Accepts a comma-separated string, a plain number list or burst names --
+    e.g.  -Steps '1,2,3'  /  -Steps 'burst02,burst04'  /  -Steps 6,12,20.
+    Empty = include every step.
+
+    Why a string and not [int[]] (P3 fix): `pwsh -File` cannot bind a comma list
+    to an array parameter -- `-Steps 1,2,3` is parsed as the single number 123
+    (the commas are read as digit-group separators), so the filter silently
+    matched nothing and the script printed "nothing selected". This is the same
+    class of problem P1 hit with -HoldSeqVK and P2 with -Phases, and it is fixed
+    the same way: take a string, split it inside the script.
 
 .PARAMETER OutFile
     Where to write the montage PNG.
 
 .EXAMPLE
-    pwsh -File tests/p1/montage_states.ps1 -Image 'logs/p1/shots/e5_probe1_seq*_burst*.png' -Steps 6,12,20
+    pwsh -File tests/p1/montage_states.ps1 -Image 'logs/p1/shots/e5_probe1_seq*_burst*.png' -Steps '6,12,20'
 #>
 [CmdletBinding()]
 param(
     [string[]]$Image = @(),
-    [int[]]$Steps = @(6, 12, 20),
+    [string]$Steps = '6,12,20',
     [string]$OutFile,
     [int]$CropX = 0,
     [int]$CropY = 706,
@@ -45,6 +55,17 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
+
+# -Steps arrives as a comma/space separated string (see the parameter help for why
+# it is not [int[]]). Accept plain numbers and 'burstNN' names.
+$StepList = @()
+foreach ($tok in ($Steps -split '[,;\s]+')) {
+    $t = $tok.Trim()
+    if ($t -eq '') { continue }
+    if ($t -match '^burst(\d+)$') { $StepList += [int]$Matches[1]; continue }
+    if ($t -match '^\d+$') { $StepList += [int]$t; continue }
+    throw "step token '$t' must be a number or 'burstNN'"
+}
 
 $ScriptDir = $PSScriptRoot
 if ([string]::IsNullOrWhiteSpace($ScriptDir)) {
@@ -72,7 +93,7 @@ foreach ($f in $selected) {
     if ($m.Groups[2].Value -match '^burst(\d+)$') { $step = [int]$Matches[1] }
     elseif ($m.Groups[2].Value -match '^\d+$') { $step = [int]$m.Groups[2].Value }
     $stepName = $m.Groups[2].Value
-    if ($Steps.Count -gt 0 -and ($Steps -notcontains $step)) { continue }
+    if ($StepList.Count -gt 0 -and ($StepList -notcontains $step)) { continue }
     $rows.Add([pscustomobject]@{ Series = $m.Groups[1].Value; Step = $step; StepName = $stepName; Path = $f })
 }
 $rows = @($rows | Sort-Object Series, Step)

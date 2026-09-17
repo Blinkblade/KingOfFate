@@ -1,0 +1,233 @@
+# ============================================================================
+# KingOfFate — Test Fighter A : 命令路由（command.zss）   [P3]
+#
+# 本文件回答唯一一个问题：**哪个命令进入哪个状态**。
+#
+# ★★★ 最重要的一条规则（P1 实验 E5 直接验证）★★★
+#   [StateDef -1] 从上到下逐条判断，**先命中者生效，后面的全部跳过**。
+#   因此：条件更"窄"的规则必须写在更"宽"的规则前面。
+#
+#   KFM 源码里也写着同一句话：
+#   "State entry with a certain command must come before another
+#    state entry with a command that is the subset of the first."
+#
+# 本角色的实际顺序（改顺序 = 改优先级，必须重跑 Runtime 验证）：
+#   ① EX Special 1  （QCF_y，需 500 气）      ← 最窄：多了资源条件
+#   ② Super         （QCF2_x，需 1000 气）    ← 窄：资源条件 + 最长指令
+#   ③ Special 1     （QCF_x）
+#   ④ Special 2     （QCB_x）
+#   ⑤ 投技          （贴身 + 前/后 + C/D）    ← 比单按 C/D 窄，必须在其前面
+#   ⑥ 前冲 / 后跳   （FF / BB）
+#   ⑦ 蹲普通技      （下 + A/B/C/D）
+#   ⑧ 空中普通技    （空中 + A/B/C/D）
+#   ⑨ 站立普通技    （A/B/C/D）
+#   ⑩ 嘲讽          （start）
+#
+# ★★★ P3 新增：普攻取消链（T7）—— 等级系统 ★★★
+#
+#   每个攻击状态在自己的 time = 0 调 AtkInit(lv) 登记链等级 var(3)，
+#   并在**首个判定帧**把 var(4) 置 1（= 取消窗口开启）。放行时要求
+#   目标等级**严格大于**当前等级：
+#
+#       lv1 轻普通技  200 / 230 / 400 / 430 / 600 / 630
+#         ↓  (轻 → 重)
+#       lv2 重普通技  210 / 240 / 410 / 440 / 610 / 640
+#         ↓  (普通 → 必杀)
+#       lv3 必杀技    1000 / 1100
+#         ↓  (必杀 → EX / Super)
+#       lv4 EX·Super  1010 / 3000
+#
+#   为什么用"等级递增"而不是"能不能取消"的布尔量：
+#     * 等级只增不减 → 连段长度天然有上限（最长 4 段），**不可能无限循环**
+#     * 不需要为每对招式单独写条件，条件恒定、可读
+#   实测验证（V16–V18）：
+#     Normal → Normal    ：200(A) → 210(C)      [lv1 → lv2]
+#     Normal → Special   ：230(B) → 1000        [lv1 → lv3]
+#     Special → Super    ：1000 → 3000          [lv3 → lv4]
+#
+# ★ 空中普通技不参与取消链：CanChain 的自由分支要求 `stateType != A`，
+#   而取消分支虽然会命中（空中招也登记等级），但空中没有空中必杀技，
+#   放行会让角色在空中切进地面必杀状态 —— 所以 ⑧ 处不用 CanChain。
+#
+# 依据：docs/ikemen_character_architecture.md §4.3 / §5.3
+# 实测对照：game/chars/p1_kfm_zss_lab/command.zss
+# ============================================================================
+
+
+# ============================================================================
+# 工具函数：链等级放行判定（T7）
+#
+# $canChain = 1 表示"现在允许进入等级 lv 的招式"。两种进入方式：
+#   a) 完全自由：在地面且有控制权（stateType != A && ctrl）
+#   b) 取消（Cancel）：正处于某个攻击状态，且
+#        - 该状态的判定帧已经开始（var(4) = 1）
+#        - 本次攻击还没取消过（var(0) = 0）
+#        - 目标等级更高（var(3) < lv）—— 这是防无限连段的关键
+#
+# ★ 语法坑（P2 实测踩到）：`animElem` 裸触发器只支持 = / !=。
+#   写 `animElem >= 3` 会在加载时抛 `Missing '=' or '!='`（引擎直接 Panic）。
+#   本文件因此**不使用 animElem 裸比较**，改用状态自己维护的 var(4)
+#   —— 既避开语法坑，也让"判定帧"与"取消窗口"由同一个地方定义（状态里）。
+#
+# 这是"函数跨状态复用"的样板：参数、let 声明、if 判断、返回值。
+# ============================================================================
+[Function CanChain(lv) ret]
+let ret = 0;
+# a) 自由状态（地面 + 有控制权）—— 空中放行会切进地面招，故排除
+if stateType != A && ctrl {
+    let ret = 1;
+}
+# b) 取消：等级严格递增 + 判定帧已开始 + 本次攻击尚未取消
+if var(3) > 0 && var(3) < $lv && var(4) = 1 && var(0) = 0 {
+    let ret = 1;
+}
+
+
+# ============================================================================
+# [StateDef -1] —— 特殊状态：无论当前在哪个状态，每 tick 都执行一次。
+# 命令路由之所以能"随时生效"，就是因为它写在这里。
+# ============================================================================
+[StateDef -1]
+
+# 只在战斗进行中处理命令（roundState = 2），且该角色由玩家操作（!aiLevelF）
+if roundState = 2 && !aiLevelF {
+
+    # map("canCombo") 保留 P2 语义：当前能否出必杀技（= 等级 3 是否放行）。
+    # 只读快照，供角色内其他脚本 / AI 查询，禁止在状态里改它。
+    #
+    # ★ 语法坑（P3 实测踩到）：`call` **不能内联写在 if 条件里**
+    #   （`if x && call F(3) {` 会在加载时抛 `Wrong token`，引擎直接 Panic）。
+    #   必须像 P2 的 canCombo 那样先用 let 取出来，再在条件里引用 $变量。
+    let canCombo = call CanChain(3);
+    let canLv4 = call CanChain(4);
+    let canLv3 = call CanChain(3);
+    let canLv2 = call CanChain(2);
+    let canLv1 = call CanChain(1);
+    ignoreHitPause{mapSet{map:"canCombo"; value: $canCombo}}
+
+    # ========================================================================
+    # 【① EX Special 1】236 + C，消耗 500 气
+    # 气量检查在这里（路由层），扣气在 test_fighter_a.zss 的 State 1010 里。
+    # lv4：可以从自由态起手，也可以从 lv1/lv2 普通技或 lv3 必杀取消进来。
+    # ========================================================================
+    if command = "QCF_y" && power >= 500 && $canLv4 {
+        changeState{value: 1010}
+    }
+
+    # ========================================================================
+    # 【② Super】236236 + A，消耗 1000 气（气槽上限 2000）
+    # 必须排在 ③ 前面：236236+A 的输入包含 236+A，写反了 Super 永远轮不到
+    # （.cmd 里 QCF2_x 也排在 QCF_x 前面 —— 两处都要正确）。
+    # ========================================================================
+    if command = "QCF2_x" && power >= 1000 && $canLv4 {
+        changeState{value: 3000}
+    }
+
+    # ========================================================================
+    # 【③ Special 1：突进直拳】236 + A，不耗气
+    # ========================================================================
+    if command = "QCF_x" && $canLv3 {
+        changeState{value: 1000}
+    }
+
+    # ========================================================================
+    # 【④ Special 2：升龙踢】214 + A，不耗气（对空）
+    # 与 ③ 条件互不包含（方向不同），不存在互相吞掉的问题。
+    # ========================================================================
+    if command = "QCB_x" && $canLv3 {
+        changeState{value: 1100}
+    }
+
+    # ========================================================================
+    # 【⑤ 投技】KOF 惯例：贴身 + 前/后 + C 或 D
+    # 必须排在 ⑨ 的单按 y / b 前面，否则永远轮不到。
+    # 只在"自由站立"时可用（不进取消链 —— 投技不是连段部件）。
+    # ========================================================================
+    if (command = "y" || command = "b") && stateType = S && ctrl &&
+        (p2StateType = S || p2StateType = C) && p2MoveType != H &&
+        ((command = "holdfwd" && p2BodyDist X < 3) ||
+            (command = "holdback" && p2BodyDist X < 5)) {
+        changeState{value: 800}
+    }
+
+    # ========================================================================
+    # 【⑥ 双击方向：前冲 / 后跳】均由公共状态提供（State 100 / 105）
+    # ========================================================================
+    if command = "FF" && stateType = S && ctrl {
+        changeState{value: 100}
+    }
+    if command = "BB" && stateType = S && ctrl {
+        changeState{value: 105}
+    }
+
+    # ========================================================================
+    # 【⑦ 蹲普通技】下 + A/B/C/D   [P3 · T1]
+    #   x = 蹲 A 轻拳 → 400    a = 蹲 B 轻脚 → 430
+    #   y = 蹲 C 重拳 → 410    b = 蹲 D 重脚 → 440
+    # 条件 = 按住下 + 正在蹲姿 + CanChain(lv)；轻招 lv1、重招 lv2。
+    # （必须写成 command = "holddown"：不写就会被 ⑨ 的站立规则抢走。）
+    # ========================================================================
+    if command = "x" && command = "holddown" && stateType = C && $canLv1 {
+        changeState{value: 400}
+    }
+    if command = "a" && command = "holddown" && stateType = C && $canLv1 {
+        changeState{value: 430}
+    }
+    if command = "y" && command = "holddown" && stateType = C && $canLv2 {
+        changeState{value: 410}
+    }
+    if command = "b" && command = "holddown" && stateType = C && $canLv2 {
+        changeState{value: 440}
+    }
+
+    # ========================================================================
+    # 【⑧ 空中普通技】A/B/C/D   [P3 · T2]
+    #   x = 跳 A 轻拳 → 600    a = 跳 B 轻脚 → 630
+    #   y = 跳 C 重拳 → 610    b = 跳 D 重脚 → 640
+    # 条件 = 处于空中 + 有控制权（KFM 同款；ctrl 在离地后由公共状态给出）。
+    # 不做 CanChain 判定：空中招不接取消链（原因见文件头）。
+    # ========================================================================
+    if command = "x" && stateType = A && ctrl {
+        changeState{value: 600}
+    }
+    if command = "a" && stateType = A && ctrl {
+        changeState{value: 630}
+    }
+    if command = "y" && stateType = A && ctrl {
+        changeState{value: 610}
+    }
+    if command = "b" && stateType = A && ctrl {
+        changeState{value: 640}
+    }
+
+    # ========================================================================
+    # 【⑨ 站立普通技】KingOfFate 四键
+    #   x = A 轻拳 → 200      a = B 轻脚 → 230
+    #   y = C 重拳 → 210      b = D 重脚 → 240
+    # command != "holddown" 保证"下+键"走 ⑦ 的蹲攻，不会误触发站立技。
+    # CanChain(1) 让轻招只能从自由态起手（不能"重取消回轻"）；
+    # CanChain(2) 让重招既能自由起手，也能从 lv1 轻招取消进来。
+    # ========================================================================
+    if command = "x" && command != "holddown" && stateType = S && $canLv1 {
+        changeState{value: 200}
+    }
+    if command = "a" && command != "holddown" && stateType = S && $canLv1 {
+        changeState{value: 230}
+    }
+    if command = "y" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 210}
+    }
+    if command = "b" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 240}
+    }
+
+    # ========================================================================
+    # 【⑩ 嘲讽】
+    # ========================================================================
+    if command = "start" && command != "holddown" && stateType != A && ctrl {
+        changeState{value: 195}
+    }
+
+# End of file: roundState = 2
+# =============================================================================
+}
