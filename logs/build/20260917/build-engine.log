@@ -4,4 +4,6 @@ WARNING: WebM alpha requires FFmpeg to select the libvpx VP8/VP9 decoder.
          Use BUILD_FFMPEG=yes if the system build selects the native decoder.
 ==> Delay-load import libs already exist in build/delaylib, skipping generation (delete that directory to force regeneration)
 ==> Building Go binary (this may take a while)...
-github.com/ikemen-engine/Ikemen-GO/src: go build github.com/ikemen-engine/Ikemen-GO/src: open D:\AI\develop\KingOfFate\.tmp\go-build1613376760\b001\exe\a.out.exe: Operation did not complete successfully because the file contains a virus or potentially unwanted software.
+==> Build successful (Windows)
+    Binary: ./Ikemen_GO.exe
+    Runtime DLLs: lib/
