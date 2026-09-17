@@ -173,6 +173,51 @@ project scripts rather than by patching the engine.
    is written directly by the shell rather than piped through PowerShell (a full-output pipe can
    apply back-pressure and stall long native builds).
 
+7. **Windows Defender quarantines `Ikemen_GO.exe` (2026-09-17).**
+   Symptoms: the game "crashes" out of nowhere during play and afterwards
+   `scripts/run_game.ps1` stops with `[fail] executable not found` and tells you to run
+   `scripts/build_engine.ps1` — the executable is simply **gone**.
+
+   Cause: Defender flags the built binary as `Trojan:Win32/Tecabans.A!cl`
+   (ThreatID 2147727215, `!cl` = cloud-delivered detection) and **kills the running process
+   first, then quarantines the file**, which is why the game dies and why no engine crash log is
+   written. A freshly rebuilt binary is flagged again by the same rule, so rebuilding alone does
+   not help.
+
+   Diagnosis (no administrator needed):
+
+   ```powershell
+   Get-MpThreatDetection | Select-Object InitialDetectionTime, ThreatID, ActionSuccess, Resources
+   Get-MpThreat                          # shows the name/severity for the ThreatID
+   Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled, AntivirusSignatureLastUpdated
+   ```
+
+   The detection recorded above lists `engine\ikemen-go\Ikemen_GO.exe` together with
+   `process:_pid:<n>`, and its timestamp matches the moment the game vanished.
+
+   Control experiment: a trivial Go program compiled with the same MSYS2 toolchain
+   (`D:\msys64\mingw64\bin\go.exe`) is **not** flagged, so this is specific to the engine
+   binary's fingerprint, not a blanket rule against Go output.
+
+   Not a repository defect: the engine submodule is on the pinned commit and clean, and no engine
+   crash log is produced. See `docs/P3-summary.md` §8 for the wider investigation.
+
+   Mitigation (needs an **elevated** shell — the trade-off is yours to make):
+
+   ```powershell
+   Add-MpPreference -ExclusionPath 'D:\AI\develop\KingOfFate\engine\ikemen-go\Ikemen_GO.exe'
+   # or the whole engine folder if you rebuild often:
+   # Add-MpPreference -ExclusionPath 'D:\AI\develop\KingOfFate\engine\ikemen-go'
+   # to undo:  Remove-MpPreference -ExclusionPath '<same path>'
+   ```
+
+   Then rebuild and run as usual. Please also report it to Microsoft as a false positive
+   (<https://www.microsoft.com/en-us/wdsi/filesubmission>) so the signature gets fixed for
+   everyone.
+
+   While the executable is missing, `scripts/test.ps1` will FAIL on the
+   `engine executable built` check — that is expected, not a new defect.
+
 ---
 
 ## Build
