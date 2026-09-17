@@ -199,17 +199,42 @@ project scripts rather than by patching the engine.
    (`D:\msys64\mingw64\bin\go.exe`) is **not** flagged, so this is specific to the engine
    binary's fingerprint, not a blanket rule against Go output.
 
+   **It also blocks the build, not only the finished binary.** Once the signature starts
+   hitting, `scripts/build_engine.ps1` fails at the link step with
+
+   ```text
+   go build github.com/ikemen-engine/Ikemen-GO/src: open <project>\.tmp\go-buildNNN\
+   b001\exe\a.out.exe: Operation did not complete successfully because the file
+   contains a virus or potentially unwanted software
+   ```
+
+   so the engine can neither be built nor run until the exclusion is in place. The
+   exclusion therefore has to cover **both** the Go build temp directory (`<project>\.tmp`)
+   and the runtime directory (`engine\ikemen-go`).
+
+   The engine's own build already passes `-s -w -trimpath`, so "rebuild it with different
+   linker flags" is not a way out — the binary is stripped and still flagged.
+
+   Both `scripts/build_engine.ps1` and `scripts/run_game.ps1` now detect this situation and
+   print the diagnosis (detection check + the two exclusion commands) instead of a bare
+   "build failed / executable not found".
+
    Not a repository defect: the engine submodule is on the pinned commit and clean, and no engine
    crash log is produced. See `docs/P3-summary.md` §8 for the wider investigation.
 
    Mitigation (needs an **elevated** shell — the trade-off is yours to make):
 
    ```powershell
-   Add-MpPreference -ExclusionPath 'D:\AI\develop\KingOfFate\engine\ikemen-go\Ikemen_GO.exe'
-   # or the whole engine folder if you rebuild often:
-   # Add-MpPreference -ExclusionPath 'D:\AI\develop\KingOfFate\engine\ikemen-go'
+   Add-MpPreference -ExclusionPath 'D:\AI\develop\KingOfFate\.tmp'
+   Add-MpPreference -ExclusionPath 'D:\AI\develop\KingOfFate\engine\ikemen-go'
+   # or the narrowest variant once the binary exists: the .exe path itself
+   # Add-MpPreference -ExclusionPath 'D:\AI\develop\KingOfFate\engine\ikemen-go\Ikemen_GO.exe'
    # to undo:  Remove-MpPreference -ExclusionPath '<same path>'
    ```
+
+   The first path is needed because the Go linker writes its temporary executable into
+   `<project>/.tmp` (the build script points `GOTMPDIR` there) and Defender blocks that
+   write before the final binary is ever produced.
 
    Then rebuild and run as usual. Please also report it to Microsoft as a false positive
    (<https://www.microsoft.com/en-us/wdsi/filesubmission>) so the signature gets fixed for
