@@ -177,14 +177,30 @@ function Send-CtrlKey([int]$vk) {
     Start-Sleep -Milliseconds 60
 }
 
+# Arrow keys (and the other "navigation" keys) are EXTENDED keys: they share their
+# scan codes with the numeric keypad (UP == numpad 8, etc.). Without
+# KEYEVENTF_EXTENDEDKEY the target sees "numpad 8" instead of "UP", and the engine's
+# direction input never moves -- silently, because the key *is* delivered.
+# P4 hit this: QCF injection degraded into a single-button attack, and a 2-second
+# UP hold did not make the character jump at all (logs/p2/shots/p4_jump_p01_26_after.png).
+# The fix is the same flag Windows itself sets for these keys.
+$KEYEVENTF_EXTENDEDKEY = 0x0001
+function Is-ExtendedVK([int]$vk) {
+    # VK_PRIOR(0x21) .. VK_DOWN(0x28), plus the numpad/divide & numlock block
+    return (($vk -ge 0x21 -and $vk -le 0x2E) -or $vk -eq 0x6F)
+}
 function Press-Key([int]$vk) {
     $scan = [byte][P2Lab.Win]::MapVirtualKey([byte]$vk, 0)
-    [P2Lab.Win]::keybd_event([byte]$vk, $scan, 0, [UIntPtr]::Zero)
+    $flags = 0
+    if (Is-ExtendedVK $vk) { $flags = $KEYEVENTF_EXTENDEDKEY }
+    [P2Lab.Win]::keybd_event([byte]$vk, $scan, [uint32]$flags, [UIntPtr]::Zero)
     [void][P2Lab.Win]::PostMessage($script:hwnd, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr](1 -bor ($scan -shl 16)))
 }
 function Release-Key([int]$vk) {
     $scan = [byte][P2Lab.Win]::MapVirtualKey([byte]$vk, 0)
-    [P2Lab.Win]::keybd_event([byte]$vk, $scan, $KEYEVENTF_KEYUP, [UIntPtr]::Zero)
+    $flags = $KEYEVENTF_KEYUP
+    if (Is-ExtendedVK $vk) { $flags = $flags -bor $KEYEVENTF_EXTENDEDKEY }
+    [P2Lab.Win]::keybd_event([byte]$vk, $scan, [uint32]$flags, [UIntPtr]::Zero)
     [void][P2Lab.Win]::PostMessage($script:hwnd, $WM_KEYUP, [IntPtr]$vk, [IntPtr](1 -bor ($scan -shl 16) -bor 0xC0000000))
 }
 

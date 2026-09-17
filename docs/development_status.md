@@ -6,7 +6,7 @@
 > It is updated whenever a phase changes state. Never mark a phase `PASS` while any
 > of its gates is unmet.
 
-Last updated: 2026-09-15
+Last updated: 2026-09-18
 
 ---
 
@@ -18,7 +18,7 @@ Last updated: 2026-09-15
 | **P1** | IKEMEN Character Architecture | **PASS** |
 | **P2** | Base Fighter Template | **PASS** |
 | **P3** | Test Fighter A | **PASS** |
-| P4 | Test Fighter B | NOT_STARTED |
+| P4 | Test Fighter B | **IN_PROGRESS** |
 | P5 | Character Asset Tooling | NOT_STARTED |
 | P6 | First Final-Art Character | NOT_STARTED |
 | P7 | Character Skills & Presentation | NOT_STARTED |
@@ -235,7 +235,49 @@ its combat logic was deliberately left untouched.
 
 ## P4 — Test Fighter B
 
-**Status: NOT_STARTED**
+**Status: IN_PROGRESS**
+
+Not `PASS`: three gates (4 / 6 / 7) are only partially evidenced — see below. The
+character itself is complete and playable, and the phase's central question is
+answered (the same `_template` does carry a second, very different fighting style).
+
+- Phase report: [`docs/phase_reports/P4-test-fighter-b.md`](phase_reports/P4-test-fighter-b.md)
+- One-pager: [`docs/P4-summary.md`](P4-summary.md)
+- Character handbook: [`game/chars/test_fighter_b/README.md`](../game/chars/test_fighter_b/README.md)
+- Frame data: [`design/characters/test_fighter_b/moves.csv`](../design/characters/test_fighter_b/moves.csv)
+- Iteration log: [`docs/iterations/20260918-p4-test-fighter-b.md`](iterations/20260918-p4-test-fighter-b.md)
+
+Delivered: `game/chars/test_fighter_b/` — a **Zoner** cloned from `_template`
+(not from Fighter A), with a native `projectile{}` special, a long-reach
+Standing Heavy Punch (hitbox to `x=105`, no `posAdd`), two anti-air tools
+(410 to `y=-112`, 1100 to `y=-152`), a two-shot EX and a three-shot Super, its own
+`CanChain` levels and its own Zoner AI. Engine baseline unchanged; submodule clean.
+
+**Gate status**: 1/2/3/5/8/9/10 PASS · 4/6/7 **partial**.
+
+Why partial: the three missing items (anti-air hitting an airborne opponent,
+the exact cancel timing, projectile being guarded/jumped over) all need
+synthetic directional input, and this machine's injection silently failed for
+arrow keys. Root cause found and fixed at the very end of the phase —
+`tests/p2/inject_phases.ps1` was missing `KEYEVENTF_EXTENDEDKEY` (arrow keys share
+scan codes with the numeric keypad, so the engine saw "numpad 8" instead of "up").
+The fix is verified (`logs/p2/shots/p4_jump2_p01_26_after.png`: the character
+jumps), but there was not enough time left to re-run those three groups.
+**They are "not yet measured", not "not working".**
+
+Two engine-level findings worth carrying forward:
+
+- **A projectile's attack box must use `Clsn1Default`, not `Clsn1`.** A per-frame
+  `Clsn1:` declaration only covers the frame it precedes; the `-1` hold frame of a
+  projectile animation then carries no attack box at all, so the projectile flies
+  beautifully and never hits. Symptom shape: small hitboxes all miss, only a huge
+  one connects.
+- **`animElem = N` is true for the whole duration of element N**, so firing a
+  projectile from `animElem` needs an explicit latch (`var(10)` here).
+
+Verdict on re-injecting into `_template`: **no**. Only documentation was changed
+(two factual errors corrected) plus the two harness defects; the template's combat
+logic is untouched and Fighter B's moves stay as a reference sample.
 
 ---
 

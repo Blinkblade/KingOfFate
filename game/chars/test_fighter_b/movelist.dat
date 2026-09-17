@@ -1,0 +1,22 @@
+<#f0f000>:Normal Attacks:</>
+Light Punch (A)									^X
+Light Kick  (B)									^A
+Heavy Punch (C) - long reach					^Y
+Heavy Kick  (D)									^B
+Crouch Heavy Punch (C) - anti-air				_D_+^Y
+Taunt											^S
+
+
+<#f0f000>:Throws:</>
+Forward Throw									_F_+^Y
+Forward Throw									_F_+^B
+
+
+<#f0f000>:Special Moves:</>
+Ki Blast          (projectile)					_D_, _DF_, _F_, ^X
+Double Ki Blast   (EX, 500 Power)				_D_, _DF_, _F_, ^Y
+Rising Upper      (anti-air)					_F_, _D_, _DF_, ^X
+
+
+<#f0f000>:Super Moves:</>
+Ki Blast Cannon   (1000 Power, 3 shots)			_D_, _DF_, _F_, _D_, _DF_, _F_, ^X

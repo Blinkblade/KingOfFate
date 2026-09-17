@@ -112,20 +112,47 @@ Add-Type -Namespace P3Watch -Name Win -MemberDefinition @'
 
 $KEYEVENTF_KEYUP = 0x0002
 $VK_CONTROL = 0x11
+$VK_MENU = 0x12
 
+# Bring the game window to the foreground, with retries.
+#
+# Why the retries and the ALT press (P4 finding):
+#   `SetForegroundWindow` is refused when the calling process does not satisfy any of
+#   the foreground rules -- in practice on this machine it is *intermittently* refused
+#   because the session has no recent physical keyboard activity
+#   (`HKCU:\Control Panel\Desktop\ForegroundLockTimeout = 200000`).
+#   P4 hit this on the very first Gate-2 run: the report said
+#       focus: foreground acquired=False
+#   and every screenshot then carried NO state readout, i.e. the run was silently
+#   worthless. A back-to-back rerun succeeded on the first try, so it is a race, not
+#   a hard failure -- exactly the kind of flakiness that must not be left in.
+#   Pressing and releasing ALT makes the OS count it as fresh user input, which is the
+#   documented way to release the foreground lock; combined with AttachThreadInput and
+#   3 attempts the acquisition became reliable (verified over repeated runs).
 function Focus-Window([IntPtr]$hwnd) {
     if ($hwnd -eq [IntPtr]::Zero) { return $false }
-    [void][P3Watch.Win]::ShowWindow($hwnd, 9)          # SW_RESTORE
     $target = [P3Watch.Win]::GetWindowThreadProcessId($hwnd, [IntPtr]::Zero)
     $mine = [P3Watch.Win]::GetCurrentThreadId()
-    if ($target -ne 0 -and $target -ne $mine) {
-        [void][P3Watch.Win]::AttachThreadInput($mine, $target, $true)
+    $scan = [byte][P3Watch.Win]::MapVirtualKey([byte]$VK_MENU, 0)
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        [void][P3Watch.Win]::ShowWindow($hwnd, 9)          # SW_RESTORE
+        $attached = $false
+        if ($target -ne 0 -and $target -ne $mine) {
+            [void][P3Watch.Win]::AttachThreadInput($mine, $target, $true)
+            $attached = $true
+        }
+        [P3Watch.Win]::keybd_event([byte]$VK_MENU, $scan, 0, [UIntPtr]::Zero)
+        Start-Sleep -Milliseconds 60
         [void][P3Watch.Win]::SetForegroundWindow($hwnd)
-        [void][P3Watch.Win]::AttachThreadInput($mine, $target, $false)
+        Start-Sleep -Milliseconds 60
+        [P3Watch.Win]::keybd_event([byte]$VK_MENU, $scan, $KEYEVENTF_KEYUP, [UIntPtr]::Zero)
+        if ($attached) {
+            [void][P3Watch.Win]::AttachThreadInput($mine, $target, $false)
+        }
+        Start-Sleep -Milliseconds 250
+        if ([P3Watch.Win]::GetForegroundWindow() -eq $hwnd) { return $true }
     }
-    else { [void][P3Watch.Win]::SetForegroundWindow($hwnd) }
-    Start-Sleep -Milliseconds 200
-    return ([P3Watch.Win]::GetForegroundWindow() -eq $hwnd)
+    return $false
 }
 
 function Send-CtrlKey([int]$vk) {
@@ -238,11 +265,21 @@ $report.Add("focus     : foreground acquired=$(Focus-Window $hwnd)")
 
 if ($ShowClsn) { Send-CtrlKey 0x43 }   # Ctrl+C
 if ($ShowDebug) {
+    # Ctrl+D is a TOGGLE, and Test-DebugOverlay is slow (a PrintWindow plus a
+    # pixel scan), so the P3 loop -- "press, wait 350 ms, check" x3 -- could end up
+    # pressing an even number of times and leaving the overlay OFF, or checking
+    # before the overlay had rendered. P4 hit exactly that: two consecutive runs
+    # with `focus: foreground acquired=True` but
+    # `debug: WARNING - debug overlay could not be enabled` and therefore zero
+    # state readout in every screenshot.
+    # Fixed by checking FIRST (never press when it is already on) and giving the
+    # engine time to render between attempts.
     $on = $false
-    for ($i = 1; $i -le 3; $i++) {
-        Send-CtrlKey 0x44              # Ctrl+D
-        Start-Sleep -Milliseconds 350
-        if (Test-DebugOverlay $hwnd) { $report.Add("debug     : overlay ON (attempt $i)"); $on = $true; break }
+    for ($i = 1; $i -le 4; $i++) {
+        if (Test-DebugOverlay $hwnd) { $on = $true; $report.Add("debug     : overlay already ON (check $i)"); break }
+        Send-CtrlKey 0x44              # Ctrl+D (toggle)
+        Start-Sleep -Milliseconds 800
+        if (Test-DebugOverlay $hwnd) { $on = $true; $report.Add("debug     : overlay ON (attempt $i)"); break }
         $report.Add("debug     : overlay not detected (attempt $i)")
     }
     if (-not $on) {

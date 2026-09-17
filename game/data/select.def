@@ -29,6 +29,10 @@ kfm_zaxis, stages/kfm.def, order=0
  ; Test Fighter A（P3）—— 由 game/chars/_template 克隆后扩展的第一个独立角色
 test_fighter_a, stages/stage0.def
 
+ ; Test Fighter B（P4）—— 同样由 _template 克隆，但走 Zoner 风格
+ ; （Projectile / Anti-Air / 长手 Normal），用来验证"同一套架构能否支撑第二种战斗风格"
+test_fighter_b, stages/stage0.def
+
  ; 基础模板 _template **不要**加进来：它是用来复制的骨架，不是可玩角色
  ; （见 game/chars/_template/README.md）。确实要试玩模板时再取消下面这行注释：
  ;_template, stages/stage0.def
