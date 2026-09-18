@@ -110,10 +110,22 @@ P3 已经证明"`_template` 能做出一个角色"。P4 要回答的是合同 §
 
 ```
 分支  : feature/p4-test-fighter-b
-基线  : main @ 18621e4
-提交  : feat: add zoner test fighter b（含工具链修复与文档）
-推送  : 见最终交付说明
+基线  : main @ 18621e4（含 P3 合并 PR #5）
+提交  : 2ae8118  feat: add zoner test fighter b
+        23 files changed, 4827 insertions(+), 19 deletions(-)
+推送  : 已推送 origin/feature/p4-test-fighter-b
+子模块: engine/ikemen-go @ ba516193（未改动）
 ```
+
+**创建 PR（本机无 `gh`，需要手动开）**：
+
+```
+https://github.com/Blinkblade/KingOfFate/pull/new/feature/p4-test-fighter-b
+```
+
+**PR 标题建议**：`P4: Test Fighter B（Zoner）`
+
+**PR 描述要点**：见本文件 §1（7 个问题的答案）、§3（两条技术结论）、§6（状态 IN_PROGRESS 的原因）。
 
 **P4 未 PASS，因此本分支的合并不是"阶段完成"，而是"阶段进度"** ——
 下一窗口补完 Gate 4/6/7 后再按 P4 的 Exit Gate 重新评估。
