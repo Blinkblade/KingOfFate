@@ -176,11 +176,12 @@ EX(QCF_y) → 必杀(QCF_x) → 投技 → FF/BB → 站立四键 → 嘲讽。
 `hits.zss` 只放"投技这种需要被抓住的特殊受击表现" —— 普通技的受击完全交给
 公共状态 5000+，不要在这里重复实现。
 
-### 5.1 参考实现：Fighter A 已经把预留区间填满了
+### 5.1 参考实现：Fighter A 与 Fighter B 已经把预留区间填满了
 
-模板**只留了号**，真正把它们实现出来的是 P3 的
-[`game/chars/test_fighter_a/`](../test_fighter_a/)（可运行、已实测）。
-做扩展动作时**直接读它**，不要从零摸索：
+模板**只留了号**，真正把它们实现出来的先是 P3 的
+[`game/chars/test_fighter_a/`](../test_fighter_a/)（可运行、已实测），
+然后是 P4 的 [`game/chars/test_fighter_b/`](../test_fighter_b/)（**Zoner**，同样可运行、已实测）。
+做扩展动作时**直接读它们**，不要从零摸索：
 
 | 预留区间 | Fighter A 的实现 | 规律 |
 | --- | --- | --- |
@@ -193,6 +194,19 @@ EX(QCF_y) → 必杀(QCF_x) → 投技 → FF/BB → 站立四键 → 嘲讽。
 它同时给出两个模板没有的样板：
 **取消链**（`command.zss` 的 `CanChain(lv)` 等级系统）
 与**独立角色 AI**（`AI.zss`：Normal / 两个必杀 / EX / Super / 投技）。
+
+**Fighter B 另外补了"远程 / 对空"三种写法**（Fighter A 是贴身型，没有这些；
+要做同类角色时直接抄它，别从零摸索）：
+
+| 想要 | 看 Fighter B 的 |
+| --- | --- |
+| **投射物** | `test_fighter_b.zss` 的 State 1000 / 1010 / 3000（原生 `projectile{}` sctrl）<br>+ `test_fighter_b.air` 的 **Action 1005**（投射物自己的动画） |
+| **长手（Long Range Normal）** | `test_fighter_b.air` 的 Action 210：判定框拉到 `x=105`，角色本体 `posAdd = 0`（长的是框，不是位移） |
+| **对空（Anti-Air）分两档** | `test_fighter_b.air` 的 Action 410（Normal，到 `y=-112`）与 1100（Special，到 `y=-152`） |
+
+> ★★ 做投射物之前，**务必**先读上文「攻击框有"逐帧"与"默认"两种声明」那一节：
+> 投射物动画带 `-1` 保持帧，攻击框**必须**用 `Clsn1Default`；
+> 用 `Clsn1` 会得到"飞得很好看、但打不中人"的哑弹（P4 实测，排查成本很高）。
 
 ## 6. 变量台账（先登记再占用）
 

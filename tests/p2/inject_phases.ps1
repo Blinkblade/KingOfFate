@@ -61,7 +61,8 @@ param(
     [switch]$ShowDebug,
     [string]$Phases = '',
     [double]$SettleSec = 0.3,
-    [switch]$NoStillShots
+    [switch]$NoStillShots,
+    [switch]$NoBurst
 )
 
 Set-StrictMode -Version Latest
@@ -322,10 +323,26 @@ foreach ($ph in $PhaseList) {
 
     $deadline = (Get-Date).AddMilliseconds([int]($sec * 1000))
     $bi = 0
-    while ((Get-Date) -lt $deadline) {
-        $bi++
-        $bf = Join-Path $OutDir ("{0}_burst{1:d2}.png" -f $tag, $bi)
-        [void](Save-Shot $script:hwnd $bf)
+    if ($NoBurst) {
+        # ★ P4 finding: Save-Shot uses PrintWindow, and for this OpenGL window that
+        # call BLOCKS the render thread. Bursting it at ~30 fps starved the engine
+        # down to roughly 10% speed: measured on a real run, 19 s of wall clock
+        # advanced the game by only 1.9 s (Frames 114 while the harness had already
+        # been tapping for ~4 s after a 15 s warmup). The practical consequence is
+        # nasty and silent -- the injected input lands way earlier in GAME time than
+        # intended, so it arrives during the round-intro "FIGHT!" window while the
+        # character is not yet controllable, and the whole experiment does nothing
+        # while every screenshot looks plausible.
+        # -NoBurst keeps the engine at full speed at the cost of not having
+        # frames of the hold itself; use the trailing -Shots for evidence instead.
+        while ((Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 25 }
+    }
+    else {
+        while ((Get-Date) -lt $deadline) {
+            $bi++
+            $bf = Join-Path $OutDir ("{0}_burst{1:d2}.png" -f $tag, $bi)
+            [void](Save-Shot $script:hwnd $bf)
+        }
     }
 
     foreach ($vk in $ph.keys) { Release-Key $vk }

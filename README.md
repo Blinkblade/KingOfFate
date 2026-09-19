@@ -10,18 +10,23 @@ tooling and testing** rather than re-implementing a fighting-game engine.
 
 ## Status
 
-**Current phase: `P3 — Test Fighter A` — ✅ PASS (10/10 gates)**
+**Current phase: `P4 — Test Fighter B` — 🟡 IN_PROGRESS (8/10 gates PASS, 2 BLOCKED)**
 
 P1 validated the character execution chain by measurement, P2 turned it into a cloneable
 4-button template (`game/chars/_template/`), and P3 cloned that template into the project's
 first independent, playable fighter: `game/chars/test_fighter_a/` — full normal set
 (standing / crouching / jumping), two specials, an EX upgrade, the first Super, a
 three-level cancel chain and its own CPU AI, all validated in real matches (V01–V29 in the
-phase report). The engine baseline is unchanged.
+phase report). P4 then cloned the same template into a **deliberately different** fighter —
+`game/chars/test_fighter_b/`, a Zoner with a native projectile, a long-reach poke
+(hitbox to x=105 with no body displacement) and two tiers of anti-air — to prove the
+architecture carries more than one fighting style. It loads, fights and runs its own CPU AI;
+two gates (cancel timing, projectile being guarded/jumped over) are still **BLOCKED** on
+synthetic-input limitations, not on the character itself. The engine baseline is unchanged.
 
 See [`docs/development_status.md`](docs/development_status.md) for the authoritative, always-up-to-date phase
-status, [`docs/P3-summary.md`](docs/P3-summary.md) for the current handoff notes
-([`docs/P2-summary.md`](docs/P2-summary.md), [`docs/P1-summary.md`](docs/P1-summary.md) and
+status, [`docs/P4-summary.md`](docs/P4-summary.md) for the current handoff notes
+([`docs/P3-summary.md`](docs/P3-summary.md), [`docs/P2-summary.md`](docs/P2-summary.md), [`docs/P1-summary.md`](docs/P1-summary.md) and
 [`docs/P0-summary.md`](docs/P0-summary.md) for the earlier ones), [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md)
 for how a character is built, [`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
 [`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
@@ -178,7 +183,8 @@ KingOfFate/
 ├── design/               Game & combat design docs, per-character specs
 │   └── characters/
 │       ├── _template/    Base fighter skeleton for P2 (copy, do not run)
-│       └── test_fighter_a/  Frame data for the first independent fighter (P3)
+│       ├── test_fighter_a/  Frame data for the first independent fighter (P3)
+│       └── test_fighter_b/  Frame data for the second fighter: the Zoner (P4)
 ├── tools/                Character / asset tooling
 ├── scripts/              PowerShell build, run and test entry points
 ├── tests/

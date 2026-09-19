@@ -237,9 +237,10 @@ its combat logic was deliberately left untouched.
 
 **Status: IN_PROGRESS**
 
-Not `PASS`: three gates (4 / 6 / 7) are only partially evidenced — see below. The
-character itself is complete and playable, and the phase's central question is
-answered (the same `_template` does carry a second, very different fighting style).
+Not `PASS`: two gates (6 / 7) are **BLOCKED** — see below. Gate 4 (anti-air) was
+re-evidenced after the injection fix and is now **PASS**. The character itself is
+complete and playable, and the phase's central question is answered (the same
+`_template` does carry a second, very different fighting style).
 
 - Phase report: [`docs/phase_reports/P4-test-fighter-b.md`](phase_reports/P4-test-fighter-b.md)
 - One-pager: [`docs/P4-summary.md`](P4-summary.md)
@@ -253,16 +254,19 @@ Standing Heavy Punch (hitbox to `x=105`, no `posAdd`), two anti-air tools
 (410 to `y=-112`, 1100 to `y=-152`), a two-shot EX and a three-shot Super, its own
 `CanChain` levels and its own Zoner AI. Engine baseline unchanged; submodule clean.
 
-**Gate status**: 1/2/3/5/8/9/10 PASS · 4/6/7 **partial**.
+**Gate status**: 1/2/3/4/5/8/9/10 **PASS** · 6/7 **BLOCKED**.
 
-Why partial: the three missing items (anti-air hitting an airborne opponent,
-the exact cancel timing, projectile being guarded/jumped over) all need
-synthetic directional input, and this machine's injection silently failed for
-arrow keys. Root cause found and fixed at the very end of the phase —
+Why BLOCKED: the two missing items (the exact cancel timing, and the projectile
+being guarded / jumped over) need synthetic directional input, and this machine's
+injection silently failed for arrow keys. Root cause found and fixed —
 `tests/p2/inject_phases.ps1` was missing `KEYEVENTF_EXTENDEDKEY` (arrow keys share
 scan codes with the numeric keypad, so the engine saw "numpad 8" instead of "up").
-The fix is verified (`logs/p2/shots/p4_jump2_p01_26_after.png`: the character
-jumps), but there was not enough time left to re-run those three groups.
+A second, subtler blocker was also found and fixed: the harness burst-captures
+during a phase, and `PrintWindow` blocks this OpenGL window's render thread, which
+starved the engine down to ~10% speed so every injection landed in the
+round-intro "FIGHT!" window where the character is not controllable. After both
+fixes, Gate 4's anti-air hit was captured on an airborne opponent
+(`logs/p2/shots/p4v_aa5_06.png`), but there was no time left for gates 6 / 7.
 **They are "not yet measured", not "not working".**
 
 Two engine-level findings worth carrying forward:

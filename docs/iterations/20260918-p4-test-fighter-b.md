@@ -1,11 +1,20 @@
 # 2026-09-18 — P4：Test Fighter B（Zoner）
 
+## 基本信息
+
 | | |
 | --- | --- |
-| **阶段** | P4 — Test Fighter B |
-| **分支** | `feature/p4-test-fighter-b` |
+| **日期** | 2026-09-18 |
+| **Phase** | P4 — Test Fighter B |
+| **Branch** | `feature/p4-test-fighter-b`（已推送 `origin`：提交 `2ae8118`、`6194f15`） |
+| **PR** | 待用户手动开（本机无 `gh`）：<https://github.com/Blinkblade/KingOfFate/pull/new/feature/p4-test-fighter-b> → `main` |
+| **状态** | **IN_PROGRESS** — Gate 1/2/3/5/8/9/10 PASS；Gate 4/6/7 **BLOCKED**（见 §6，原因是合成注入能力受限，不是功能不成立） |
 | **基线** | `main` @ `18621e4`（含 P3 合并 PR #5） |
 | **引擎** | IKEMEN GO `v1.0.0-rc.5` = `ba516193`（**未修改**，submodule 全程干净） |
+| **前置** | P3 PASS（`game/chars/test_fighter_a/`） |
+| **详细证据** | [`docs/phase_reports/P4-test-fighter-b.md`](../phase_reports/P4-test-fighter-b.md) |
+| **交接说明** | [`docs/P4-summary.md`](../P4-summary.md) |
+| **设计说明** | [`design/characters/test_fighter_b/README.md`](../../design/characters/test_fighter_b/README.md) |
 | **范围** | 从 `_template` 克隆并实现第二个角色；验证同一套架构能否承载第二种战斗风格 |
 
 ---

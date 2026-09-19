@@ -8,15 +8,15 @@
 | | |
 | --- | --- |
 | **阶段** | P4 — Test Fighter B |
-| **状态** | **IN_PROGRESS**（Gate 1/2/3/5/8/9/10 PASS；Gate 4、6、7 部分通过，原因见各条） |
+| **状态** | **IN_PROGRESS**（Gate 1/2/3/4/5/8/9/10 **PASS**；Gate 6、7 **BLOCKED**，原因见各条） |
 | **分支** | `feature/p4-test-fighter-b` |
 | **基线** | `main` @ `18621e4` |
 | **引擎** | `ba516193`（v1.0.0-rc.5），**未修改** |
 | **日期** | 2026-09-18 |
 
-> **为什么不写 PASS**：Gate 4（Anti-Air 的空中命中交互）、Gate 6（取消链的时间序）、
-> Gate 7（投射物被防御 / 被跳跃规避）三项没有拿到完整的 Runtime 证据。
-> 原因统一记录在 §3，不掩饰。
+> **为什么不写 PASS**：Gate 6（取消链的时间序）与 Gate 7（投射物被防御 / 被跳跃规避）
+> 没有拿到完整的 Runtime 证据，记为 **BLOCKED**，原因统一记录在 §3。
+> （Gate 4 的 Anti-Air 空中命中已在补测中拿到证据，状态由 BLOCKED 改为 PASS。）
 
 ---
 
@@ -27,10 +27,10 @@
 | 1 | Baseline | **PASS** |
 | 2 | Fighter B from Template | **PASS** |
 | 3 | Complete Basic Fighter | **PASS** |
-| 4 | Zoner Identity | **PASS（部分）** — 长手与投射物完整；Anti-Air 的空中命中未实测 |
+| 4 | Zoner Identity | **PASS**（长手 / 投射物 / 对空三者均已实测；对空命中见 Gate 4 组） |
 | 5 | Meter Skills | **PASS** |
-| 6 | Cancel | **PASS（部分）** — 状态序列有，时间序不精确 |
-| 7 | Projectile Lifecycle | **PASS（部分）** — 生成/移动/命中/消失有；被防御/被跳跃规避未测 |
+| 6 | Cancel | **BLOCKED** — 状态序列有，但取消**时机**未取得逐帧证据 |
+| 7 | Projectile Lifecycle | **BLOCKED** — 生成/移动/命中/消失已测；**被防御 / 被跳跃规避未测** |
 | 8 | Fighter A VS Fighter B | **PASS** |
 | 9 | AI | **PASS** |
 | 10 | Regression & Documentation | **PASS** |
@@ -70,24 +70,34 @@
 | 12 个普通技 | 站 4 / 蹲 4 / 跳 4 全部实现 | `moves.csv` 与 `.zss` 逐条对齐 |
 | 长手 Normal | `State 210` | `State No: 210`，`ElemNo 5/8`（设计的判定帧） — `logs/p3/shots/p4_ver1_*.png` |
 
-### Gate 4 — Zoner Identity：**PASS（部分）**
+### Gate 4 — Zoner Identity：**PASS**
 
 | 手段 | 方法 | 结果 | 证据 |
 | --- | --- | --- | --- |
 | **长手 Normal** | 注入/观测 `State 210` | 判定框到 `x=105`，起手 14 / 判定 4 / 收招 15，**无 posAdd** | `test_fighter_b.air` Action 210；`logs/p3/shots/p4_ver1_05.png` |
 | **投射物** | 观测 `State 1000` | 投射物生成、飞行、命中（对手掉血 60） | `logs/p3/shots/p4_ver1_05.png` |
-| **Anti-Air** | 观测 `State 1100` | 招式触发 ✓（`ElemNo 8/14`）；**"对手在空中被命中"未取得截图** | `logs/p3/shots/p4_aa6_04.png` |
+| **Anti-Air** | 注入让对手起跳 → 观测 B 的攻击框 | **对手在空中被 B 的攻击框覆盖并掉血**（`LIFE 1000 → 820`） | `logs/p2/shots/p4v_aa5_06.png`（`-ShowClsn`） |
 
-**Anti-Air 的几何依据**（非 Runtime，如实标注）：
+**Anti-Air 的 Runtime 证据**（`logs/p2/shots/p4v_aa5_06.png`，开 `Ctrl+C` 判定框显示）：
+
+- 对手（P1）处于**空中**（`Type: A`）。
+- B 身上的**粉色攻击框（`Clsn1`）从胸口向上延伸**并覆盖空中的对手 —— 这条"向上的柱状框"
+  就是 1100 的形状特征（`Action 1100` 的 `Clsn1[0] = 28,-60 → 62,-152`）。
+  与之对比，长手 210 的框是**水平**延伸的（`30,-76 → 105,-56`），投射物的框是**居中**的（±40×±60），
+  三者形状明显不同，可以据此区分。
+- 对手 `LIFE` 从 1000 降到 820，B 获得气（`POW` 上升）→ 命中成立。
+
+**几何依据**（与 Runtime 证据一致）：
 
 - `Action 1100` 的 `Clsn1[0] = 28,-60 → 62,-152`，角色身高 60 → 判定覆盖到身高的 2.5 倍高度。
 - `Action 410` 的 `Clsn1` 向上到 `-112`（Fighter A 同位置是 -94）。
 - AI 规则 ②③ 只在 `p2StateType = A`（对手在空中）时使用它们。
 
-**未取得空中命中截图的原因**：本机合成注入长期无法让对手起跳。
-根因（`inject_phases.ps1` 缺 `KEYEVENTF_EXTENDEDKEY`，方向键被识别成小键盘）在本次**末尾**才定位修复，
-修复验证成功（`logs/p2/shots/p4_jump2_p01_26_after.png`：KFM `State 50` 在空中），
-但剩余时间不足重跑 Anti-Air 组。
+**为什么最初没拿到这条证据**：本机合成注入长期无法让对手起跳，
+根因是 `inject_phases.ps1` 缺 `KEYEVENTF_EXTENDEDKEY`（方向键被识别成小键盘）。
+修好之后还有第二个坑：相位期间的无节制连拍会把游戏拖到约 10% 速度，
+注入落在"回合开始不可控期"。加上 `-NoBurst` 后游戏恢复全速，才拿到上面这张图。
+（两处修复都保留在仓库里。）
 
 ### Gate 5 — Meter Skills：**PASS**
 
@@ -99,7 +109,7 @@
 | Super 气耗 | 读 `POW` 前后 | **2000 → 1000（正好 1000）** | 同上 |
 | 未创建第二套资源 | 代码审查 | 只有一个 `power`（`test_fighter_b.const`） | — |
 
-### Gate 6 — Cancel：**PASS（部分）**
+### Gate 6 — Cancel：**BLOCKED**
 
 | 项 | 结果 |
 | --- | --- |
@@ -108,7 +118,7 @@
 | 证据 | `logs/p2/shots/p4_cancel2_p01_09_burst03.png`（State 200）、`p4_cancel_02.png`（State 1000） |
 | 是否新建第二套取消系统 | **否**，沿用 `CanChain(lv)` 等级系统 |
 
-### Gate 7 — Projectile Lifecycle：**PASS（部分）**
+### Gate 7 — Projectile Lifecycle：**BLOCKED**
 
 | 项 | 方法 | 结果 |
 | --- | --- | --- |
@@ -164,7 +174,8 @@
 
 ## 3. 未完成项与原因（统一说明）
 
-三项部分通过**有同一个根因**：**本机合成按键注入长期不可用**。
+两项 BLOCKED（Gate 6、7）**有同一个根因**：**本机合成按键注入长期不可用**。
+（Gate 4 一度也受阻，但补齐注入能力后已完成，见 Gate 4 组。）
 
 - 现象：只能注入 `TAB` / `RETURN`，方向键完全无效。
 - 影响：无法让对手起跳（Anti-Air）、无法精确构造取消时机、无法让角色跳跃（投射物被规避）。
@@ -175,7 +186,52 @@
   说明**修复有效**。
 - 剩余问题：修复发生在本次工作的末尾，重跑三个 Gate 的时间不够。
 
-**因此这三项的结论是"未测"，不是"不成立"。** 修复已完成并留在仓库里，下一窗口可以直接补测。
+**因此这两项的结论是"未测"，不是"不成立"。** 修复已完成并留在仓库里，下一窗口可以直接补测。
+
+### 3.1 环境基线
+
+| 项 | 值 |
+| --- | --- |
+| 引擎 | IKEMEN GO `v1.0.0-rc.5` = `ba516193bba83f13f0b63ddce314d8719793931f`（**未修改**） |
+| 集成分支 | `kingoffate/rc5`；submodule 工作树全程干净 |
+| 基线 | `main` @ `18621e4`（含 P3 合并 PR #5） |
+| 构建产物 | `engine/ikemen-go/Ikemen_GO.exe` 14.94 MB |
+| 操作系统 | Windows；PowerShell 5.1；MSYS2 `D:\msys64\mingw64\bin`（SDL2） |
+| 图形 | OpenGL 3.3.0 / NVIDIA RTX 3090 |
+| 观测工具 | `tests/p3/run_match_watch.ps1`、`tests/p2/inject_phases.ps1`、`tests/p1/capture_match.ps1` |
+
+### 3.2 交付物清单
+
+| 类别 | 内容 |
+| --- | --- |
+| 角色 | `game/chars/test_fighter_b/`（12 文件：`.def .cmd .const .zss .air .sff .snd` + `command.zss hits.zss AI.zss movelist.dat README.md`） |
+| 注册 | `game/data/select.def`（新增一行） |
+| 资产登记 | `assets/LICENSE_MANIFEST.csv`（占位素材 2 条，`prototype_only`） |
+| 设计数据 | `design/characters/test_fighter_b/moves.csv` + `README.md` |
+| 文档 | `docs/iterations/20260918-p4-test-fighter-b.md`、`docs/phase_reports/P4-test-fighter-b.md`、`docs/P4-summary.md`、`docs/development_status.md` |
+| 工具修复 | `tests/p2/inject_phases.ps1`（方向键扩展键 + `-NoBurst`）、`tests/p3/run_match_watch.ps1`（`Ctrl+D` toggle + 前台焦点重试） |
+| 模板文档 | `game/chars/_template/README.md`、`game/chars/_template/_template.air` |
+
+### 3.3 关键决策
+
+| 决策 | 选择 | 理由 |
+| --- | --- | --- |
+| 投射物实现 | 引擎原生 `projectile{}`，**不用 Helper** | 引擎已提供完整能力，手搓投射物系统违反合同 §11.1 / §29 |
+| 长手实现 | **判定框画远**，`posAdd = 0` | 合同 §10.2：不能靠位移伪装长手 |
+| 取消链 | **沿用 P3 的 `CanChain(lv)`**，不新建 | 同一套机制承载两种风格，正是 P4 要验证的 |
+| 气槽 | 只用引擎 `power`，不建第二套资源 | 同上 |
+| Zoner 的"拉开" | 只用公共状态 105（后跳），**不写走路兜底** | AI 不走命令系统，走路方向由引擎给（实测贴脸），见 iteration §4.4 |
+| 是否回灌 `_template` | **不回灌**（只改文档） | 合同 §39：两个角色有相似代码 ≠ 已需要框架化 |
+| 占位素材 | 沿用 KFM，登记 `prototype_only` | P5 替换；发布前必须替换 |
+
+### 3.4 对下一阶段的输入
+
+下一阶段（P5 / 下一窗口）可以直接假设：
+
+- `game/chars/test_fighter_b/` 可加载、可打、AI 可跑，可作为第三个角色的参考。
+- 投射物的**正确写法**已定型（`Clsn1Default` + `var(10)` 闩锁 + 三重生命周期闸门）。
+- 合成注入已可用（方向键 + `-NoBurst`），**可以直接补测 Gate 6 / 7**。
+- P5 必须做：换正式投射物素材后**重画 Action 1005 的判定框**。
 
 ---
 
