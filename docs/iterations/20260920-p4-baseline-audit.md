@@ -180,7 +180,7 @@ pwsh -File tests\p4\run_matrix.ps1 -Only mirror    # 只跑镜像
 | 脚本 | 检查结果 |
 | --- | --- |
 | `scripts/sync_game_content.ps1` | ✅ `EXIT=0`，5 项复制 0 跳过 |
-| `scripts/build_engine.ps1 -BuildFfmpeg no` | ✅ `EXIT=0`，52 s / 二次 23 s，SHA256 两次一致 |
+| `scripts/build_engine.ps1 -BuildFfmpeg no` | ✅ `EXIT=0`，52 s / 二次 23 s，同日内两次构建 SHA256 一致（跨日会变，见下） |
 | `scripts/test.ps1` | ✅ **26/26 PASS** |
 | `scripts/run_game.ps1 -CheckOnly` | ✅ `EXIT=0`，预检 6 项全 OK |
 | `tests/smoke/smoke.ps1` | ✅ `EXIT=0`，26/26 |
@@ -198,7 +198,8 @@ pwsh -File tests\p4\run_matrix.ps1 -Only mirror    # 只跑镜像
 
 | 项 | 之前 | 现在 |
 | --- | --- | --- |
-| 构建"突然"失败 | 被当成新问题 | ✅ 根因是 FFmpeg 源码克隆需要外网；`build_engine.ps1` 已能自动降级重试 + 陈旧产物拦截（本次两次构建 SHA256 完全一致，可复现） |
+| 构建"突然"失败 | 被当成新问题 | ✅ 根因是 FFmpeg 源码克隆需要外网；`build_engine.ps1` 已能自动降级重试 + 陈旧产物拦截 |
+| ~~构建产物字节可复现~~ | 曾写成"两次构建 SHA256 完全一致，可复现" | ⚠️ **仅限同一自然日**：`build/build.sh:102` 把 `$(date '+%Y.%m.%d')` 写进 `-ldflags -X main.BuildTime`（`:1118`/`:1158`），跨日二进制必然不同。2026-09-21 实测：新旧哈希不同但体积同为 14.94 MB，且新二进制里恰好一处 `2026.09.21`、无更早日期 ⇒ **只有日期戳变了**。真要字节级复现，需要 `APP_BUILDTIME=固定值` 再构建 |
 | 注入会改坏用户键位 | 只能"记得还原" | ✅ `inject_phases.ps1` 自带快照/复原，`finally` 保证 Ctrl-C 也还原 |
 | 数值靠看截图 | 流程缺陷 | ✅ `tools/read_frame_text.py` 提供可复现读数通道 |
 | 多组合对战没有验证 | 无 | ✅ `tests/p4/run_matrix.ps1`，6/6 PASS |
@@ -241,3 +242,54 @@ pwsh -File tests\p4\run_matrix.ps1 -Only mirror    # 只跑镜像
 2. Gate 6/7：按 `docs/howto/gate-verification-in-training-mode.md` 完成人工操作，
    把结果表填回该文档 §6。
 3. P5 换正式素材后，用 `tools/read_frame_text.py` 重新采集一遍伤害表（不再需要大余量判定框）。
+
+---
+
+## 10. 最终验收（2026-09-21）
+
+用当天重建的二进制（`Build Time: 2026.09.21`）把"所有功能 + 所有运行脚本"完整跑了一遍。
+
+### 10.1 静态底座
+
+| 检查 | 结果 |
+| --- | --- |
+| `scripts/sync_game_content.ps1` | ✅ EXIT=0 |
+| `scripts/build_engine.ps1 -BuildFfmpeg no` | ✅ EXIT=0 |
+| `scripts/test.ps1` | ✅ 26/26 PASS |
+| `tests/smoke/smoke.ps1` | ✅ 26/26 PASS |
+| `scripts/run_game.ps1 -CheckOnly` | ✅ EXIT=0，6 项预检全 OK |
+
+### 10.2 会启动引擎的脚本（逐个实跑）
+
+| 脚本 | 结果 |
+| --- | --- |
+| `tests/p3/run_match_watch.ps1` | ✅ 矩阵内实跑 6 次 |
+| `tests/p4/run_matrix.ps1` | ✅ **6/6 PASS**，`MATCH MATRIX PASS` |
+| `tests/p2/inject_phases.ps1` | ✅ EXIT=0，两组相位执行；**键位 SHA256 与运行前完全一致** |
+| `tests/p2/framestep_probe.ps1` | ✅ EXIT=0，暂停成功、单帧步进 9 tick |
+| `tests/p1/capture_match.ps1` | ✅ EXIT=0，按住序列连拍 + 3 张静态帧 |
+| `tests/p1/analyze_shots.ps1` | ✅ EXIT=0（`-Dir` + `-Pattern 'diagA*'`） |
+| `tests/p1/measure_positions.ps1` | ✅ EXIT=0，量出两个名字条的像素区间 |
+| `tests/p1/montage_states.ps1` | ✅ EXIT=0，输出 3 行拼图（30 KB） |
+| `tools/read_frame_text.py` | ✅ 读出 `State No: 1000 (P1)`、`P2 LIF:836` |
+
+**键位安全性专项**：`inject_phases` 运行前后
+`save/config.ini` 的 SHA256 均为 `73CA3C43…6B09`（`x = a`、`start = RETURN` 未被破坏）。
+这条是历史事故点，现在由脚本自己保证，不依赖"记得还原"。
+
+### 10.3 验收中发现并修掉的问题
+
+| # | 现象 | 定位 | 修法 |
+| --- | --- | --- | --- |
+| 1 | `montage_states.ps1` 给了明确文件却输出 `nothing selected`，**退出码还是 0** | `tests/p1/montage_states.ps1:43` 默认 `-Steps '6,12,20'` + `:96` 过滤器；`:100` 空结果时 `exit 0` | 显式传入的文件**绕过** `-Steps` 过滤；选不中改为 `exit 1` 并打印原因与建议（`:78-100`）。验收重跑：3 行拼图、EXIT=0 |
+| 2 | `inject_phases.ps1` 的 EXAMPLE 写 `-Phases 'a:1','b:2'`（两个值），但参数是 `[string]` | `tests/p2/inject_phases.ps1:42-44` | 示例改成单个字符串 `'0x27:2.8,0x27+0x0D:1.0'`，并写明"`pwsh -File` 不能把逗号列表绑成字符串参数"以及"本脚本没有 `none` 标记" |
+| 3 | 二进制 SHA256 与昨日不同 | **不是缺陷**：`build/build.sh:102` 把 `$(date '+%Y.%m.%d')` 经 `:1118/:1158` 的 `-ldflags -X main.BuildTime` 写进 exe | 交叉验证：体积同为 14.94 MB，新二进制里恰好 1 处 `2026.09.21`、0 处更早日期；引擎启动横幅也印 `Build Time: 2026.09.21`。**文档里"两次构建 SHA256 一致"的说法收窄为"同一自然日内一致"** |
+
+未发现引擎侧问题：submodule 仍 `dirty=0`，6 组对战 `crashlogs: 0 new`。
+
+### 10.4 验收结论
+
+- 全部 12 个脚本可运行，全部按预期产出
+- 6 种对战组合无崩溃、无新增引擎日志，双方均有真实交互（不是"对手不动"的假通过）
+- 运行时数值现在有可复现的读数通道，不再依赖看截图
+- **仍 BLOCKED：Gate 6 / Gate 7**，缺的是人工按键与填表，不是能力

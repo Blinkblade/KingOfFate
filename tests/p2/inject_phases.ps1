@@ -39,9 +39,18 @@
     -Phases '0x27+0x0D:1.0' holds Right + RETURN for one second (throw attempt
     at contact range).
 
+    There is no 'none' token (framestep_probe.ps1 has one, this script does not).
+    To wait between phases, use -SettleSec -- a phase with an empty key list is
+    rejected.
+
 .EXAMPLE
     pwsh -File tests/p2/inject_phases.ps1 -Prefix v11_throw `
-        -Phases '0x27:2.8','0x27+0x0D:1.0' -ShowDebug -ShowClsn
+        -Phases '0x27:2.8,0x27+0x0D:1.0' -ShowDebug -ShowClsn
+
+    Note (P4 acceptance): -Phases is ONE string, not a list. `pwsh -File` cannot
+    bind comma-separated values to a [string] parameter, so
+    -Phases 'a:1','b:2' fails; the tokens must live inside a single quoted
+    string separated by commas, as above.
 #>
 [CmdletBinding()]
 param(

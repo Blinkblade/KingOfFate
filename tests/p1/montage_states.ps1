@@ -31,6 +31,11 @@
     class of problem P1 hit with -HoldSeqVK and P2 with -Phases, and it is fixed
     the same way: take a string, split it inside the script.
 
+    Note (P4 acceptance): files named explicitly through -Image bypass this
+    filter. Otherwise listing e.g. burst01..burst05 with the default steps would
+    drop every row and print "nothing selected", which reads like "there is no
+    evidence" instead of "wrong argument". Selecting nothing is now an error.
+
 .PARAMETER OutFile
     Where to write the montage PNG.
 
@@ -75,11 +80,20 @@ $RepoRoot = (Resolve-Path (Join-Path $ScriptDir '..\..')).ProviderPath
 if ([string]::IsNullOrWhiteSpace($OutFile)) { $OutFile = Join-Path $RepoRoot 'logs\p1\shots\montage_states.png' }
 
 # Resolve the requested images, honouring both literal paths and globs.
+# Files the caller named explicitly are kept no matter what -Steps says: silently
+# dropping them because they are not step 6/12/20 produced an empty montage and
+# looked like "no evidence" rather than a wrong argument.
 $selected = New-Object System.Collections.Generic.List[string]
+$literal = New-Object 'System.Collections.Generic.HashSet[string]'
 foreach ($item in $Image) {
     $p = $item
     if (-not [System.IO.Path]::IsPathRooted($p)) { $p = Join-Path $RepoRoot $p }
-    if (Test-Path -LiteralPath $p -PathType Leaf) { $selected.Add((Resolve-Path -LiteralPath $p).ProviderPath); continue }
+    if (Test-Path -LiteralPath $p -PathType Leaf) {
+        $full = (Resolve-Path -LiteralPath $p).ProviderPath
+        $selected.Add($full)
+        [void]$literal.Add($full)
+        continue
+    }
     $hits = @(Get-ChildItem -Path $p -File -ErrorAction SilentlyContinue | Sort-Object Name)
     foreach ($h in $hits) { $selected.Add($h.FullName) }
 }
@@ -93,11 +107,16 @@ foreach ($f in $selected) {
     if ($m.Groups[2].Value -match '^burst(\d+)$') { $step = [int]$Matches[1] }
     elseif ($m.Groups[2].Value -match '^\d+$') { $step = [int]$m.Groups[2].Value }
     $stepName = $m.Groups[2].Value
-    if ($StepList.Count -gt 0 -and ($StepList -notcontains $step)) { continue }
+    if (-not $literal.Contains($f) -and $StepList.Count -gt 0 -and ($StepList -notcontains $step)) { continue }
     $rows.Add([pscustomobject]@{ Series = $m.Groups[1].Value; Step = $step; StepName = $stepName; Path = $f })
 }
 $rows = @($rows | Sort-Object Series, Step)
-if ($rows.Count -eq 0) { Write-Host '[warn] nothing selected'; exit 0 }
+if ($rows.Count -eq 0) {
+    Write-Host ('[warn] nothing selected ({0} candidate file(s) resolved)' -f $selected.Count)
+    Write-Host ('       every image must match ^(...)_(before|after|burstNN|N).png')
+    Write-Host ('       -Steps keeps: {0}  -- try -Steps ''1,3,5'' or list the files explicitly' -f $Steps)
+    exit 1
+}
 
 $cellW = [int]($CropW * $Scale)
 $cellH = [int]($CropH * $Scale)
