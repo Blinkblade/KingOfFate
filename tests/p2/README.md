@@ -56,6 +56,28 @@ pwsh -File tests/p2/inject_phases.ps1 -Prefix qcf `
    实测 19 秒壁钟只推进 1.9 秒游戏时间。后果是注入**全部落在"回合开始不可控期"**：
    实验什么也没做，但每一张截图都看起来正常。
    需要游戏保持全速时加 **`-NoBurst`**（相位期间不连拍，代价是没有按键保持期间的帧）。
+7. **键位由脚本自己快照 / 还原（P4 修复）**。合成输入只能到 TAB / RETURN，所以
+   本脚本会把 `save/config.ini` 的 `[Keys_P1]` 临时改成 `x = TAB`、`start = Not used`，
+   并在 **`finally` 块里无条件还原**（Ctrl-C 中断也还原）。
+   ⚠️ **不要再手工改 `config.ini`** —— 此前两次"Enter 无法确认、a/z 无法攻击"就是
+   手工改完忘记还原造成的。验收时用 `config.ini` 的哈希在跑前跑后各记一次即可自查。
+
+## framestep_probe.ps1 — 暂停 + 单帧步进
+
+`inject_phases` 的最小粒度是"秒"，对"取消链落在 20 tick 窗口内"这类问题不够。
+本脚本用引擎自带的调试热键把粒度降到 **1 tick**：
+
+- `PAUSE` → `togglePause()`（`external/script/debug.lua:47`）
+- `SCROLLLOCK` → `frameStep()`（`debug.lua:48`）
+- `Ctrl+D` → 打开状态读出覆盖层（`debug.lua:6`）
+
+```powershell
+pwsh -File tests/p2/framestep_probe.ps1 -Steps 'none:4,0x09:2,none:3' -ShowDebug
+```
+
+`-Steps` 的写法与 `inject_phases` 相同（**一个逗号连接的字符串**），但单位是
+**tick 而不是秒**，`none:N` 表示空推 N 帧。每推一帧存一张图，所以暂停期间截图耗时
+**不会**影响时序 —— 这正是它相对 `inject_phases` 的价值。
 
 ## 验证矩阵索引
 

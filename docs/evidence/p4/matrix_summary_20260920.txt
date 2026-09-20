@@ -1,0 +1,14 @@
+P4 match matrix summary — 2026-09-20 re-audit run
+reports parsed: 2026-09-21 01:11:52
+
+config           P1                P2                ai   exit  crashlogs                verdict
+------           --                --                --   ----  ---------                -------
+m_a_vs_b         test_fighter_a    test_fighter_b    8/8  0     0 new during the run     PASS
+m_asym_ai        test_fighter_b    test_fighter_a    3/8  0     0 new during the run     PASS
+m_b_vs_a         test_fighter_b    test_fighter_a    8/8  0     0 new during the run     PASS
+m_mirror_a       test_fighter_a    test_fighter_a    8/8  0     0 new during the run     PASS
+m_mirror_b       test_fighter_b    test_fighter_b    8/8  0     0 new during the run     PASS
+m_vs_kfm         test_fighter_b    kfm_zss           8/8  0     0 new during the run     PASS
+
+note: this run was interrupted before run_matrix.ps1 could write its own
+      summary file, so this table was rebuilt from the six harness reports.

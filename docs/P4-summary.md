@@ -3,8 +3,8 @@
 | | |
 | --- | --- |
 | **阶段** | P4 — Test Fighter B |
-| **状态** | **IN_PROGRESS**（Gate 1/2/3/5/8/9/10 PASS；Gate 4/6/7 部分通过） |
-| **时间** | 2026-09-18 |
+| **状态** | **IN_PROGRESS**（Gate 1/2/3/**4**/5/8/9/10 PASS；**Gate 6/7 仍 BLOCKED**） |
+| **时间** | 2026-09-18（2026-09-20 全量复查 + 2026-09-21 最终验收，见 §9） |
 | **分支** | `feature/p4-test-fighter-b` |
 | **基线** | `main` @ `18621e4`（含 P3 合并 PR #5） |
 | **引擎** | `ba516193`（`v1.0.0-rc.5`）—— **全程未修改**，submodule 指针未动 |
@@ -12,6 +12,8 @@
 | **过程记录** | [`docs/iterations/20260918-p4-test-fighter-b.md`](iterations/20260918-p4-test-fighter-b.md) |
 | **核心产出** | [`game/chars/test_fighter_b/`](../game/chars/test_fighter_b/)（角色本体 · [手册](../game/chars/test_fighter_b/README.md)） |
 | **设计数据** | [`design/characters/test_fighter_b/moves.csv`](../design/characters/test_fighter_b/moves.csv) |
+| **复查 / 验收** | [`docs/iterations/20260920-p4-baseline-audit.md`](iterations/20260920-p4-baseline-audit.md)（§10 为最终验收） |
+| **证据通道** | [`tools/read_frame_text.py`](../tools/read_frame_text.py) · [`tests/p4/run_matrix.ps1`](../tests/p4/run_matrix.ps1) |
 
 > 与 Phase Report 的分工同 P1/P2/P3：Phase Report 是**逐条 Gate 的证据档案**，
 > 本文是**总览 + 交接说明**。两者冲突时以 Phase Report 为准。
@@ -27,7 +29,7 @@ P3 已经证明"`_template` 能做出一个角色"。P4 要回答的是合同 §
 | 1 | 第二个风格完全不同的角色能否继续从 `_template` 开发？ | **能**。12 文件由 `_template` 克隆后扩展，没有新建框架 |
 | 2 | Fighter A 是否依赖了角色特有的隐含假设？ | **没有**。Fighter B 只在 `_template` 与 Fighter A 提供的机制内改动。**唯一的隐含假设在工具层**（见 §5） |
 | 3 | Projectile / 长手 / Anti-Air 能否在现有体系内自然实现？ | **能**。全部用角色层能力（`projectile{}` sctrl + `.air` 判定框 + 状态）实现，不需要改引擎 |
-| 4 | 两角色之间的 Hit / Guard / Throw / Knockdown 是否正常？ | **正常**。A vs B 完整对局 110 秒，0 崩溃 |
+| 4 | 两角色之间的 Hit / Guard / Throw / Knockdown 是否正常？ | **正常**。6 种组合对战全部 `crashlogs: 0 new`，双方血量分布各不相同（不是"对手不动"的假通过）。<br>⚠️ 原先写的"完整对局 110 秒"**没有机器记录**（harness 报告不含时长字段），已撤下 — 见 [20260920 复查](iterations/20260920-p4-baseline-audit.md) §2 |
 | 5 | 双方的 Meter / Cancel / EX / Super 是否互不干扰？ | **互不干扰**。各自一个 `power`、各自的 `command.zss` |
 | 6 | Zoner AI 能否形成不同的行为分布？ | **能**。末位规则从"走向对手"变成"后跳拉开"；主力从近身招变成投射物 |
 | 7 | 是否暴露 `_template` 中真正属于"通用缺陷"的问题？ | **暴露了 3 个**：见 §4 |
@@ -125,10 +127,10 @@ https://github.com/Blinkblade/KingOfFate/pull/new/feature/p4-test-fighter-b
 
 **PR 标题建议**：`P4: Test Fighter B（Zoner）`
 
-**PR 描述要点**：见本文件 §1（7 个问题的答案）、§3（两条技术结论）、§6（状态 IN_PROGRESS 的原因）。
+**可直接粘贴的 PR 正文**：见本文 **§9**（含本次目标 / 主要修改 / 测试结果 / Iteration Record / 已知问题）。
 
 **P4 未 PASS，因此本分支的合并不是"阶段完成"，而是"阶段进度"** ——
-下一窗口补完 Gate 4/6/7 后再按 P4 的 Exit Gate 重新评估。
+Gate 4 已补测转 PASS；剩 Gate 6 / 7 需人工按手册操作并填表，之后按 P4 的 Exit Gate 重新评估。
 
 ---
 
@@ -208,5 +210,80 @@ pwsh -File tests\p4\run_matrix.ps1 -Only kfm  # 只跑某一组
 | 长手 / 对空判定框的样板 | `test_fighter_b.air` 的 Action 210 / 410 / 1100 |
 | 多段投射物（弹幕）的写法 | State 3000（3 发，`var(10)` 计数） |
 | 取消链 | 与 Fighter A 相同：`command.zss` 的 `CanChain(lv)` + `AtkInit(lv)` |
-| 观测装置 | `tests/p3/run_match_watch.ps1`（已修 focus 与 overlay）、`tests/p2/inject_phases.ps1`（已修方向键） |
+| 观测装置 | `tests/p3/run_match_watch.ps1`（已修 focus 与 overlay）、`tests/p2/inject_phases.ps1`（已修方向键 + 键位自动还原）、`tests/p2/framestep_probe.ps1`（单帧步进） |
+| **把截图里的数值读成文本** | `tools/read_frame_text.py`（覆盖层字体已知 + 行格式写死在 `debug.lua`，可程序化识别） |
+| **批量对战回归** | `tests/p4/run_matrix.ps1`（6 种组合，判定只看 `crashlogs`） |
+
+---
+
+## 9. PR 正文（可直接粘贴）
+
+> 以下内容按 `.github/pull_request_template.md` 的字段填写，与 §1–§8 保持同源，
+> 可直接复制到 PR 描述框。
+
+### 本次目标
+
+交付第二个风格完全不同的角色 **Test Fighter B（Zoner）**，验证"同一个 `_template`
+与同一套角色体系能否承载第二种战斗风格"；并在本阶段末尾做一次全量复查与最终验收，
+使 P4 成为一个完整、无已知遗留问题的基线版本。
+
+### 主要修改
+
+- **新角色** `game/chars/test_fighter_b/`（12 文件，由 `_template` 克隆）：
+  原生 `projectile{}` 投射物、长手判定框（210 到 `x=105`，无 `posAdd`）、
+  两处对空（410 到 `y=-112`、1100 到 `y=-152`）、两发 EX、三发 Super、自己的 `CanChain`
+  等级与 Zoner AI。
+- **证据通道** `tools/read_frame_text.py`：把引擎调试覆盖层（已知 TrueType 字体 +
+  写死在 `external/script/debug.lua` 的行格式）从 PNG 读成文本，同时输出原始串、
+  修复结果与每处改动。
+- **多组合对战** `tests/p4/run_matrix.ps1`：6 种组合（双方互序 / 两个镜像 / 非对称 AI /
+  对引擎自带 KFM），判定只认报告里的 `crashlogs : 0 new during the run`。
+- **单帧步进** `tests/p2/framestep_probe.ps1`：用引擎自带 `PAUSE` / `SCROLLLOCK` 热键逐 tick 取证。
+- **构建加固** `scripts/build_engine.ps1`：FFmpeg 可达性探测 + 自动降级重试 + 专项诊断 +
+  **陈旧产物拦截**（构建报成功但 exe 没被重写时直接判失败）。
+- **键位安全** `tests/p2/inject_phases.ps1`：自己快照 / 改写 / **在 `finally` 中还原**
+  `save/config.ini`（Ctrl-C 也会还原）。手工改键位正是此前两次弄坏用户控制的根源。
+- **文档订正**：撤下一批没有机器依据的数值结论（详见"已知问题"）。
+- **未修改引擎**：submodule 全程 `dirty=0`，HEAD 仍为 `ba516193`。
+
+### 测试结果
+
+- [x] Build PASS —— `pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no` → `EXIT=0`
+- [x] Test PASS —— `pwsh -File scripts/test.ps1` → **26/26 PASS**
+- [x] Iteration Record 已更新 —— `docs/iterations/20260920-p4-baseline-audit.md`
+- [x] 相关文档已同步 —— Phase Report / P4-summary / development_status / howto
+
+验收实跑（2026-09-21 用当天重建的二进制，`Build Time: 2026.09.21`）：
+
+| 检查 | 结果 |
+| --- | --- |
+| sync / build / test / smoke / run_game -CheckOnly | 全部 `EXIT=0`，test 与 smoke 均 26/26 |
+| `tests/p4/run_matrix.ps1` | **6/6 PASS**（互序、镜像、非对称 AI、对 KFM） |
+| `inject_phases` / `framestep_probe` / `capture_match` | 全部 `EXIT=0` |
+| `tools/read_frame_text.py` | 读出 `State No: 1000 (P1)`、`P2 LIF: 836` |
+| 键位安全 | `save/config.ini` 运行前后 SHA256 一致（`x = a`、`start = RETURN` 未被破坏） |
+
+### Iteration Record
+
+- [`docs/iterations/20260918-p4-test-fighter-b.md`](iterations/20260918-p4-test-fighter-b.md)（本阶段实现）
+- [`docs/iterations/20260920-p4-baseline-audit.md`](iterations/20260920-p4-baseline-audit.md)（全量复查 + §10 最终验收）
+
+### 已知问题
+
+1. **Gate 6（取消链精确时间序）/ Gate 7（投射物被防御、被跳跃规避）仍 BLOCKED。**
+   缺的不是推理能力，而是**有人按下那几下键**并把结果填回
+   `docs/howto/gate-verification-in-training-mode.md` §6。场景构造不需要按键注入 ——
+   引擎自带 Training 模式（`Guard Mode = all` 让假人必防、`Dummy Mode = jump` 让假人持续跳）
+   + 真实键盘即可。
+2. **撤下了一批没有机器依据的数值结论。** 复查发现 harness 报告里只有
+   `pid / hwnd / focus / 截图列表 / crashlog 行数`，**不含任何游戏数值**，
+   因此诸如"投射物命中 LIFE 1000→940""EX 耗气 580→80""对局 110 秒""A 被打到 74 血"
+   这类结论原本只能靠看截图得到，已全部标注删除线并说明原因（Phase Report §5.x）。
+   **没有为了填满表格把任何一项写成 PASS。**
+3. **P1–P3 文档里"读截图得来的数值"尚未复核**（同一证据类别），
+   已列入遗留项 #8，建议下一窗口用 `tools/read_frame_text.py` 回扫。
+4. **占位素材**：SFF/SND 沿用 KFM 占位资源（`prototype_only`，见 `assets/LICENSE_MANIFEST.csv`），
+   投射物判定框尺寸是按占位精灵原点凑出来的，P5 换素材后需重画。
+5. **构建产物跨日不可字节复现**：`build/build.sh:102` 把当天日期写进
+   `-ldflags -X main.BuildTime`。同日两次构建 SHA256 一致；跨日必然不同（已核对为良性）。
 | Frame Data 表格式 | `design/characters/test_fighter_b/moves.csv` |

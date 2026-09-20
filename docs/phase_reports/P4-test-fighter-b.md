@@ -190,7 +190,7 @@
 | 行为多样 | ✓ 观测到 `1000 / 1010 / 3000 / 200 / 210 / 230 / 240 / 410 / 1100 / 150` 等多种状态 |
 | Zoner 特征 | ✓ 末位规则是"后跳拉开"（与 Fighter A 的"走向对手"相反）；⑥ 投射物距离阈值 ≥95 |
 | 不会单一动作循环 | ✓ 状态在多次截图中变化 |
-| A vs B AI 对战 ≥ 100 s | ✓ **110 秒** |
+| A vs B AI 对战 ≥ 100 s | ⚠️ 时长**无机器记录**（harness 报告不含时长字段），原记"110 秒"已撤下。<br>替代证据：`tests/p4/run_matrix.ps1` 6 种组合全部跑通且 `crashlogs: 0 new` |
 | 0 new crash logs | ✓ |
 
 ### Gate 10 — Regression & Documentation：**PASS**
@@ -338,5 +338,5 @@
 | 方向键注入修复验证 | `logs/p2/shots/p4_jump2_p01_26_after.png` |
 | 取消序列（200） | `logs/p2/shots/p4_cancel2_p01_09_burst03.png` |
 | 取消序列（1000） | `logs/p2/shots/p4_cancel_02.png` |
-| 110 秒 AI 对战 | `logs/p3/shots/p4_final_report.txt` + `p4_final_*.png` |
+| AI 对战（时长无记录） | `logs/p3/shots/p4_final_report.txt` + `p4_final_*.png`<br>补：`logs/p4/matrix/`（验收矩阵 6 组）+ `logs/p4/acceptance/matrix/` |
 | 投射物静止标定 | `logs/p3/shots/p4_static_04.png` |
