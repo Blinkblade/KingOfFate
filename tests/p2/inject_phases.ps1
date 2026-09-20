@@ -205,6 +205,56 @@ function Release-Key([int]$vk) {
     [void][P2Lab.Win]::PostMessage($script:hwnd, $WM_KEYUP, [IntPtr]$vk, [IntPtr](1 -bor ($scan -shl 16) -bor 0xC0000000))
 }
 
+# ---------------------------------------------------------------------------
+# Keymap guard -- READ THIS BEFORE EDITING THE KEYS BELOW
+# ---------------------------------------------------------------------------
+# Synthetic input can only reach a small set of virtual keys. Everything else
+# (letters, digits) is swallowed before the engine's input layer sees it, so a
+# byte-level injection of "z" does nothing at all. The working trick is to
+# TEMPORARILY rebind a character button to an injectable key in the runtime
+# file  engine/ikemen-go/save/config.ini  ([Keys_P1] x = TAB, start = Not used).
+#
+# That file is gitignored, shared with the real game, and easy to forget.
+# P4 got burned twice: the leftover binding made the user's own controls dead
+# ("enter does not confirm, a/z do not attack"). So the rebinding is now
+# *scoped*: the harness snapshots the file, patches it, and always restores it
+# in a finally block -- including when the run is interrupted with Ctrl-C.
+$RuntimeConfig = Join-Path $RuntimeRoot 'save\config.ini'
+
+function Set-InjectionKeymap {
+    if (-not (Test-Path -LiteralPath $RuntimeConfig)) {
+        Write-Host '[warn ] save/config.ini not found - running with the current keymap' -ForegroundColor Yellow
+        return $null
+    }
+    $orig = [System.IO.File]::ReadAllBytes($RuntimeConfig)
+    $text = [System.Text.Encoding]::UTF8.GetString($orig)
+    if ($text -match '(?m)^\s*x\s*=\s*TAB\s*$') {
+        Write-Host '[ info] keymap already in injection mode (x = TAB)'
+        return $null
+    }
+    # only the first [Keys_P1] block, up to the next section header
+    $patched = [regex]::Replace($text, '(?ms)(^\[Keys_P1\]\r?\n.*?)(?=\r?\n\[)', {
+            param($m)
+            $b = $m.Groups[1].Value
+            $b = [regex]::Replace($b, '(?m)^\s*x\s*=.*$', 'x        = TAB')
+            $b = [regex]::Replace($b, '(?m)^\s*start\s*=.*$', 'start    = Not used')
+            $b
+        }, 1)
+    if ($patched -notmatch '(?m)^\s*x\s*=\s*TAB\s*$') {
+        Write-Host '[warn ] could not patch [Keys_P1]; injection may not work' -ForegroundColor Yellow
+        return $null
+    }
+    [System.IO.File]::WriteAllText($RuntimeConfig, $patched, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host '[ info] keymap patched for injection (x = TAB, start = Not used)'
+    return $orig
+}
+
+function Restore-InjectionKeymap([byte[]]$orig) {
+    if ($null -eq $orig) { return }
+    [System.IO.File]::WriteAllBytes($RuntimeConfig, $orig)
+    Write-Host '[ info] keymap restored to its pre-run state'
+}
+
 function Save-Shot([IntPtr]$hwnd, [string]$path) {
     $r = New-Object P2Lab.Win+RECT
     [void][P2Lab.Win]::GetClientRect($hwnd, [ref]$r)
@@ -259,6 +309,11 @@ $report.Add("harness   : tests/p2/inject_phases.ps1")
 $report.Add("args      : " + ($argList -join ' '))
 $report.Add("outdir    : $OutDir")
 $report.Add("phases    : " + ($Phases -join ' | '))
+
+# Patch the keymap only while this run needs it; the finally block below takes
+# it back even if the harness is interrupted.
+$keymapBackup = Set-InjectionKeymap
+try {
 
 $proc = Start-Process -FilePath $Exe -WorkingDirectory $RuntimeRoot -ArgumentList $argList -PassThru
 $report.Add("process   : pid=$($proc.Id)")
@@ -379,6 +434,15 @@ if (-not $proc.HasExited) {
 }
 else {
     $report.Add("stop      : engine exited by itself, exitcode=$($proc.ExitCode)")
+}
+
+}   # end of the keymap-patched region
+finally {
+    if ($proc -and -not $proc.HasExited) {
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    }
+    Restore-InjectionKeymap $keymapBackup
+    $report.Add('keymap    : restored to the pre-run state')
 }
 
 $reportPath = Join-Path $OutDir "${Prefix}_report.txt"

@@ -247,6 +247,15 @@ complete and playable, and the phase's central question is answered (the same
 - Character handbook: [`game/chars/test_fighter_b/README.md`](../game/chars/test_fighter_b/README.md)
 - Frame data: [`design/characters/test_fighter_b/moves.csv`](../design/characters/test_fighter_b/moves.csv)
 - Iteration log: [`docs/iterations/20260918-p4-test-fighter-b.md`](iterations/20260918-p4-test-fighter-b.md)
+- Baseline audit (2026-09-20): [`docs/iterations/20260920-p4-baseline-audit.md`](iterations/20260920-p4-baseline-audit.md)
+
+**Evidence channel (added 2026-09-20).** A batch of earlier runtime numbers turned
+out to have no machine source: they had been read off screenshots, which cannot be
+audited. Those claims were withdrawn (Phase Report §5.x). Runtime values are now
+read programmatically from the debug overlay with
+`tools/read_frame_text.py`, and multi-combination matches are run by
+`tests/p4/run_matrix.ps1` (6 combinations — both seat orders, mirrors, asymmetric
+AI, and vs the reference KFM — all clean, `crashlogs: 0 new`).
 
 Delivered: `game/chars/test_fighter_b/` — a **Zoner** cloned from `_template`
 (not from Fighter A), with a native `projectile{}` special, a long-reach

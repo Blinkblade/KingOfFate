@@ -23,9 +23,13 @@
 
 .PARAMETER BuildFfmpeg
     Passed through to the engine build as BUILD_FFMPEG.
-      auto (default) - build a minimal local FFmpeg (matches CI; preserves WebM alpha)
-      no             - use the system/MSYS2 FFmpeg packages
-      yes            - force a local FFmpeg build
+      auto (default) - build a minimal local FFmpeg (matches CI; preserves WebM alpha).
+                       NOTE: when no local alpha-capable FFmpeg exists yet, this mode has to
+                       clone the FFmpeg sources from github.com. If that source is not
+                       reachable the script degrades to 'no' and says so loudly instead of
+                       failing the whole engine build.
+      no             - use the system/MSYS2 FFmpeg packages (works fully offline)
+      yes            - force a local FFmpeg build (never degrades; fails if the network is down)
 
 .PARAMETER NoLog
     Do not write a build log file.
@@ -316,22 +320,144 @@ if (-not $NoLog) {
 }
 
 # ---------------------------------------------------------------------------
+# FFmpeg strategy
+#
+# BUILD_FFMPEG=auto (the engine default, and what CI uses) builds a libvpx-only
+# local FFmpeg so WebM alpha keeps working. build.sh only skips that build when
+# BOTH of these already exist:
+#     build/ffmpeg/lib/pkgconfig/libavcodec.pc
+#     build/ffmpeg-src/config_components.h   (with CONFIG_LIBVPX_VP{8,9}_DECODER 1)
+# Otherwise it does  rm -rf build/ffmpeg-src  and re-clones release/7.1 from
+# github.com. On a machine whose proxy is not running, that clone dies with
+#
+#     error: RPC failed; curl 56 Recv failure: Software caused connection abort
+#     fatal: early EOF
+#     fatal: fetch-pack: invalid index-pack output
+#
+# and build.sh exits 1 - so "pwsh -File scripts/build_engine.ps1" fails with
+# exit code 1 even though nothing is wrong with the engine code. That is what
+# happened on 2026-09-19 (see logs/build/20260919/build-engine.log); the
+# 2026-09-17 run used BUILD_FFMPEG=no and passed.
+#
+# Decide the strategy up front: probe the FFmpeg source with a cheap
+# ls-remote (a few KB) rather than discovering the failure after a long build.
+# Only 'auto' degrades; 'yes' keeps the old behaviour on purpose.
+# ---------------------------------------------------------------------------
+$ffmpegPrefixPc = Join-Path $EngineDir 'build\ffmpeg\lib\pkgconfig\libavcodec.pc'
+$ffmpegSrcCfg   = Join-Path $EngineDir 'build\ffmpeg-src\config_components.h'
+
+function Test-LocalAlphaFfmpeg {
+    if (-not ((Test-Path -LiteralPath $ffmpegPrefixPc) -and (Test-Path -LiteralPath $ffmpegSrcCfg))) {
+        return $false
+    }
+    return [bool](Select-String -LiteralPath $ffmpegSrcCfg -SimpleMatch -Quiet -Pattern 'CONFIG_LIBVPX_VP8_DECODER 1')
+}
+
+function Test-FfmpegSourceReachable {
+    # 25 s ceiling; timeout returns 124, a missing binary returns 127 - both != 0.
+    $null = Get-Msys2BashOutput -Command 'timeout 25 git ls-remote --exit-code --heads https://github.com/FFmpeg/FFmpeg.git release/7.1 >/dev/null 2>&1'
+    return ($script:lastMsysRc -eq 0)
+}
+
+$ffmpegDegraded = $false
+if ($BuildFfmpeg -eq 'auto') {
+    if (Test-LocalAlphaFfmpeg) {
+        Write-Ok 'FFmpeg       : local alpha-capable build already present (engine skips the rebuild)'
+    }
+    elseif (Test-FfmpegSourceReachable) {
+        Write-Warn2 'FFmpeg       : no local alpha-capable build yet - the engine will clone + build FFmpeg (slow)'
+    }
+    else {
+        $BuildFfmpeg = 'no'
+        $ffmpegDegraded = $true
+        Write-Warn2 'FFmpeg       : github.com is not reachable -> degrading to system FFmpeg (BUILD_FFMPEG=no)'
+        Write-Host  '               This keeps the engine build working offline. WebM alpha may fall back to'
+        Write-Host  '               the native VP8/VP9 decoder; re-run with -BuildFfmpeg yes once the proxy is up.'
+    }
+}
+else {
+    Write-Ok "FFmpeg       : BUILD_FFMPEG=$BuildFfmpeg (requested explicitly, no auto-degradation)"
+}
+Write-Host ''
+
+# ---------------------------------------------------------------------------
 # Build
 # ---------------------------------------------------------------------------
 $engineMsysPath = ConvertTo-MsysPath $EngineDir
-$inner = "${proxyPrefix}cd '$engineMsysPath' && export CI=1 && export BUILD_FFMPEG=$BuildFfmpeg && export APP_VERSION=kingoffate-rc5 && ./build/build.sh $BuildTarget"
 
-Write-Step "Running: ./build/build.sh $BuildTarget   (BUILD_FFMPEG=$BuildFfmpeg)"
-Write-Step 'This can take a long time, especially on a first run (dependencies may be built from source).'
-Write-Host ''
+# Timestamp of THIS run - used at the end to prove the binary was really rebuilt.
+$buildStart = Get-Date
 
-if ($logFile) {
-    Invoke-Msys2Bash -Command $inner -LogFile $logFile
+function Invoke-EngineBuild {
+    param([Parameter(Mandatory)][string]$FfmpegMode)
+    $cmd = "${proxyPrefix}cd '$engineMsysPath' && export CI=1 && export BUILD_FFMPEG=$FfmpegMode && export APP_VERSION=kingoffate-rc5 && ./build/build.sh $BuildTarget"
+    Write-Step "Running: ./build/build.sh $BuildTarget   (BUILD_FFMPEG=$FfmpegMode)"
+    Write-Step 'This can take a long time, especially on a first run (dependencies may be built from source).'
+    Write-Host ''
+    if ($logFile) {
+        Invoke-Msys2Bash -Command $cmd -LogFile $logFile
+    }
+    else {
+        Invoke-Msys2Bash -Command $cmd
+    }
+    return $script:lastMsysRc
 }
-else {
-    Invoke-Msys2Bash -Command $inner
+
+function Test-FfmpegFetchFailure {
+    <#
+      True when the log shows the build died while *fetching* the FFmpeg sources.
+      That is a network problem, not a code problem - the engine itself never
+      got to compile.
+    #>
+    param([string]$Log)
+    if (-not $Log) { return $false }
+    if (-not (Test-Path -LiteralPath $Log)) { return $false }
+    return [bool](Select-String -LiteralPath $Log -SimpleMatch -Quiet -Pattern @(
+        'RPC failed',                 # curl 56 / connection abort during the clone
+        'early EOF',
+        'invalid index-pack output',
+        'Could not resolve host',
+        'Failed to connect to github.com'
+    ))
 }
-$buildRc = $script:lastMsysRc
+
+function Test-FfmpegStageFailure {
+    <#
+      True when the build never reached the Go compile step, i.e. everything that
+      happened (and failed) was inside build_ffmpeg: the clone, configure, make
+      or make install.
+
+      This machine has two independent, reproducible ways to lose that stage:
+        * the FFmpeg clone dies when the proxy is down (see Test-FfmpegFetchFailure)
+        * libvpx + FFmpeg compile, but `make install` STRIP produces 0-byte DLLs,
+          after which build.sh aborts with "FFmpeg pkg-config files still not
+          visible after build"  (recorded in docs/environment.md)
+      Neither has anything to do with the engine source, so neither should be
+      reported as "the engine build is broken".
+    #>
+    param([string]$Log)
+    if (-not $Log) { return $false }
+    if (-not (Test-Path -LiteralPath $Log)) { return $false }
+    $inFfmpeg = [bool](Select-String -LiteralPath $Log -SimpleMatch -Quiet -Pattern 'Building minimal FFmpeg')
+    $reachedGo = [bool](Select-String -LiteralPath $Log -SimpleMatch -Quiet -Pattern 'Building Go binary')
+    return ($inFfmpeg -and -not $reachedGo)
+}
+
+$buildRc = Invoke-EngineBuild -FfmpegMode $BuildFfmpeg
+
+# Second chance: 'auto' can still lose the race even after a successful probe
+# (the probe only downloads a few KB, the real clone is ~100 MB and can be
+# dropped mid-transfer). Retry once with the system FFmpeg so the engine build
+# itself is not reported as broken.
+if ($buildRc -ne 0 -and $BuildFfmpeg -eq 'auto' -and (Test-FfmpegStageFailure -Log $logFile)) {
+    Write-Host ''
+    Write-Warn2 'The build died inside the local FFmpeg stage - a download, configure, make or'
+    Write-Warn2 'make install problem, not a code problem. Retrying once with the system FFmpeg.'
+    Write-Host ''
+    $BuildFfmpeg = 'no'
+    $ffmpegDegraded = $true
+    $buildRc = Invoke-EngineBuild -FfmpegMode 'no'
+}
 
 Write-Host ''
 
@@ -378,6 +504,14 @@ if ($buildRc -ne 0) {
         Write-Host ("                Add-MpPreference -ExclusionPath '{0}'" -f $EngineDir) -ForegroundColor Yellow
         Write-Host '            See docs/environment.md (environment quirk: Defender quarantine).' -ForegroundColor Yellow
     }
+    elseif (Test-FfmpegStageFailure -Log $logFile) {
+        Write-Host ''
+        Write-Host '[ffmpeg] The build never reached the Go compile step - it died inside the local' -ForegroundColor Yellow
+        Write-Host '         FFmpeg stage (clone / configure / make / make install). Nothing is wrong' -ForegroundColor Yellow
+        Write-Host '         with the engine code. Build with the system FFmpeg instead:' -ForegroundColor Yellow
+        Write-Host '             pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no' -ForegroundColor Yellow
+        Write-Host '         See docs/environment.md (section "Build").' -ForegroundColor Yellow
+    }
     exit 1
 }
 
@@ -387,11 +521,31 @@ if (-not (Test-Path -LiteralPath $Executable)) {
     exit 1
 }
 
+# A build that was killed (Ctrl-C, process terminated, Defender killed the shell)
+# can leave the PREVIOUS binary in place and still report rc = 0 to PowerShell.
+# That silently turns "the build did not run" into "Build PASS" - observed on
+# 2026-09-20, where an interrupted FFmpeg build produced a PASS line for a binary
+# dated 2026-09-17. Require the binary to have been written during THIS run.
 $exe = Get-Item -LiteralPath $Executable
+if ($exe.LastWriteTime -lt $buildStart) {
+    Write-Err "build reported success but $ExecutableName was not rewritten"
+    Write-Host  ("       Binary timestamp : {0}" -f $exe.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor Yellow
+    Write-Host  ("       Build started at : {0}" -f $buildStart.ToString('yyyy-MM-dd HH:mm:ss')) -ForegroundColor Yellow
+    Write-Host  '       The executable is older than this run, so nothing was built - most likely the' -ForegroundColor Yellow
+    Write-Host  '       build was interrupted. Treat this as a FAILED build and re-run it.' -ForegroundColor Yellow
+    if ($logFile) { Write-Host "       See the full log: $logFile" -ForegroundColor Yellow }
+    exit 1
+}
 $hash = (Get-FileHash -LiteralPath $Executable -Algorithm SHA256).Hash
 
 Write-Ok 'Build PASS'
 Write-Host ''
+if ($ffmpegDegraded) {
+    Write-Warn2 'Built with the system FFmpeg (the local alpha-capable FFmpeg was not reachable).'
+    Write-Host  '  WebM alpha may fall back to the native VP8/VP9 decoder. To build it: start the'
+    Write-Host  '  proxy and run  pwsh -File scripts/build_engine.ps1 -BuildFfmpeg yes'
+    Write-Host ''
+}
 Write-Host "  Binary    : $($exe.FullName)"
 Write-Host ("  Size      : {0:N2} MB" -f ($exe.Length / 1MB))
 Write-Host "  SHA256    : $hash"

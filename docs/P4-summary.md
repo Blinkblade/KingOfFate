@@ -136,21 +136,66 @@ https://github.com/Blinkblade/KingOfFate/pull/new/feature/p4-test-fighter-b
 
 | # | 事项 | 原因 | 归属 |
 | --- | --- | --- | --- |
-| 1 | Anti-Air 的**空中命中**实测 | 注入缺陷修复太晚 | 下一窗口（一条命令即可重跑） |
-| 2 | 取消链的**精确时间序**（200 → 1000 落在 20 tick 窗口内） | 同上 | 下一窗口 |
-| 3 | 投射物**被防御 / 被跳跃规避** | 同上 | 下一窗口 |
-| 4 | P3 遗留：Fighter A 的 **610 / 640 伤害**补测、`Clsn1: 0` 的 A/B 对照 | 同上 | 下一窗口 |
+| 1 | ~~Anti-Air 的**空中命中**实测~~ | ~~注入缺陷修复太晚~~ | **已 PASS**（Gate 4 组，见 Phase Report） |
+| 2 | 取消链的**精确时间序**（200 → 1000 落在 20 tick 窗口内） | 数值得有人读 | 下一窗口，**用手册** → howto §5 |
+| 3 | 投射物**被防御 / 被跳跃规避** | 同上 | 下一窗口，**用手册** → howto §3 / §4 |
+| 4 | P3 遗留：Fighter A 的 **610 / 640 伤害**补测、`Clsn1: 0` 的 A/B 对照 | 同上 | 下一窗口（同样可用 Training 模式） |
 | 5 | 投射物判定框尺寸重画 | 依赖占位素材 | **P5**（换素材后） |
 | 6 | 占位 SFF/SND 替换 | — | P5/P6 |
 | 7 | 正式平衡 / 胜率 / Tier | — | P10 |
+| 8 | **P1–P3 文档中"读截图得来的数值"未复核** | 与 P4 属同一证据类别 | 下一窗口，用 `tools/read_frame_text.py` 回扫（见已修：[`20260920-p4-baseline-audit.md`](iterations/20260920-p4-baseline-audit.md)） |
 
-**遗留项 1–4 共用一条命令模板**：
+> **遗留项 2–4 不需要注入。** 引擎自带 Training 模式 + 真实键盘即可构造场景
+> （`Guard Mode = all` 让假人必防、`Dummy Mode = jump` 让假人持续跳）。
+> 完整操作手册：[`docs/howto/gate-verification-in-training-mode.md`](howto/gate-verification-in-training-mode.md)，
+> 结论填该手册 §6 的结果记录表。**在此之前 Gate 6 / 7 保持 BLOCKED。**
+
+<details>
+<summary>【已废弃】旧的注入命令模板（不要再照着做）</summary>
+
+下面这条写法已淘汰 —— **手工改 `save/config.ini` 正是此前两次把用户键位搞坏的根源**。
 
 ```powershell
-# 先改 save/config.ini 的 [Keys_P1] 为 x=TAB（注入需要），测完还原
+# ❌ 不要手工改 config.ini
 pwsh -File tests/p2/inject_phases.ps1 -P1 test_fighter_b -P2 test_fighter_a -Ai1 0 -Ai2 0 `
     -Phases '...' -SettleSec 0.02 -ShowDebug -ShowClsn
 ```
+
+需要自动化时直接跑上面的命令即可，`inject_phases.ps1` 自己会：
+快照 `save/config.ini` → 只在 `[Keys_P1]` 段内临时改 `x = TAB` / `start = Not used`
+→ **`finally` 块无条件还原**（Ctrl-C 中断也会还原）。
+
+</details>
+
+---
+
+## 7.1 证据通道（2026-09-20 新增，解决"数值查无实据"）
+
+本档与 Phase Report 中一批 `LIF` / `POW` / `ElemNo` / 时长类数字，原先只能靠看截图得到。
+核对后确认 harness 报告里**不含任何游戏数值**，已撤下无证据的结论（详见 Phase Report §5.x）。
+
+现在的正确做法是先把它变成文本再引用：
+
+```powershell
+python tools\read_frame_text.py logs\p4\matrix\m_vs_kfm_04.png
+```
+
+输出示例（同时给出原始串与修复后的串，含每一处改动，猜错时可见）：
+
+```
+raw      : P1; 5B: L!F:1000; POW; 2B4: ...
+repaired : P1; 5B: LIF:1000; POW; 284: ...
+State No; 1000 lP1); CTRL; 0; Type: S; MoveType; A; PhysIC5: S; Time; 17
+```
+
+多条组合对战也一并固化了：
+
+```powershell
+pwsh -File tests\p4\run_matrix.ps1            # 6 种组合：双方互序 / 镜像 / 非对称 AI / 对 KFM
+pwsh -File tests\p4\run_matrix.ps1 -Only kfm  # 只跑某一组
+```
+
+判定只认 harness 报告里那行机器可判别的 `crashlogs : 0 new during the run`。
 
 ---
 

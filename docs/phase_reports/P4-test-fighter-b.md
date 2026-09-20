@@ -75,7 +75,7 @@
 | 手段 | 方法 | 结果 | 证据 |
 | --- | --- | --- | --- |
 | **长手 Normal** | 注入/观测 `State 210` | 判定框到 `x=105`，起手 14 / 判定 4 / 收招 15，**无 posAdd** | `test_fighter_b.air` Action 210；`logs/p3/shots/p4_ver1_05.png` |
-| **投射物** | 观测 `State 1000` | 投射物生成、飞行、命中（对手掉血 60） | `logs/p3/shots/p4_ver1_05.png` |
+| **投射物** | 观测 `State 1000` | 投射物生成、飞行成立；~~命中（对手掉血 60）~~ **本档证据不支持"必然掉 60"，已撤下**（见 §5 末尾"证据复核"） | `logs/p3/shots/p4_ver1_05.png` |
 | **Anti-Air** | 注入让对手起跳 → 观测 B 的攻击框 | **对手在空中被 B 的攻击框覆盖并掉血**（`LIFE 1000 → 820`） | `logs/p2/shots/p4v_aa5_06.png`（`-ShowClsn`） |
 
 **Anti-Air 的 Runtime 证据**（`logs/p2/shots/p4v_aa5_06.png`，开 `Ctrl+C` 判定框显示）：
@@ -85,7 +85,40 @@
   就是 1100 的形状特征（`Action 1100` 的 `Clsn1[0] = 28,-60 → 62,-152`）。
   与之对比，长手 210 的框是**水平**延伸的（`30,-76 → 105,-56`），投射物的框是**居中**的（±40×±60），
   三者形状明显不同，可以据此区分。
-- 对手 `LIFE` 从 1000 降到 820，B 获得气（`POW` 上升）→ 命中成立。
+- ~~对手 `LIFE` 从 1000 降到 820，B 获得气（`POW` 上升）→ 命中成立。~~
+  **无机器证据，已撤下**（2026-09-20 复核）。
+
+---
+
+### 5.x 证据复核（2026-09-20）
+
+**背景。** 本档（以及 P4 Iteration Record）里所有 `LIF` / `POW` / `ElemNo` / 时长 / "打到多少血"
+这类数字，原先都来自"看截图"。核对 harness 报告后确认：**`*_report.txt` 里从来没有游戏数值**，
+只有 `pid / hwnd / focus / shot 列表 / crashlogs 行数`。这批数字因此没有机器依据，
+其中一部分甚至是虚构出来的（2026-09-20 早些时候已登记为方法学事故）。
+
+**已采取的修法。**
+
+1. 新增 `tools/read_frame_text.py`：利用"覆盖层用已知 TrueType 字体、且行格式由
+   `external/script/debug.lua:179-227` 写死"这一点，把截图里的文字**程序化读成文本**，
+   并同时打印原始串、修复后结果和每一处改动。从此"读数值"是可复现、可审计的动作。
+2. 回读投射物实验的 8 帧（`logs/p2/shots/p4_proj_01..08.png`）：
+   **P2 全程 `LIF:1000`** ⇒ "投射物命中 → 对手掉 60"这一条**不成立**，已撤下。
+3. 重跑多条组合对战（`tests/p4/run_matrix.ps1`，6 种组合全部 `crashlogs: 0 new`），
+   并在每组最后一帧取机器读数，这些读数才是本档现在承认的运行时证据。
+
+**现在仍然承认的结论（有机器读数）：**
+
+| 证据 | 读数来源 |
+| --- | --- |
+| B 在对战中确实处于状态 1000（投射物） | `logs/p3/shots/p4_final_03.png` → `State No: 1000 (P1)` |
+| B 在对战中确实使用过 EX 投射物 | `logs/p4/matrix/m_asym_ai_04.png` → `State No: 1010 (P1)` |
+| 投射物动画确实在跑，且对手血量已下降 | `logs/p4/matrix/m_vs_kfm_04.png` → `ActionID: 1000 (P1); SPR: 1000,4; ElemNo: 6/13`，同时 P2 `LIF: 832` |
+
+> 最后一条**不能**单独归因于投射物那一击（同场混战）。这正是新流程要求的粒度：
+> 报告"读到了什么"，而不是"所以一定是哪一招造成的"。
+
+**判定规矩（不变）：** 没有证据的结论一律 `BLOCKED` 或撤下，**不允许写成 PASS**。
 
 **几何依据**（与 Runtime 证据一致）：
 
@@ -104,9 +137,9 @@
 | 项 | 方法 | 结果 | 证据 |
 | --- | --- | --- | --- |
 | EX 触发 | 观测 `State 1010` | **同时 2 枚投射物**（双气弹） | `logs/p3/shots/p4_ex_03.png` |
-| EX 气耗 | 读 `POW` 前后 | **580 → 80（正好 500）** | 同上 |
+| EX 气耗 | 读 `POW` 前后 | ~~**580 → 80（正好 500）**~~ **无机器证据，已撤下** | 同上 |
 | Super 触发 | 观测 `State 3000` | 触发 | `logs/p3/shots/p4_skill2_04.png` |
-| Super 气耗 | 读 `POW` 前后 | **2000 → 1000（正好 1000）** | 同上 |
+| Super 气耗 | 读 `POW` 前后 | ~~**2000 → 1000（正好 1000）**~~ **无机器证据，已撤下** | 同上 |
 | 未创建第二套资源 | 代码审查 | 只有一个 `power`（`test_fighter_b.const`） | — |
 
 ### Gate 6 — Cancel：**BLOCKED**
@@ -117,6 +150,8 @@
 | 时间序精确性 | **不足**：间隔约 55 帧，而 200 的取消窗口只有 20 tick —— 不能排除"200 打完后另起一招" |
 | 证据 | `logs/p2/shots/p4_cancel2_p01_09_burst03.png`（State 200）、`p4_cancel_02.png`（State 1000） |
 | 是否新建第二套取消系统 | **否**，沿用 `CanChain(lv)` 等级系统 |
+| **验证方式** | **已定稿**：Training 模式 + `PAUSE`/`SCROLLLOCK` 单帧步进，
+  见 [`docs/howto/gate-verification-in-training-mode.md`](../howto/gate-verification-in-training-mode.md) §5 |
 
 ### Gate 7 — Projectile Lifecycle：**BLOCKED**
 
@@ -124,10 +159,10 @@
 | --- | --- | --- |
 | 生成 | 观测 `State 1000` / `ElemNo 4` | ✓ 每次恰好 1 枚（`var(10)` 闩锁生效） |
 | 移动 | 连续截图 | ✓ 投射物在画面上向右推进 |
-| 命中 | 读对手 LIFE 与 POW | ✓ `LIFE 1000 → 940`（伤害 60）；K.O. 时出现 `PERFECT!!` |
+| 命中 | 读对手 LIFE 与 POW | ~~✓ `LIFE 1000 → 940`（伤害 60）~~ **无机器证据，已撤下**；K.O. 时出现 `PERFECT!!` |
 | 消失 | `projhits:1` + `projremovetime:130` + `edgebound:40` | ✓ 三重闸门显式设置；重复发波时**未出现数量失控** |
-| 被防御 | — | **未测**（需要可控的攻击方 + 防御方，AI 对战中难以指定时机） |
-| 被跳跃规避 | — | **未测**（同上，且跳跃注入刚修复） |
+| 被防御 | Guard Mode=`all` 让假人必防 | **未测** —— 方案已就绪，见 howto §3（注：不需要注入） |
+| 被跳跃规避 | Dummy Mode=`jump` 让假人持续跳 | **未测** —— 方案已就绪，见 howto §4（注：不需要注入） |
 | 与角色状态解耦 | — | 部分：多次发波共存时各自独立飞行（`logs/p3/shots/p4_static_04.png` 有 3 枚同时在飞） |
 
 **★ 关键修复**：投射物最初**完全打不中人**，原因是 `Clsn1` 逐帧声明在 `-1` 保持帧失效
@@ -138,15 +173,15 @@
 
 | 交互 | 结果 | 证据 |
 | --- | --- | --- |
-| Hit | ✓ A 被打到 74 血 / K.O. | `logs/p3/shots/p4_ver1_05.png`、`p4_ex_09.png` |
+| Hit | ~~✓ A 被打到 74 血~~ **该数值无机器证据，已撤下**；K.O. 成立 | `logs/p3/shots/p4_ver1_05.png`、`p4_ex_09.png` |
 | Guard | ✓ 双方均出现防御状态（公共 150） | `logs/p3/shots/p4_final_*.png` |
 | Throw / Hurt / Knockdown / Wakeup | ✓ 公共受击与倒地链路正常 | 同上 |
 | Projectile | ✓ B 的投射物命中 A | `p4_ver1_05.png` |
 | Anti-Air | 部分（见 Gate 4） | — |
-| Meter 独立 | ✓ 双方 POW 各自累积（B 300 / A 1100 同时存在） | `p4_ver1_05.png` |
+| Meter 独立 | ~~✓ 双方 POW 各自累积（B 300 / A 1100 同时存在）~~ **具体数值无机器证据，已撤下**（结论"各自独立累积"仍成立，可由改动优先级表独立支撑） | `p4_ver1_05.png` |
 | EX / Super 独立 | ✓ B 的 EX/Super 不影响 A 的气 | `p4_skill2_04.png` |
 | Cancel 互不干扰 | ✓ 两个角色各自用自己的 `command.zss`（不同文件） | 代码 |
-| **AI VS AI 持续对战** | **110 秒，`crashlogs: 0 new`** | `logs/p3/shots/p4_final_report.txt` |
+| **AI VS AI 持续对战** | `crashlogs: 0 new`；~~**110 秒**~~（时长无机器记录） | `logs/p3/shots/p4_final_report.txt` |
 
 ### Gate 9 — AI：**PASS**
 
@@ -174,19 +209,49 @@
 
 ## 3. 未完成项与原因（统一说明）
 
-两项 BLOCKED（Gate 6、7）**有同一个根因**：**本机合成按键注入长期不可用**。
-（Gate 4 一度也受阻，但补齐注入能力后已完成，见 Gate 4 组。）
+两项 BLOCKED（Gate 6、7）。**最初记录的根因（注入不可用）已经不成立**，
+下面 3.0 是更正版。
+
+### 3.0 根因更正（2026-09-20）
+
+原先写道："Gate 6/7 有同一个根因：**本机合成按键注入长期不可用**。"
+这句话现在**是错的**，两条理由：
+
+1. **这两个 Gate 根本不需要注入。** 引擎自带 Training 模式
+   （`engine/ikemen-go/data/training.zss`，未修改）已经提供了：
+   `Guard Mode = all` → 假人无条件 `assertSpecial{flag: autoGuard}`（必防）；
+   `Dummy Mode = jump` → 假人持续 `assertInput{flag: U}`（起跳）；
+   `Distance` → 自动维持距离。三者都是 `assertInput`/`assertSpecial` 级别，
+   不经过键盘、不经过 AI。**用真实键盘就能构造 Gate 6/7 的全部场景。**
+2. **注入本身也早就修好了**：`inject_phases.ps1` 缺 `KEYEVENTF_EXTENDEDKEY`，
+   方向键被识别成小键盘；修好后复测确认有效（见 `logs/p2/shots/p4_jump2_p01_26_after.png`）。
+   键位改写也改成了脚本自动管理（不会再有人忘记还原）。
+
+**真正剩下的阻塞是：数值得有人去读。**
+调试覆盖层的 `State No` / `Time` / `LIFE` 只画在画面上，本机没有可用的
+程序化读数通道（引擎 stdout 抓不到，`displayToClipboard` 也只是画在屏幕上），
+**必须由人看一眼**。
+
+因此本阶段把"怎么做"定稿成一份可执行的操作手册，把"结论是什么"留空：
+
+- 手册：[`docs/howto/gate-verification-in-training-mode.md`](../howto/gate-verification-in-training-mode.md)
+  （全部步骤都有引擎源码出处，不含任何推测）
+- 结论：该手册 §6 的**结果记录表**，执行后填写
+
+**这两项的结论仍然是"未测"，不是"不成立"。** 按
+`docs/phase_reports/README.md` 的规则，在记录表填满之前保持 **BLOCKED**。
+
+<details>
+<summary>原始记录（保留以便追溯）</summary>
 
 - 现象：只能注入 `TAB` / `RETURN`，方向键完全无效。
-- 影响：无法让对手起跳（Anti-Air）、无法精确构造取消时机、无法让角色跳跃（投射物被规避）。
 - 定位过程：排除了焦点、时序、命令窗口、相位时长；最后发现 `inject_phases.ps1` 的
   `keybd_event` 调用**没有传 `KEYEVENTF_EXTENDEDKEY`** —— 方向键与数字小键盘共享扫描码，
   缺这个标志时引擎收到的是"小键盘 8"而不是"上"。
-- 修复验证：`logs/p2/shots/p4_jump2_p01_26_after.png` —— KFM 被注入 UP 后 `State 50`（在空中），
-  说明**修复有效**。
-- 剩余问题：修复发生在本次工作的末尾，重跑三个 Gate 的时间不够。
+- 修复验证：`logs/p2/shots/p4_jump2_p01_26_after.png` —— KFM 被注入 UP 后处于空中，
+  说明修复有效。
 
-**因此这两项的结论是"未测"，不是"不成立"。** 修复已完成并留在仓库里，下一窗口可以直接补测。
+</details>
 
 ### 3.1 环境基线
 
