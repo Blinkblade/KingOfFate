@@ -143,7 +143,10 @@ Add-Type -Namespace FsLab -Name Win -MemberDefinition @'
 [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
 [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 [DllImport("user32.dll")] public static extern uint MapVirtualKey(uint uCode, uint uMapType);
-[DllImport("user32.dll")] public static extern IntPtr GetWindowThreadProcessId(IntPtr hWnd, IntPtr lpdwProcessId);
+// Win32 returns a DWORD here, not a pointer. Declaring it IntPtr made the
+// AttachThreadInput(uint,uint,bool) call below fail intermittently with
+// "cannot convert value 10576 of type System.IntPtr to System.UInt32".
+[DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr lpdwProcessId);
 [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
 [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
@@ -262,11 +265,53 @@ $argList = @('-p1', $P1, '-p2', $P2, '-s', $Stage, '-windowed', '-nosound', '-ti
 if ($Ai1 -gt 0) { $argList += @('-p1.ai', "$Ai1") }
 if ($Ai2 -gt 0) { $argList += @('-p2.ai', "$Ai2") }
 
+# ---------------------------------------------------------------------------
+# Keymap guard (ported from inject_phases.ps1)
+# ---------------------------------------------------------------------------
+# Injectable virtual keys are only TAB / RETURN / the arrows. To fire a special
+# we need one of them bound to a character button, which means temporarily
+# editing engine/ikemen-go/save/config.ini -- the file that, when left patched,
+# made the user's own controls dead. So: snapshot, patch, restore on EVERY exit
+# path (the two early exits and the normal end).
+$RuntimeConfig = Join-Path $RuntimeRoot 'save\config.ini'
+
+function Set-InjectionKeymap {
+    if (-not (Test-Path -LiteralPath $RuntimeConfig)) {
+        Write-Host '[warn ] save/config.ini not found - running with the current keymap'
+        return $null
+    }
+    $orig = [System.IO.File]::ReadAllBytes($RuntimeConfig)
+    $text = [System.Text.Encoding]::UTF8.GetString($orig)
+    if ($text -match '(?m)^\s*x\s*=\s*TAB\s*$') { return $null }
+    $patched = [regex]::Replace($text, '(?ms)(^\[Keys_P1\]\r?\n.*?)(?=\r?\n\[)', {
+            param($m)
+            $b = $m.Groups[1].Value
+            $b = [regex]::Replace($b, '(?m)^\s*x\s*=.*$', 'x        = TAB')
+            $b = [regex]::Replace($b, '(?m)^\s*start\s*=.*$', 'start    = Not used')
+            $b
+        }, 1)
+    if ($patched -notmatch '(?m)^\s*x\s*=\s*TAB\s*$') {
+        Write-Host '[warn ] could not patch [Keys_P1]; injection may not work'
+        return $null
+    }
+    [System.IO.File]::WriteAllText($RuntimeConfig, $patched, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host '[ info] keymap patched for injection (x = TAB, start = Not used)'
+    return $orig
+}
+
+function Restore-InjectionKeymap([byte[]]$orig) {
+    if ($null -eq $orig) { return }
+    [System.IO.File]::WriteAllBytes($RuntimeConfig, $orig)
+    Write-Host '[ info] keymap restored to its pre-run state'
+}
+
 $report = New-Object System.Collections.Generic.List[string]
 $report.Add('harness   : tests/p2/framestep_probe.ps1')
 $report.Add('args      : ' + ($argList -join ' '))
 $report.Add('steps     : ' + $Steps)
 $report.Add('outdir    : ' + $OutDir)
+
+$keymapBackup = Set-InjectionKeymap
 
 $proc = Start-Process -FilePath $Exe -WorkingDirectory $RuntimeRoot -ArgumentList $argList -PassThru
 $report.Add("process   : pid=$($proc.Id)")
@@ -274,6 +319,7 @@ $report.Add("process   : pid=$($proc.Id)")
 Start-Sleep -Seconds $WarmupSec
 if ($proc.HasExited) {
     $report.Add("early exit: exitcode=$($proc.ExitCode)")
+    Restore-InjectionKeymap $keymapBackup
     $report | Out-File -Encoding utf8 (Join-Path $OutDir "${Prefix}_report.txt")
     $report | ForEach-Object { Write-Host $_ }
     exit 1
@@ -288,6 +334,7 @@ $report.Add("window    : hwnd=$script:hwnd")
 if ($script:hwnd -eq [IntPtr]::Zero) {
     $report.Add('window    : NO WINDOW HANDLE')
     Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    Restore-InjectionKeymap $keymapBackup
     $report | Out-File -Encoding utf8 (Join-Path $OutDir "${Prefix}_report.txt")
     $report | ForEach-Object { Write-Host $_ }
     exit 2
@@ -381,6 +428,8 @@ else {
     $report.Add("stop      : engine exited by itself, exitcode=$($proc.ExitCode)")
 }
 $report.Add("ticks     : $tick")
+Restore-InjectionKeymap $keymapBackup
+$report.Add('keymap    : restored to the pre-run state')
 
 $reportPath = Join-Path $OutDir "${Prefix}_report.txt"
 $report | Out-File -Encoding utf8 $reportPath

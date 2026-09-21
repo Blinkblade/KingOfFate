@@ -69,6 +69,20 @@ foreach ($v in $names) {
     $txt = $txt.Replace('_template', $name).Replace('"KOF Template"', ('"Dummy: {0}"' -f $v))
     [System.IO.File]::WriteAllText($def, $txt, (New-Object System.Text.UTF8Encoding($false)))
 
+    # .const: the jump dummy needs an airtime longer than the projectile's
+    # flight time. Stock jump.neu (0,-8.4) with yaccel .44 gives ~38 ticks
+    # (~0.6 s) of air -- shorter than the projectile needs to cross the stage,
+    # so the dummy lands before the projectile arrives and gets hit on the
+    # ground. That run was identical to the control and proved nothing.
+    if ($v -eq 'jump') {
+        $const = Join-Path $dst ($name + '.const')
+        $ctxt = [System.IO.File]::ReadAllText($const)
+        $ctxt2 = [regex]::Replace($ctxt, '(?m)^\s*jump\.neu\s*=.*$',
+            'jump.neu                        = 0,-25   ; raised by make_dummy.ps1: airtime must exceed the projectile flight time')
+        if ($ctxt2 -eq $ctxt) { throw "could not patch jump.neu in $const" }
+        [System.IO.File]::WriteAllText($const, $ctxt2, (New-Object System.Text.UTF8Encoding($false)))
+    }
+
     # .zss: fill the existing [StateDef -3] instead of appending a duplicate
     $zss  = Join-Path $dst ($name + '.zss')
     $ztxt = [System.IO.File]::ReadAllText($zss)

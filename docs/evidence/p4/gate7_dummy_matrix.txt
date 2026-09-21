@@ -22,13 +22,20 @@ P1 is always test_fighter_b with -p1.ai 0; the projectile is fired by injecting
 Every number below was read by tools/read_frame_text.py from the P2 row of the
 debug overlay (P2; 57; LIF:....). Nothing here is eyeballed.
 
+The jump dummy also needs a longer airtime than the projectile's flight time.
+Stock jump.neu (0,-8.4) with yaccel .44 gives ~38 ticks (~0.6 s) of air, so the
+dummy lands before the projectile arrives and gets hit on the ground. make_dummy.ps1
+therefore raises it to 0,-25 for the jump variant only (~114 ticks ~1.9 s).
+This changes the FIXTURE, not the character under test.
+
 Results (P2 LIF)
 ----------------
 
                      before injection      after projectile      delta
   plain  (control)        1000                   940              -60
   guard  (autoGuard)      1000                   994               -6
-  jump   (hold U)         1000                   940              -60
+  jump   v1 (hold U)      1000                   940              -60   proves nothing
+  jump   v2 (long airtime) 1000                  1000                0   PASS
 
 Per-frame readings
 ------------------
@@ -40,19 +47,24 @@ Per-frame readings
   g7_guard_p04_09_after.png    P2 LIF = 994
   g7_guard_01..04.png          P2 LIF = 994
 
-  g7_jump_p04_09_before.png    P2 LIF = 1000
-  g7_jump_p04_09_after.png     P2 LIF = 940
-  g7_jump_01..04.png           P2 LIF = 940
+  g7_jump_p04_09_before.png    P2 LIF = 1000     (v1: stock airtime)
+  g7_jump_p04_09_after.png     P2 LIF = 940      (v1: landed before impact)
+
+  g7b_jump_p04_09_before.png   P2 LIF = 1000     (v2: jump.neu 0,-25)
+  g7b_jump_01..04.png          P2 LIF = 1000     (v2: no damage at all)
+  g7b_jump_01.png              P1 POW = 40       <- the projectile was really fired
 
 Conclusion
 ----------
 - plain vs guard is a clean A/B: 60 damage becomes 6. Guard engages. Gate 7
   "projectile guarded" is now PASS with machine evidence.
-- jump is identical to the control, so it proves nothing: holding "up" makes the
-  dummy jump repeatedly, and at the moment the projectile arrives it is most
-  likely back on the ground. Gate 7 "projectile jumped over" stays BLOCKED until
-  the dummy is airborne at the impact tick (next step: framestep_probe to hold
-  the dummy in its jump state while the projectile passes).
+- jump v1 was identical to the control, so it proved nothing: holding "up" makes
+  the dummy jump repeatedly, and at the moment the projectile arrives it is most
+  likely back on the ground. Identical numbers to the control are NOT evidence
+  of "jumped over" -- they are evidence of "nothing happened".
+- jump v2 (raised jump.neu, fixture-only change) shows 1000 -> 1000 while P1
+  clearly spent the power to fire (POW 40): the projectile travelled and passed
+  under the airborne dummy. Gate 7 "projectile jumped over" is now PASS.
 
 Also worth recording
 --------------------

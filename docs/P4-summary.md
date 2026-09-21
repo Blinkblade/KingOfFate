@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | **阶段** | P4 — Test Fighter B |
-| **状态** | **IN_PROGRESS**（Gate 1/2/3/**4**/5/8/9/10 PASS；Gate 7「被防御」**PASS**；**Gate 6 与 Gate 7「被跳跃规避」仍 BLOCKED**） |
+| **状态** | **IN_PROGRESS**（Gate 1/2/3/**4**/5/8/9/10 PASS；**Gate 7 全部 PASS**；**Gate 6 仍 BLOCKED**） |
 | **时间** | 2026-09-18（2026-09-20 全量复查 + 2026-09-21 最终验收，见 §9） |
 | **分支** | `feature/p4-test-fighter-b` |
 | **基线** | `main` @ `18621e4`（含 P3 合并 PR #5） |
@@ -270,16 +270,30 @@ pwsh -File tests\p4\run_matrix.ps1 -Only kfm  # 只跑某一组
 
 ### 已知问题
 
-1. **Gate 7「投射物被防御」已 PASS（2026-09-21 自动重测）**：脚本假人
-   `assertSpecial{flag: autoGuard}` → P2 `LIF 1000 → 994`（-6）；对照组（不设防）
-   `1000 → 940`（-60）。同一轮还顺带把"投射物伤害 60"这条**重新取回了机器证据**。
+1. **Gate 7 已全部 PASS（2026-09-21 自动重测，不再需要人工按键）**：
+
+   | 场景 | P2 LIF | 判定 |
+   | --- | --- | --- |
+   | `plain`（对照，不设防） | 1000 → **940** | −60，与设计伤害一致 |
+   | `guard`（`assertSpecial{flag: autoGuard}`） | 1000 → **994** | −6，**被防御 PASS** |
+   | `jump`（`assertInput{flag: U}` + 加大滞空） | 1000 → **1000** | 0，**被跳跃规避 PASS** |
+
+   同一轮还顺带把"投射物伤害 60"这条**重新取回了机器证据**。
    详见 `docs/evidence/p4/gate7_dummy_matrix.txt`。
-2. **Gate 7「被跳跃规避」与 Gate 6（取消链精确时间序）仍 BLOCKED。**
-   - 跳跃那条：假人按住上会**反复起跳落地**，命中瞬间很可能已落回地面，
-     本次读数与对照组完全相同（-60），**证明不了任何事**，所以不写 PASS。
-     下一步要用 `framestep_probe.ps1` 逐 tick 卡住"命中帧假人确实在空中"。
-   - Gate 6：`framestep_probe` + 自动读数已经具备条件，尚未执行。
-   - 需要说明的是：此前把它们归因为"必须人工按键"**是我的判断失误** ——
+   注：跳跃那条第一版读数与对照组完全相同（-60）—— **数字一样不代表"跳过去了"，
+   只代表"什么也没发生"**，当时的滞空（≈0.63 s）短于波的飞行时间，假人落地了才挨打；
+   把假人的 `jump.neu` 从 `-8.4` 提到 `-25`（**只改假人，被测角色一行没动**）后才是真的穿过。
+
+2. **Gate 6（取消链精确时间序）仍 BLOCKED —— 装置修好了，证据还没拿到。**
+   - 本轮给 `framestep_probe.ps1` 补了键位快照/还原，并修掉一个**间歇性崩溃**：
+     `GetWindowThreadProcessId` 被声明成返回 `IntPtr`（Win32 实际返回 DWORD），
+     传给 `AttachThreadInput(uint,uint,bool)` 时会报"无法将 IntPtr 转为 UInt32"。
+   - 修好后的逐 tick 运行确认：**按下 x 的那一 tick 就进入 `State No: 1000`**，
+     但前置的 `200` 没出现（开头的 x 落在回合开始不可控期），因此不构成"从 200 取消"。
+   - 后续两次尝试都失败了：一次所有 `Save-Shot` 返回 FAILED（暂停态下 `PrintWindow`
+     对 OpenGL 窗口会阻塞渲染线程），一次 `EXIT=1` 提前结束。
+   - 已确认的是"236+A 能进 1000"；未确认的是"在 200 的取消窗口内切进去"。**不写 PASS。**
+   - 需要说明的是：此前把这两个 Gate 归因为"必须人工按键"**是我的判断失误** ——
      `data/training.zss:82-83 / 204-209` 表明假人行为可以从角色脚本直接驱动，
      现在 `tests/p4/make_dummy.ps1` 已经能做到，不再需要人去按菜单。
    - 人工手册仍然有效（`docs/howto/gate-verification-in-training-mode.md`），
