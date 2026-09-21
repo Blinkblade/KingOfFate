@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | **阶段** | P4 — Test Fighter B |
-| **状态** | **IN_PROGRESS**（Gate 1/2/3/**4**/5/8/9/10 PASS；**Gate 6/7 仍 BLOCKED**） |
+| **状态** | **IN_PROGRESS**（Gate 1/2/3/**4**/5/8/9/10 PASS；Gate 7「被防御」**PASS**；**Gate 6 与 Gate 7「被跳跃规避」仍 BLOCKED**） |
 | **时间** | 2026-09-18（2026-09-20 全量复查 + 2026-09-21 最终验收，见 §9） |
 | **分支** | `feature/p4-test-fighter-b` |
 | **基线** | `main` @ `18621e4`（含 P3 合并 PR #5） |
@@ -270,20 +270,31 @@ pwsh -File tests\p4\run_matrix.ps1 -Only kfm  # 只跑某一组
 
 ### 已知问题
 
-1. **Gate 6（取消链精确时间序）/ Gate 7（投射物被防御、被跳跃规避）仍 BLOCKED。**
-   缺的不是推理能力，而是**有人按下那几下键**并把结果填回
-   `docs/howto/gate-verification-in-training-mode.md` §6。场景构造不需要按键注入 ——
-   引擎自带 Training 模式（`Guard Mode = all` 让假人必防、`Dummy Mode = jump` 让假人持续跳）
-   + 真实键盘即可。
-2. **撤下了一批没有机器依据的数值结论。** 复查发现 harness 报告里只有
+1. **Gate 7「投射物被防御」已 PASS（2026-09-21 自动重测）**：脚本假人
+   `assertSpecial{flag: autoGuard}` → P2 `LIF 1000 → 994`（-6）；对照组（不设防）
+   `1000 → 940`（-60）。同一轮还顺带把"投射物伤害 60"这条**重新取回了机器证据**。
+   详见 `docs/evidence/p4/gate7_dummy_matrix.txt`。
+2. **Gate 7「被跳跃规避」与 Gate 6（取消链精确时间序）仍 BLOCKED。**
+   - 跳跃那条：假人按住上会**反复起跳落地**，命中瞬间很可能已落回地面，
+     本次读数与对照组完全相同（-60），**证明不了任何事**，所以不写 PASS。
+     下一步要用 `framestep_probe.ps1` 逐 tick 卡住"命中帧假人确实在空中"。
+   - Gate 6：`framestep_probe` + 自动读数已经具备条件，尚未执行。
+   - 需要说明的是：此前把它们归因为"必须人工按键"**是我的判断失误** ——
+     `data/training.zss:82-83 / 204-209` 表明假人行为可以从角色脚本直接驱动，
+     现在 `tests/p4/make_dummy.ps1` 已经能做到，不再需要人去按菜单。
+   - 人工手册仍然有效（`docs/howto/gate-verification-in-training-mode.md`），
+     只是不再作为唯一途径。
+3. **撤下了一批没有机器依据的数值结论。** 复查发现 harness 报告里只有
    `pid / hwnd / focus / 截图列表 / crashlog 行数`，**不含任何游戏数值**，
-   因此诸如"投射物命中 LIFE 1000→940""EX 耗气 580→80""对局 110 秒""A 被打到 74 血"
-   这类结论原本只能靠看截图得到，已全部标注删除线并说明原因（Phase Report §5.x）。
+   因此诸如"EX 耗气 580→80""对局 110 秒""A 被打到 74 血"这类结论
+   原本只能靠看截图得到，已全部标注删除线并说明原因（Phase Report §5.x）。
    **没有为了填满表格把任何一项写成 PASS。**
-3. **P1–P3 文档里"读截图得来的数值"尚未复核**（同一证据类别），
+   （注：其中"投射物命中 LIFE 1000→940"这一条已由 2026-09-21 的假人对照实验
+   **重新取得机器证据并恢复**，见上面第 1 条 —— 撤下不等于永久删除，有证据就能回来。）
+4. **P1–P3 文档里"读截图得来的数值"尚未复核**（同一证据类别），
    已列入遗留项 #8，建议下一窗口用 `tools/read_frame_text.py` 回扫。
-4. **占位素材**：SFF/SND 沿用 KFM 占位资源（`prototype_only`，见 `assets/LICENSE_MANIFEST.csv`），
+5. **占位素材**：SFF/SND 沿用 KFM 占位资源（`prototype_only`，见 `assets/LICENSE_MANIFEST.csv`），
    投射物判定框尺寸是按占位精灵原点凑出来的，P5 换素材后需重画。
-5. **构建产物跨日不可字节复现**：`build/build.sh:102` 把当天日期写进
+6. **构建产物跨日不可字节复现**：`build/build.sh:102` 把当天日期写进
    `-ldflags -X main.BuildTime`。同日两次构建 SHA256 一致；跨日必然不同（已核对为良性）。
 | Frame Data 表格式 | `design/characters/test_fighter_b/moves.csv` |

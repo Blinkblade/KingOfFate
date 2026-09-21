@@ -1,0 +1,67 @@
+P4 Gate 7 — scripted-dummy experiment (2026-09-21)
+==================================================
+
+Setup
+-----
+Three runtime-only dummies generated from game/chars/_template by
+tests/p4/make_dummy.ps1. The only difference between them is what their
+[StateDef -3] (runs every tick) asserts:
+
+  test_dummy_plain   (no assert)                <- control
+  test_dummy_guard   assertSpecial{flag: autoGuard}
+  test_dummy_jump    assertInput{flag: U}
+
+Both sctrls are copied from the engine's own data/training.zss (:82-83 and
+:204-209), i.e. this is exactly how the built-in Training mode drives its dummy.
+
+P1 is always test_fighter_b with -p1.ai 0; the projectile is fired by injecting
+236 + x with tests/p2/inject_phases.ps1:
+
+  -Phases '0x28:0.06,0x28+0x27:0.06,0x27:0.06,0x09:0.7' -SettleSec 0.02 -NoBurst
+
+Every number below was read by tools/read_frame_text.py from the P2 row of the
+debug overlay (P2; 57; LIF:....). Nothing here is eyeballed.
+
+Results (P2 LIF)
+----------------
+
+                     before injection      after projectile      delta
+  plain  (control)        1000                   940              -60
+  guard  (autoGuard)      1000                   994               -6
+  jump   (hold U)         1000                   940              -60
+
+Per-frame readings
+------------------
+  g7_plain_p04_09_before.png   P2 LIF = 1000
+  g7_plain_p04_09_after.png    P2 LIF = 940
+  g7_plain_01..04.png          P2 LIF = 940   (stays there, one hit only)
+
+  g7_guard_p04_09_before.png   P2 LIF = 1000
+  g7_guard_p04_09_after.png    P2 LIF = 994
+  g7_guard_01..04.png          P2 LIF = 994
+
+  g7_jump_p04_09_before.png    P2 LIF = 1000
+  g7_jump_p04_09_after.png     P2 LIF = 940
+  g7_jump_01..04.png           P2 LIF = 940
+
+Conclusion
+----------
+- plain vs guard is a clean A/B: 60 damage becomes 6. Guard engages. Gate 7
+  "projectile guarded" is now PASS with machine evidence.
+- jump is identical to the control, so it proves nothing: holding "up" makes the
+  dummy jump repeatedly, and at the moment the projectile arrives it is most
+  likely back on the ground. Gate 7 "projectile jumped over" stays BLOCKED until
+  the dummy is airborne at the impact tick (next step: framestep_probe to hold
+  the dummy in its jump state while the projectile passes).
+
+Also worth recording
+--------------------
+The first version of make_dummy.ps1 wrote its comment with ';'. ZSS only accepts
+'#' comments, so the engine aborted at once:
+
+  Error: external/script/main.lua:1162:
+  chars/test_dummy_guard/test_dummy_guard.zss:538: Invalid data: ;
+  (save/logs/Ikemen_2026-09-21_23-27-22.log)
+
+The harness reported it as "engine exited by itself, exitcode=1" -- without the
+crash log this would have looked like an unexplained quit.
