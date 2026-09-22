@@ -293,6 +293,11 @@ pwsh -File tests\p4\run_matrix.ps1 -Only kfm  # 只跑某一组
    - 后续两次尝试都失败了：一次所有 `Save-Shot` 返回 FAILED（暂停态下 `PrintWindow`
      对 OpenGL 窗口会阻塞渲染线程），一次 `EXIT=1` 提前结束。
    - 已确认的是"236+A 能进 1000"；未确认的是"在 200 的取消窗口内切进去"。**不写 PASS。**
+   - **补测步骤已写成手册**：[`docs/howto/gate6-cancel-verification.md`](howto/gate6-cancel-verification.md)
+     —— 判据是量出来的：状态 200 起手 3 + 判定 4 + 收招 13 = **20 tick**，
+     取消窗口在 `animElem 3` 打开（`test_fighter_b.zss:157-158`）。
+     **取消成立时 200 会被打断（明显短于 20 tick）且 1000 紧接开始**；
+     若 200 跑满 20 tick 才出现 1000，那就是"打完再出下一招"，不算取消。
    - 需要说明的是：此前把这两个 Gate 归因为"必须人工按键"**是我的判断失误** ——
      `data/training.zss:82-83 / 204-209` 表明假人行为可以从角色脚本直接驱动，
      现在 `tests/p4/make_dummy.ps1` 已经能做到，不再需要人去按菜单。

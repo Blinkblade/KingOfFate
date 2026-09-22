@@ -58,7 +58,13 @@
     # walk into range, pause, then tap A and watch state 200 unfold tick by tick
     pwsh -File tests/p2/framestep_probe.ps1 -P1 test_fighter_b -P2 test_fighter_a `
         -ApproachSec 2.2 -ShowDebug -ShowClsn -Prefix fs_a `
-        -Steps '0x09:2','none:24'
+        -Steps '0x09:2,none:24'
+
+    -Steps is ONE comma-separated string, exactly like inject_phases.ps1:
+    `pwsh -File` cannot bind a comma list to a [string] parameter, and the extra
+    value silently lands on the next positional parameter.
+    A worked Gate 6 recipe (with the numbers to compare against) lives in
+    docs/howto/gate6-cancel-verification.md.
 #>
 [CmdletBinding()]
 param(

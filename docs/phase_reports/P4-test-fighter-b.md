@@ -151,7 +151,9 @@
 | 证据 | `logs/p2/shots/p4_cancel2_p01_09_burst03.png`（State 200）、`p4_cancel_02.png`（State 1000） |
 | 是否新建第二套取消系统 | **否**，沿用 `CanChain(lv)` 等级系统 |
 | **验证方式** | **已定稿**：Training 模式 + `PAUSE`/`SCROLLLOCK` 单帧步进，
-  见 [`docs/howto/gate-verification-in-training-mode.md`](../howto/gate-verification-in-training-mode.md) §5 |
+  见 [`docs/howto/gate-verification-in-training-mode.md`](../howto/gate-verification-in-training-mode.md) §5。
+  **完整的分步操作手册（含判据数字与已知坑）**：
+  [`docs/howto/gate6-cancel-verification.md`](../howto/gate6-cancel-verification.md) |
 
 #### 2026-09-21 的进展：装置修好了，证据还没拿到
 
