@@ -253,7 +253,10 @@ tick 数不变，并有 Runtime 回归证据（`crashlogs : 0 new`）。
                   1 file changed, 5 insertions(+), 1 deletion(-)
         77deb1c  tool: add character asset inspection, export and validation tools
                   69 files changed, 6989 insertions(+), 53 deletions(-)
-        （第三个提交为本文档的 Git 信息回填）
+        后续两个提交只改文档：一个回填本节的 Git 信息，一个记录推送状态
+推送  : 已推送 origin/feature/p5-character-asset-tooling
+        （本机 push 需要本地代理 http://127.0.0.1:7897；不带代理时 GitHub 会
+         在 send-pack 阶段直接掐断连接，报 curl 52/56）
 子模块: engine/ikemen-go @ ba516193（未改动，指针未动）
 ```
 
