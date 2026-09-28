@@ -417,6 +417,45 @@ pwsh -File scripts\test.ps1 -Suite tools
   （`anim.go:311-364`、`char.go:10209-10233`）+ P4 在 Runtime 上对 `Clsn1` 的 A/B 实测。
   对 `Clsn2` 没有单独做过 Runtime 实测；它走的是同一段解析代码，所以按同一结论处理。
   如果你在 P6 上观察到相反的现象，先怀疑这条假设。
-- 正确性的人工判据是 montage 拼图（人眼确认是人形而不是噪点）+ fixtures 的
-  **逐像素相等**断言。真实容器只做"未变化"的 golden 哈希回归，不做像素级与引擎对照 ——
-  工具不声称"与 IKEMEN 渲染 100% 一致"（缩放、palFX、blend 都不在导出范围内）。
+- 工具不声称"导出的 PNG 与 IKEMEN 的画面 100% 一致"：缩放、palFX、blend、可选调色板
+  都是 Runtime 的事，不在导出范围内。导出做的是"精灵的原始像素 + 该精灵自己的调色板"。
+
+---
+
+## 13. 解码正确性是怎么证明的（不是"看着像"）
+
+P5 结束时的证据链，从强到弱：
+
+1. **与引擎自身解码器逐字节对照（最强）**。把
+   `engine/ikemen-go/src/image.go:1209` 的 `Sprite.Lz5Decode` **逐字照抄**成一份
+   临时的 Go 程序，对四个容器每个精灵解码取 sha256，与 `tools/kofassets/sff.py`
+   的输出比对：
+
+   ```text
+   cross-check: 1128 sprite(s) compared against the engine's own decoder, 0 mismatch
+   ```
+
+   1128 = 4 容器 × 282，其中 280/282 走 LZ5、2/282 走 PNG 索引（这一半同时对照了
+   Go 的 `image/png` 与我们的 `pngio.py`）、41/282 是链接精灵（走 `link` 链）。
+   方法与结果：[`docs/evidence/p5/engine_decoder_crosscheck.txt`](evidence/p5/engine_decoder_crosscheck.txt)。
+
+   > 那份 Go 程序**刻意没有提交**：它是引擎代码的副本，把它留在外面也顺便让 Go 不进
+   > 项目的依赖表（资产工具保持"只用标准库"）。重建方法写在上面的证据文件里，约五分钟。
+
+2. **夹具逐像素相等**。合成夹具的"已知索引 + 已知调色板 → 期望 RGBA"是逐字节断言，
+   覆盖 raw 与 LZ5 两条路径（`tests/fixtures/verify_decoders.py`，48/48）。
+
+3. **真实容器的结构断言**：282 个精灵全部可解码、长度与 `width*height` 相符、
+   全部都有可见像素、golden 哈希未变化。
+
+4. **人眼**：`sffctl montage` 拼图（透明区域是棋盘格）。它不再承担"证明解码正确"的
+   职责 —— 那是第 1 条的事 —— 但它是最快发现"哪里看着不对"的方式。
+
+### 顺带的发现：链接精灵
+
+每个容器里 **41/282** 个精灵是"链接精灵"（`data_size == 0`，自身没有字节，
+复用 `link` 指向的前一个精灵的像素，即引擎的 `shareCopy`），全部落在 50xx
+（受击／倒地）区间。读取器按引擎的方式顺着 `link` 链解析，所以导出它们会得到正常的
+PNG 而不是空文件或报错；`inspect --json` 里能看到 `linked_to_index`。
+（`data_size == 0` 但 `link` 越界时，引擎会把它留成"无贴图"；工具同样留空并给出告警，
+不会让整个容器读不了。）

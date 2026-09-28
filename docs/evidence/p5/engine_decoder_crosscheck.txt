@@ -1,0 +1,91 @@
+# P5 — cross-checking the asset reader against the engine's own decoder
+
+Why this exists: the correctness of the sprite decoder used to rest on a human
+looking at a montage and saying "yes, that is a person". That is not machine
+checkable. This check makes it checkable: it runs the **engine's own
+`Lz5Decode`** (copied verbatim from `engine/ikemen-go/src/image.go:1209`) over
+every sprite of every container the project ships, and compares the decoded bytes
+with what `tools/kofassets/sff.py` produces. Same input, two implementations.
+
+## Result
+
+```
+game/chars/_template/_template.sff            compared 282 sprites
+game/chars/test_fighter_a/test_fighter_a.sff  compared 282 sprites
+game/chars/test_fighter_b/test_fighter_b.sff  compared 282 sprites
+game/chars/p1_kfm_zss_lab/kfm.sff             compared 282 sprites
+
+cross-check: 1128 sprite(s) compared against the engine's own decoder, 0 mismatch
+by decode path: {'indices': 1128}
+```
+
+1128 sprites = 4 containers x 282, of which:
+
+- 280 per container use **LZ5** (format 4) — the decoder that carries the whole
+  placeholder art set, and the one a port bug would most likely have broken;
+- 2 per container use **PNG palette** (format 10), decoded on the Go side by
+  `image/png` + `image.Paletted.Pix` and on the Python side by
+  `tools/kofassets/pngio.py`, so this half cross-checks the PNG reader too;
+- 41 per container are **linked** sprites (data size 0, pixels reused from the
+  sprite the `link` field points at — the engine's `shareCopy`). Those are
+  resolved on both sides through the same link chain.
+
+The two fixture containers were checked as well (`linked_sprite.sff`,
+`blank_sprite.sff`, `minimal_v2.sff`): MATCH.
+
+## How to reproduce it
+
+The helper Go program is **deliberately not committed**. It is a copy of engine
+code, and keeping it out also keeps Go off the project's dependency list — the
+asset tools stay standard-library-only. Recreating it takes about five minutes:
+
+1. Copy `Sprite.Lz5Decode` verbatim from `engine/ikemen-go/src/image.go`
+   (the declaration it needs is a struct with a `Size [2]uint16` field).
+2. Walk the SFF v2 container — the offsets are in `tools/kofassets/sff.py`, in
+   `Sff._parse`:
+   ```text
+   36 sprite-header offset   40 sprite count   44 palette-header offset
+   48 palette count          52 lofs           60 tofs
+   sprite header (28 bytes): group, number, w, h, axis_x, axis_y, link,
+                             format, coldepth, data_offset, data_size,
+                             palette_index, flags
+   pixel data at lofs + data_offset when bit 0 of flags is clear
+   ```
+   For formats 2/3/4 the engine skips the 4-byte length prefix before decoding
+   (`readV2`: `f.Seek(offset+4, 0)`); for format 10 it calls `png.Decode` there.
+   For `data_size == 0` it reuses the decoded bytes of `sprites[link]`.
+3. Print `index  group,image  format  sha256` for every sprite and diff against
+   the same hashes computed from `tools/kofassets/sff.py`
+   (`Sff._resolve_pixels`).
+
+On this machine Go lives at `D:\msys64\mingw64\bin\go.exe` and needs an explicit
+GOROOT (the MSYS2 package is "trimmed"):
+
+```bash
+GOROOT=D:/msys64/mingw64/lib/go GOCACHE=D:/AI/develop/KingOfFate/.tmp/gocache \
+GOPATH=D:/AI/develop/KingOfFate/.tmp/gopath GOPROXY=off CGO_ENABLED=0 \
+  /d/msys64/mingw64/bin/go.exe build -o go_xcheck.exe main.go
+```
+
+## What this does and does not prove
+
+**Proves**: the Python reader decodes each sprite to exactly the bytes the
+engine's decoder produces, for every sprite in the project. A port bug in LZ5,
+the PNG reader, the length-prefix skipping or the link resolution would show up
+here as a mismatch.
+
+**Does not prove**: that the exported PNG "looks like the game". Scaling,
+palFX, blend modes and the selectable palette are runtime concerns and are out
+of the exporter's scope. Linking decoded indices through a palette is a
+separate, much simpler step, and it is covered by the byte-exact fixture
+assertions in `tests/fixtures/verify_decoders.py`.
+
+## Incidental finding
+
+Writing the helper turned up something worth knowing about the placeholder
+assets: **41 of the 282 sprites in each container are linked sprites**
+(`data_size == 0`), all of them in the 50xx get-hit / liedown range. They have
+no bytes of their own; the engine copies them from the sprite just before them.
+`tools/kofassets/sff.py` resolves them through the `link` chain, exactly like
+`loadSff` does, so `sffctl export` produces a real PNG for them instead of an
+empty file or an error.

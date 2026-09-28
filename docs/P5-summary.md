@@ -87,8 +87,15 @@ pwsh -File scripts\test.ps1 -Full      # 额外导出 282 个精灵并拼图
 **验证过**：尺寸与 SFF 元数据一致、透明像素逐字节正确（用夹具做已知输入断言）、
 每个精灵都不是全透明、两次导出 **SHA256 逐文件相同**、导出后从磁盘回读逐像素对照。
 
-**没有声称**：与 IKEMEN Runtime 渲染"100% 一致"。缩放 / palFX / blend 不在导出范围内。
-真实容器的正确性判据是"人眼看 montage 是人形 + 282 个精灵全部可解码且有可见像素"。
+**★ 解码本身与引擎逐字节一致（不是"看着像"）**：把引擎 `image.go:1209` 的
+`Sprite.Lz5Decode` 逐字照抄成一份临时 Go 程序，对四个容器的每个精灵解码取哈希，
+与 `tools/kofassets/sff.py` 比对 —— **1128 个精灵，0 处不一致**
+（其中 280/282 走 LZ5、2/282 走 PNG 索引、41/282 是链接精灵）。
+方法与复现步骤：[`docs/evidence/p5/engine_decoder_crosscheck.txt`](evidence/p5/engine_decoder_crosscheck.txt)。
+
+**没有声称**：与 IKEMEN 的画面"100% 一致"。缩放 / palFX / blend / 可选调色板都是
+Runtime 的事，不在导出范围内；导出做的是"精灵原始像素 + 该精灵自己的调色板"。
+（对照用的 Go 程序**刻意不提交**：它是引擎代码副本，且不该让 Go 进项目依赖表。）
 
 ---
 
@@ -149,10 +156,11 @@ Python 3.8+，只用标准库（struct / zlib / json / argparse / re / hashlib /
 
 | 命令 | 内容 | 实测结果 |
 | --- | --- | --- |
-| `pwsh -File scripts\test.ps1` | smoke（26）+ tools（61） | **PASS** |
-| `pwsh -File scripts\test.ps1 -Full` | tools 66 项（含 282 个精灵全导出 + montage 确定性） | **PASS**，21.9 s |
-| `python tests\fixtures\verify_decoders.py` | 夹具逐像素相等 + 真实容器 golden + 全精灵解码 | **42/42 PASS** |
-| `python tests\fixtures\make_fixtures.py --check` | 夹具与生成器一致 | 36 文件 0 问题 |
+| `pwsh -File scripts\test.ps1` | smoke（26）+ tools（65） | **PASS** |
+| `pwsh -File scripts\test.ps1 -Full` | tools 70 项（含 282 个精灵全导出 + montage 确定性） | **PASS**，22.4 s |
+| `python tests\fixtures\verify_decoders.py` | 夹具逐像素相等 + 真实容器 golden + 全精灵解码 + 链接/空白精灵 | **48/48 PASS** |
+| `python tests\fixtures\make_fixtures.py --check` | 夹具与生成器一致 | 39 文件 0 问题 |
+| 引擎解码器逐字节对照 | 1128 个精灵 vs 引擎自己的 `Lz5Decode` | **0 处不一致** |
 | `pwsh -File tests\p4\run_matrix.ps1 -Only b_vs_a` | Runtime 回归 | PASS，`crashlogs : 0 new` |
 
 ---
@@ -193,7 +201,10 @@ tests/fixtures/
    本次只记录未改注释 —— P6 写新动画时不要照那句话做。
 5. 判定框作用域结论的来源是引擎源码 + P4 对 `Clsn1` 的 Runtime A/B 实测；
    对 `Clsn2` 没有单独实测（同一段解析代码，按同一结论处理）。
-6. 不做 SND、调色板编辑、精灵表切割、AI 生成精灵、GUI、数据库。
+6. **每个容器有 41/282 个"链接精灵"**（`data_size == 0`，复用 `link` 指向的前一个精灵的
+   像素，全部在 50xx 受击/倒地区间）。工具顺着 `link` 解析，所以导出它们得到正常 PNG；
+   但如果你换素材时只替换"有字节的精灵"，这些共享像素的精灵不会跟着变 —— 留意。
+7. 不做 SND、调色板编辑、精灵表切割、AI 生成精灵、GUI、数据库。
 
 ---
 

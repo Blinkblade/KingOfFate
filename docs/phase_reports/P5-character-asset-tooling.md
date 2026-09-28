@@ -75,6 +75,7 @@ P5 的客户是 P6。P5 结束时可以做到：
 | 导出全部 282 个 | `--out logs\p5\tool-tests\real_all --overwrite` → `exported 282 of 282` | `tool_tests_full.txt` |
 | 尺寸正确 | 导出的 PNG 从磁盘读回，`width/height` 与 SFF 元数据一致（282/282） | `check_export.py`：`282 file(s) verified, 0 problem(s)` |
 | 透明度正确 | 每个 PNG 的不透明像素数与容器逐像素相等；且**没有全透明精灵** | 同上；`verify_decoders.py`：`every sprite has visible pixels`（3 个容器 × 282） |
+| **解码与引擎一致** | 用引擎自己的 `Lz5Decode`（`image.go:1209` 逐字照抄）对四个容器每个精灵解码取哈希，与 `tools/kofassets/sff.py` 逐字节比对 | **1128 个精灵，0 处不一致**（含 41/282 的链接精灵与 2/282 的 PNG 索引精灵）→ [`evidence/p5/engine_decoder_crosscheck.txt`](../evidence/p5/engine_decoder_crosscheck.txt) |
 | 文件命名稳定 | `<group>_<image>.png`（`0_0.png` / `1_0.png` / `2_0.png`），两次导出到不同目录 **SHA256 逐文件相同** | `tool_tests.txt` group 3 |
 | 默认不覆盖 | 目标已存在且未加 `--overwrite` → `SFF_EXPORT_NO_OVERWRITE`，退出码 **1** | 同上 |
 | 不污染角色目录 | 输出目录必填；工具从不默认写入角色目录；跑完 `git status` 无 `logs/` 之外的 PNG | `tool_tests.txt` group 7 |
@@ -196,10 +197,12 @@ STEP 9  montage                       282 精灵 → 16x18 拼图          exit=
 
 | 检查 | 结果 |
 | --- | --- |
-| `pwsh -File scripts/test.ps1` | smoke **26/26** + tools **61/61** = PASS → [`evidence/p5/test_ps1_all_suites.txt`](../evidence/p5/test_ps1_all_suites.txt) |
-| `pwsh -File scripts/test.ps1 -Full` | tools **66/66**（含全部 282 个精灵导出 + montage 确定性）→ [`evidence/p5/tool_tests_full.txt`](../evidence/p5/tool_tests_full.txt) |
+| `pwsh -File scripts/test.ps1` | smoke **26/26** + tools **65/65** = PASS → [`evidence/p5/test_ps1_all_suites.txt`](../evidence/p5/test_ps1_all_suites.txt) |
+| `pwsh -File scripts/test.ps1 -Full` | tools **70/70**（含全部 282 个精灵导出 + montage 确定性）→ [`evidence/p5/tool_tests_full.txt`](../evidence/p5/tool_tests_full.txt) |
 | Fighter A / Fighter B 基础回归 | `run_matrix.ps1 -Only b_vs_a` PASS，`crashlogs : 0 new` → [`evidence/p5/runtime_regression.txt`](../evidence/p5/runtime_regression.txt) |
-| 工具测试 | 见上（61 / 66 项） |
+| 工具测试 | 见上（**65** 项 / `-Full` **70** 项，含链接精灵与空白精灵两个夹具） |
+| 解码器校验 | `python tests\fixtures\verify_decoders.py` → **48/48 PASS**（含链接精灵与空白精灵断言） |
+| 解码与引擎逐字节对照 | 1128 个精灵，0 处不一致（详见 Gate 3） |
 | 无意外 Git 修改 | 工具测试 group 7 直接断言：引擎 submodule 未改、`logs/` 外无 PNG、除 `test_fighter_b.air` 外无角色文件变化；收尾 `git status` 见 §6 |
 | `docs/character_asset_tooling.md` | DONE |
 | Iteration Record | DONE：`docs/iterations/20260929-p5-character-asset-tooling.md` |
@@ -280,6 +283,8 @@ ERROR AIR_MISSING_SPRITE  action 410 element 4 references sprite 410,5
 | 7 | 判定框作用域按引擎源码实现，而不是按仓库注释 | `anim.go:311-364` 的 `def1/def2` 复位语义 + P4 的 Runtime A/B 实测一致；仓库注释里"沿用到下一次声明"的说法不准确。**只记录不改注释**（工具 PR 不顺手改三个角色的文档文案）。 |
 | 8 | 测试夹具必须自己造 SFF | 真实容器是占位素材，没有任何地方记录过"每个像素应该是什么"，无法据以断言解码正确。合成夹具让"索引 + 调色板 → RGBA"的逐字节断言成为可能；`make_fixtures.py` 是全仓库唯一写 SFF 的地方，且明确标注为测试夹具。 |
 | 9 | `scripts/test.ps1` 默认同时跑 smoke + tools，重活放 `-Full` | 合同 §59：`character_validate` 这类静态检查适合进默认回归，`export-all` 不适合每次跑。实测 tools 套件约 4 s，`-Full` 约 22 s。 |
+| 10 | 用"引擎自己的解码器逐字节对照"替代"人眼看拼图"作为解码正确性的主证据；对照用的 Go 程序**不提交** | 拼图只能判断"像不像"，不可机器复核。照抄 `Lz5Decode` 做对照可以。不提交是因为它是引擎代码副本，且不该让 Go 进项目依赖表 —— 重建方法（约 5 分钟）写进了证据文件。 |
+| 11 | 链接精灵（`data_size == 0`）按引擎 `shareCopy` 顺着 `link` 解析；`link` 越界时留空并告警，而不是让整个容器读不了 | 真实容器有 41/282 个链接精灵（50xx 受击/倒地区间）—— 不处理的话，导出会得到一堆空文件或报错。引擎对 `link` 越界的处理是"无贴图"，工具照做并告警。 |
 
 ---
 
@@ -291,12 +296,12 @@ tools/sffctl/sffctl.py                    inspect / export / montage
 tools/airtool/airtool.py                  inspect / validate
 tools/character_validate/validate_character.py
 tests/fixtures/make_fixtures.py           夹具生成器（唯一写 SFF 的地方，测试专用）
-tests/fixtures/verify_decoders.py         逐像素断言 + golden 回归
+tests/fixtures/verify_decoders.py         逐像素断言 + golden 回归 + 链接/空白精灵
 tests/fixtures/expected/decoder_goldens.json
-tests/fixtures/assets/**                  36 个生成夹具
+tests/fixtures/assets/**                  39 个生成夹具
 tests/fixtures/README.md                  夹具来源 / 用途 / License
 tests/tools/check_export.py               导出 PNG 的独立回读校验
-tests/tools/run_tool_tests.ps1            61 / 66 项工具测试
+tests/tools/run_tool_tests.ps1            65 项工具测试（-Full 70 项）
 scripts/test.ps1                          接入 tools 套件
 docs/character_asset_tooling.md           工具手册
 docs/P5-summary.md                        交接说明

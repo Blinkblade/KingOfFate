@@ -75,6 +75,8 @@ python: python
   [PASS] 2    SFF v1 is UNSUPPORTED (4)
   [PASS] 2    truncated file is CORRUPT (5)
   [PASS] 2    bad signature is CORRUPT (5)
+  [PASS] 2    a linked sprite is resolved through its link
+  [PASS] 2    a sprite the engine leaves blank is reported, not fatal
   [PASS] 3    fixture container exports all sprites
   [PASS] 3    files are named <group>_<image>.png
   [PASS] 3    written PNGs match the container exactly
@@ -83,6 +85,8 @@ python: python
   [PASS] 3    existing files are not overwritten by default
   [PASS] 3    a missing sprite fails with exit 1
   [PASS] 3    a usage error exits 2
+  [PASS] 3    a container holding a blank sprite still exports
+  [PASS] 3    the blank sprite is exported at its declared size
   [PASS] 4    real animation table is summarised
   [PASS] 4    a single action can be inspected
   [PASS] 4    action 1005 reports an -1 hold
@@ -117,9 +121,9 @@ python: python
   [PASS] 6    JSON verdict lists per-item statuses
   [PASS] 7    the engine submodule was not modified
   [PASS] 7    no PNG was written outside logs/
-  [PASS] 7    no character file other than the AIR fixture fix changed
+  [PASS] 7    no character file other than the AIR sprite fix changed
 ------------------------------------------------------------------------
-asset tool tests: 61/61 checks passed
+asset tool tests: 65/65 checks passed
 
 ASSET TOOL TESTS PASS
 

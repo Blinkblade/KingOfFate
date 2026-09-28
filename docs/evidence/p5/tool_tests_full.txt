@@ -1,4 +1,49 @@
 ﻿
+=== suite: smoke ===
+
+KingOfFate smoke test
+root: D:\AI\develop\KingOfFate
+------------------------------------------------------------------------
+A. engine submodule / pinned baseline
+B. engine runtime directories
+C. build artifact
+D. basic runtime files
+E. project scaffolding
+------------------------------------------------------------------------
+  [PASS] submodule directory exists   (engine\ikemen-go)
+  [PASS] submodule git metadata exists   (engine\ikemen-go\.git)
+  [PASS] .gitmodules exists   (.gitmodules)
+  [PASS] engine baseline commit matches pin   (expected ba516193bba8 / found ba516193bba8)
+  [PASS] engine on integration branch kingoffate/rc5   (kingoffate/rc5)
+  [PASS] .gitmodules points at the engine fork   (engine/ikemen-go -> Blinkblade/Ikemen-GO)
+  [PASS] runtime dir: data/   (engine\ikemen-go\data)
+  [PASS] runtime dir: font/   (engine\ikemen-go\font)
+  [PASS] runtime dir: external/   (engine\ikemen-go\external)
+  [PASS] runtime dir: chars/   (engine\ikemen-go\chars)
+  [PASS] runtime dir: stages/   (engine\ikemen-go\stages)
+  [PASS] engine executable built   (engine\ikemen-go\Ikemen_GO.exe)
+  [PASS] executable size is plausible (> 5 MB)   (14.94 MB)
+  [PASS] default motif (data/ikemen1/system.def)   (engine\ikemen-go\data\ikemen1\system.def)
+  [PASS] fight screen (data/fight.def)   (engine\ikemen-go\data\fight.def)
+  [PASS] test character (chars/kfm/kfm.def)   (engine\ikemen-go\chars\kfm\kfm.def)
+  [PASS] test stage (stages/stage0.def)   (engine\ikemen-go\stages\stage0.def)
+  [PASS] README.md   (README.md)
+  [PASS] CONTRIBUTING.md   (CONTRIBUTING.md)
+  [PASS] docs/development_status.md   (docs\development_status.md)
+  [PASS] docs/environment.md   (docs\environment.md)
+  [PASS] docs/iterations/README.md   (docs\iterations\README.md)
+  [PASS] .github/pull_request_template.md   (.github\pull_request_template.md)
+  [PASS] scripts/build_engine.ps1   (scripts\build_engine.ps1)
+  [PASS] scripts/run_game.ps1   (scripts\run_game.ps1)
+  [PASS] scripts/test.ps1   (scripts\test.ps1)
+------------------------------------------------------------------------
+smoke test: 26/26 checks passed
+
+SMOKE TEST PASS
+
+
+=== suite: tools ===
+
 KingOfFate asset tool tests
 root:   D:\AI\develop\KingOfFate
 python: python
@@ -30,6 +75,8 @@ python: python
   [PASS] 2    SFF v1 is UNSUPPORTED (4)
   [PASS] 2    truncated file is CORRUPT (5)
   [PASS] 2    bad signature is CORRUPT (5)
+  [PASS] 2    a linked sprite is resolved through its link
+  [PASS] 2    a sprite the engine leaves blank is reported, not fatal
   [PASS] 3    fixture container exports all sprites
   [PASS] 3    files are named <group>_<image>.png
   [PASS] 3    written PNGs match the container exactly
@@ -38,6 +85,8 @@ python: python
   [PASS] 3    existing files are not overwritten by default
   [PASS] 3    a missing sprite fails with exit 1
   [PASS] 3    a usage error exits 2
+  [PASS] 3    a container holding a blank sprite still exports
+  [PASS] 3    the blank sprite is exported at its declared size
   [PASS] 3    all 282 real sprites export and verify
   [PASS] 3    exported real sprites match the container
   [PASS] 3    montage renders every sprite
@@ -77,9 +126,12 @@ python: python
   [PASS] 6    JSON verdict lists per-item statuses
   [PASS] 7    the engine submodule was not modified
   [PASS] 7    no PNG was written outside logs/
-  [PASS] 7    no character file other than the AIR fixture fix changed
+  [PASS] 7    no character file other than the AIR sprite fix changed
 ------------------------------------------------------------------------
-asset tool tests: 66/66 checks passed
+asset tool tests: 70/70 checks passed
 
 ASSET TOOL TESTS PASS
+
+
+ALL TEST SUITES PASS
 
