@@ -308,8 +308,8 @@ README.md                                 当前阶段 / tools / 测试入口
 game/chars/test_fighter_b/test_fighter_b.air   410,5 → 410,4（+1 行注释）
 ```
 
-收尾时的 `git status` / `git diff --stat` 与最终 commit 见 [`docs/P5-summary.md`](../P5-summary.md) §6
-（本文件在提交前写就，提交哈希在 Summary 里回填）。
+收尾时的 `git status` / `git diff --stat` 与最终 commit 见
+[`docs/P5-summary.md`](../P5-summary.md) §15。
 
 **未修改**：`engine/ikemen-go`（submodule 指针与内容都没动）、其他角色文件、`scripts/build_engine.ps1` /
 `run_game.ps1` / `sync_game_content.ps1`、`tests/p1..p4` 的全部 harness。

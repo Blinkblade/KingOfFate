@@ -241,3 +241,46 @@ AI 生成精灵 / Img2Img      正式角色美术 / VFX / 音频   角色平衡 
 （引擎会记 missing sprite 并在那 5 tick 里不画角色）。已按注释声明的收招长度改成 `410,4`，
 tick 数不变，并有 Runtime 回归证据（`crashlogs : 0 new`）。
 详见 Phase Report §4。
+
+---
+
+## 15. Git 收尾
+
+```text
+分支  : feature/p5-character-asset-tooling
+基线  : main @ e279e96（PR #6 合并 P4）
+提交  : 60dfee1  fix: correct a missing sprite reference in test_fighter_b action 410
+                  1 file changed, 5 insertions(+), 1 deletion(-)
+        77deb1c  tool: add character asset inspection, export and validation tools
+                  69 files changed, 6989 insertions(+), 53 deletions(-)
+        （第三个提交为本文档的 Git 信息回填）
+子模块: engine/ikemen-go @ ba516193（未改动，指针未动）
+```
+
+`git status` 收尾状态：工作树 clean；改动集**只有**下列内容，没有导出 PNG、
+没有 `logs/`、没有引擎改动：
+
+```text
+M  README.md                                  M  scripts/test.ps1
+M  docs/development_status.md                 A  .gitattributes
+M  game/chars/test_fighter_b/test_fighter_b.air
+A  tools/{kofassets,sffctl,airtool,character_validate}/**
+A  tests/fixtures/**（36 个生成夹具 + 生成器 + 校验器 + goldens + README）
+A  tests/tools/{check_export.py,run_tool_tests.ps1}
+A  docs/{character_asset_tooling.md,P5-summary.md}
+A  docs/phase_reports/P5-character-asset-tooling.md
+A  docs/iterations/20260929-p5-character-asset-tooling.md
+A  docs/evidence/p5/**
+```
+
+**创建 PR（本机无 `gh`，需手动开）**：
+
+```text
+https://github.com/Blinkblade/KingOfFate/pull/new/feature/p5-character-asset-tooling
+```
+
+**PR 标题建议**：`P5: Character Asset Tooling（角色资产工具链）`
+
+**PR 正文**：与 Phase Report §2（逐 Gate 证据）、§4（发现的缺陷）、§5（关键决策）同源，
+可直接复制。
+
