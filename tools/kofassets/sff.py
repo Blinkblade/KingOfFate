@@ -595,8 +595,12 @@ class Sff:
 
         if sprite.is_linked:
             if sprite.linked_source_index is None:
-                raise SffCorruptError("%s: sprite %d has no pixel data and no usable link"
-                                      % (self.path, sprite.index))
+                # The engine falls back to "no texture" here (loadSff sets palidx 0 and
+                # leaves the sprite blank). Do the same and let the validator report it,
+                # instead of making the whole container unreadable.
+                result = ("indices", b"")
+                self._pixel_cache[sprite.index] = result
+                return result
             result = self._resolve_pixels(self.sprites[sprite.linked_source_index], depth + 1)
             self._pixel_cache[sprite.index] = result
             return result
@@ -614,7 +618,8 @@ class Sff:
             if len(raw_payload) < 4:
                 raise SffCorruptError(
                     "%s: sprite %d (%s) payload is %d bytes, need at least 4 for the length "
-                    "prefix" % (self.path, sprite.index, sprite.format_name, len(raw_payload)))
+                    "prefix; the engine clamps this to 4 and leaves the sprite blank"
+                    % (self.path, sprite.index, sprite.format_name, len(raw_payload)))
             body = raw_payload[4:]
         else:
             body = raw_payload
@@ -689,6 +694,18 @@ class Sff:
         thing the engine would draw.
         """
         kind, data = self._resolve_pixels(sprite)
+        expected = sprite.width * sprite.height
+        stride = 4 if kind == "rgba" else 1
+
+        if len(data) != expected * stride:
+            # Only reachable for sprites the engine also leaves blank (no payload and
+            # no usable link, or a payload shorter than its length prefix). Keep the
+            # declared size so the exported PNG still matches the metadata, and let the
+            # reader's warning explain why it is empty.
+            if len(data) > expected * stride:
+                data = data[:expected * stride]
+            else:
+                data = bytes(data) + bytes(expected * stride - len(data))
 
         if kind == "rgba":
             out = bytearray(data)

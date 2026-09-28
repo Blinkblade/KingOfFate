@@ -119,6 +119,45 @@ def check_fixture_pixels(results):
                       "%d transparent of %d" % (transparent, sprite.width * sprite.height))
 
 
+def check_special_sprites(results):
+    """Linked sprites (the engine's shareCopy) and sprites the engine leaves blank.
+
+    The real character containers hold 41 linked sprites out of 282, so this path is
+    exercised by production data, not only by fixtures.
+    """
+    linked_path = os.path.join(ASSETS, "linked_sprite.sff")
+    if os.path.exists(linked_path):
+        try:
+            container = sff.Sff.load(linked_path)
+            source = container.sprite(0, 0)
+            clone = container.sprite(1, 0)
+            results.check("linked sprite is recognised", clone is not None and clone.is_linked)
+            if source is not None and clone is not None:
+                same = container._resolve_pixels(clone) == container._resolve_pixels(source)
+                results.check("linked sprite decodes to the pixels it shares", bool(same))
+                results.check("linked sprite records its source",
+                              clone.linked_source_index == source.index)
+        except sff.SffError as exc:
+            results.check("linked sprite fixture loads", False, str(exc))
+
+    blank_path = os.path.join(ASSETS, "blank_sprite.sff")
+    if os.path.exists(blank_path):
+        try:
+            container = sff.Sff.load(blank_path)
+            orphan = container.sprite(1, 0)
+            if orphan is None:
+                results.check("blank sprite fixture has the orphan sprite", False)
+            else:
+                rgba, _ = container.rgba(orphan)
+                results.check("a sprite the engine leaves blank is still the declared size",
+                              len(rgba) == orphan.width * orphan.height * 4)
+                results.check("that sprite is entirely transparent",
+                              not any(rgba[i] for i in range(3, len(rgba), 4)))
+                results.check("the reader reports it", bool(container.warnings))
+        except sff.SffError as exc:
+            results.check("blank sprite fixture loads", False, str(exc))
+
+
 def check_png_roundtrip(results):
     width, height = 7, 5
     pixels = bytearray()
@@ -231,6 +270,7 @@ def main(argv=None):
     results = Results()
     goldens = load_goldens()
     check_fixture_pixels(results)
+    check_special_sprites(results)
     check_png_roundtrip(results)
     check_error_handling(results)
     check_real_containers(results, goldens, update=False)

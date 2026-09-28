@@ -200,6 +200,17 @@ foreach ($c in @(
         -Expect $c.e -MustContain @($c.m) | Out-Null
 }
 
+# Two sprite-sharing paths the engine has and that production data uses: a linked
+# sprite (data size 0, reuse the pixels of `link`) and a sprite the engine leaves
+# blank (data size 0 and `link` out of range). Both must be reported, neither may
+# fail the whole container. The real character files have 41 linked sprites of 282.
+Invoke-Tool -Group '2' -Label 'a linked sprite is resolved through its link' `
+    -Arguments @($Sffctl, 'inspect', (Join-Path $Fixtures 'linked_sprite.sff')) -Expect 0 `
+    -MustContain @('Sprites:   2', 'linked_sprite.sff') | Out-Null
+Invoke-Tool -Group '2' -Label 'a sprite the engine leaves blank is reported, not fatal' `
+    -Arguments @($Sffctl, 'inspect', (Join-Path $Fixtures 'blank_sprite.sff')) -Expect 0 `
+    -MustContain @('invalid link index') | Out-Null
+
 # ---------------------------------------------------------------------------
 # 3. sffctl export
 # ---------------------------------------------------------------------------
@@ -241,6 +252,15 @@ Invoke-Tool -Group '3' -Label 'a missing sprite fails with exit 1' `
 
 Invoke-Tool -Group '3' -Label 'a usage error exits 2' `
     -Arguments @($Sffctl, 'export', $fixSff) -Expect 2 | Out-Null
+
+$outBlank = Join-Path $WorkDir 'blank'
+Invoke-Tool -Group '3' -Label 'a container holding a blank sprite still exports' `
+    -Arguments @($Sffctl, 'export', (Join-Path $Fixtures 'blank_sprite.sff'), '--out', $outBlank,
+        '--overwrite') -Expect 0 -MustContain @('exported 2 of 2') | Out-Null
+Invoke-Tool -Group '3' -Label 'the blank sprite is exported at its declared size' `
+    -Arguments @($CheckExport, '--sff', (Join-Path $Fixtures 'blank_sprite.sff'),
+        '--out', $outBlank, '--allow-empty-alpha') -Expect 0 `
+    -MustContain @('2 file(s) verified, 0 problem(s)') | Out-Null
 
 if ($Full) {
     $outAll = Join-Path $WorkDir 'real_all'

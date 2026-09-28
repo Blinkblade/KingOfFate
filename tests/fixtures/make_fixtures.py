@@ -106,8 +106,12 @@ def build_sff_v2(sprites):
     payloads = bytearray()
     payload_start = sprite_header_offset + 28 * len(sprites)
     for sprite in sprites:
-        payload = sprite["payload"]
-        if sprite.get("has_length_prefix"):
+        payload = sprite.get("payload")
+        if payload is None:
+            # A sprite with no data of its own: the engine reuses the pixels of the
+            # sprite its link field points at (shareCopy), so no bytes follow.
+            payload = b""
+        elif sprite.get("has_length_prefix"):
             payload = struct.pack("<I", len(payload)) + payload
         # The engine reads pixel data at lofs + offset (flags bit 0 clear), so the
         # header value must be relative to lofs, not to the start of the payloads.
@@ -115,9 +119,9 @@ def build_sff_v2(sprites):
             "<HHHHhhHBBIIHH",
             sprite["group"], sprite["number"], sprite["width"], sprite["height"],
             sprite["axis_x"], sprite["axis_y"],
-            0,                                      # link
+            sprite.get("link", 0),
             sprite["format"], sprite["depth"],
-            payload_start + len(payloads) - data_offset,
+            payload_start + len(payloads) - data_offset if payload else 0,
             len(payload),
             0,                                      # palette index
             0,                                      # flags: offset is relative to lofs
@@ -167,6 +171,35 @@ def minimal_sff():
          "has_length_prefix": True},
         {"group": 2, "number": 0, "width": 5, "height": 3, "axis_x": 5, "axis_y": 0,
          "format": 0, "depth": 8, "payload": SOLID_PATTERN, "has_length_prefix": False},
+    ])
+
+
+def linked_sff():
+    """A container that exercises the engine's `shareCopy` path.
+
+    A sprite whose data size is 0 reuses the pixels of the sprite its ``link``
+    field points at; the real character containers have 41 of these out of 282.
+    """
+    return build_sff_v2([
+        {"group": 0, "number": 0, "width": 8, "height": 8, "axis_x": 3, "axis_y": 7,
+         "format": 0, "depth": 8, "payload": sprite_pattern_a()},
+        {"group": 1, "number": 0, "width": 8, "height": 8, "axis_x": 3, "axis_y": 7,
+         "format": 0, "depth": 8, "payload": None, "link": 0},
+    ])
+
+
+def blank_sff():
+    """A container with a sprite the engine would also leave blank.
+
+    ``data_size`` is 0 and ``link`` points past the end of the table, so there is
+    nothing to copy. The engine falls back to "no texture"; the tool must report
+    that instead of failing the whole file.
+    """
+    return build_sff_v2([
+        {"group": 0, "number": 0, "width": 8, "height": 8, "axis_x": 3, "axis_y": 7,
+         "format": 0, "depth": 8, "payload": sprite_pattern_a()},
+        {"group": 1, "number": 0, "width": 4, "height": 4, "axis_x": 1, "axis_y": 2,
+         "format": 4, "depth": 5, "payload": None, "link": 99},
     ])
 
 
@@ -344,6 +377,8 @@ def build_all():
     files["minimal_v2.sff"] = container
     # Same container under the name airtool auto-detects next to ok.air.
     files["ok.sff"] = container
+    files["linked_sprite.sff"] = linked_sff()
+    files["blank_sprite.sff"] = blank_sff()
     files["unsupported_v1.sff"] = build_sff_v1()
     files["truncated.sff"] = container[:200]           # header promises more than exists
     files["bad_signature.sff"] = b"NOT AN SFF FILE" + b"\x00" * 48

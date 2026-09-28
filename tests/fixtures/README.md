@@ -28,6 +28,8 @@ assets/
   unsupported_v1.sff    a valid SFF v1 file, to check that v1 is refused clearly
   truncated.sff         header promises more data than the file holds
   bad_signature.sff     not an SFF at all
+  linked_sprite.sff     a sprite with no data of its own (engine shareCopy path)
+  blank_sprite.sff      a sprite the engine leaves blank (data size 0, link out of range)
   ok.air                a clean animation table
   dup_action.air        the same action number twice
   empty_action.air      an action with no elements
@@ -59,7 +61,13 @@ into an SFF writer for production use.
 ## Note on the goldens
 
 The hashes in `expected/decoder_goldens.json` prove the decode **has not changed**, not
-that it is right. Correctness rests on two other things: the byte-exact assertions
-against the generated fixtures, and the human check of the montage produced by
-`python tools\sffctl\sffctl.py montage <sff> --out <png>` -- if the LZ5 decoder were
-wrong, that sheet would be noise instead of a human figure.
+that it is right. Correctness rests on the byte-exact assertions above, and on a
+one-off comparison of every decoded sprite against the engine's own `Lz5Decode`
+(1128 sprites, 0 mismatches; method and result in
+`docs/evidence/p5/engine_decoder_crosscheck.txt`). The helper Go program used for that
+comparison is deliberately **not** committed, so re-running it means recreating it from
+the instructions in that file -- about five minutes of work.
+
+The montage (`python tools\sffctl\sffctl.py montage <sff> --out <png>`) is still the
+fastest way to spot something that looks wrong, but it is no longer carrying the
+burden of proving the decoder.
