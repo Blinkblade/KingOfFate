@@ -10,24 +10,26 @@ tooling and testing** rather than re-implementing a fighting-game engine.
 
 ## Status
 
-**Current phase: `P4 — Test Fighter B` — 🟡 IN_PROGRESS (8/10 gates PASS, 2 BLOCKED)**
+**Current phase: `P5 — Character Asset Tooling` — ✅ PASS · next: `P6 — First Final-Art Character`**
 
 P1 validated the character execution chain by measurement, P2 turned it into a cloneable
 4-button template (`game/chars/_template/`), and P3 cloned that template into the project's
-first independent, playable fighter: `game/chars/test_fighter_a/` — full normal set
-(standing / crouching / jumping), two specials, an EX upgrade, the first Super, a
-three-level cancel chain and its own CPU AI, all validated in real matches (V01–V29 in the
-phase report). P4 then cloned the same template into a **deliberately different** fighter —
-`game/chars/test_fighter_b/`, a Zoner with a native projectile, a long-reach poke
-(hitbox to x=105 with no body displacement) and two tiers of anti-air — to prove the
-architecture carries more than one fighting style. It loads, fights and runs its own CPU AI;
-two gates (cancel timing, projectile being guarded/jumped over) are still **BLOCKED** on
-synthetic-input limitations, not on the character itself. The engine baseline is unchanged.
+first independent, playable fighter: `game/chars/test_fighter_a/`. P4 then cloned the same
+template into a **deliberately different** fighter — `game/chars/test_fighter_b/`, a Zoner
+with a native projectile, a long-reach poke and two tiers of anti-air — proving the
+architecture carries more than one fighting style. Both fighters are complete, playable and
+validated in real matches; the engine baseline is still untouched.
+
+P5 added the character **asset tooling** that P6 needs: read an SFF, export its sprites,
+read and validate an animation table, and check whether a character directory is complete
+enough to reach Runtime. Everything is read-only and dependency-free, and the tools found a
+real defect in existing content on their first run.
 
 See [`docs/development_status.md`](docs/development_status.md) for the authoritative, always-up-to-date phase
-status, [`docs/P4-summary.md`](docs/P4-summary.md) for the current handoff notes
-([`docs/P3-summary.md`](docs/P3-summary.md), [`docs/P2-summary.md`](docs/P2-summary.md), [`docs/P1-summary.md`](docs/P1-summary.md) and
-[`docs/P0-summary.md`](docs/P0-summary.md) for the earlier ones), [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md)
+status, [`docs/P5-summary.md`](docs/P5-summary.md) for the current handoff notes
+([`docs/P4-summary.md`](docs/P4-summary.md), [`docs/P3-summary.md`](docs/P3-summary.md), [`docs/P2-summary.md`](docs/P2-summary.md), [`docs/P1-summary.md`](docs/P1-summary.md) and
+[`docs/P0-summary.md`](docs/P0-summary.md) for the earlier ones), [`docs/character_asset_tooling.md`](docs/character_asset_tooling.md)
+for the asset tools, [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md)
 for how a character is built, [`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
 [`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
 
@@ -148,20 +150,29 @@ and the full move list (with the files that define it) are documented in
 pwsh -File scripts/test.ps1
 ```
 
-`scripts/test.ps1` runs the smoke test suite in `tests/smoke/` and returns:
+`scripts/test.ps1` runs the project's test suites and returns:
 
 ```text
 0   = PASS
 !=0 = FAIL   (the failing check and the reason are printed)
 ```
 
-It covers the engine submodule and its pinned baseline, the runtime directories, the build
-artifact, the basic files needed to run a match, and the project scaffolding. Add `-RuntimeTest`
-to also launch the engine, verify it creates a window and stays responsive, then terminate it:
+| Suite | What it covers |
+| --- | --- |
+| `smoke` (`tests/smoke/`) | the engine submodule and its pinned baseline, the runtime directories, the build artifact, the basic files needed to run a match, and the project scaffolding |
+| `tools` (`tests/tools/`) | the P5 character asset tools: every command, every exit code, the fixture set, and a pixel-accurate check of exported sprites |
+
+Options:
 
 ```powershell
-pwsh -File scripts/test.ps1 -RuntimeTest
+pwsh -File scripts/test.ps1 -Suite smoke     # only the project invariants
+pwsh -File scripts/test.ps1 -Suite tools     # only the asset tools
+pwsh -File scripts/test.ps1 -Full            # also export all 282 sprites and render a montage
+pwsh -File scripts/test.ps1 -RuntimeTest     # smoke + a real engine launch check
 ```
+
+The asset tools need Python 3.8+ and **no third-party packages**; see
+[`docs/character_asset_tooling.md`](docs/character_asset_tooling.md).
 
 ---
 
@@ -185,18 +196,23 @@ KingOfFate/
 │       ├── _template/    Base fighter skeleton for P2 (copy, do not run)
 │       ├── test_fighter_a/  Frame data for the first independent fighter (P3)
 │       └── test_fighter_b/  Frame data for the second fighter: the Zoner (P4)
-├── tools/                Character / asset tooling
+├── tools/                Character / asset tooling (P5)
 ├── scripts/              PowerShell build, run and test entry points
 ├── tests/
 │   ├── characters/       Character tests
-│   ├── tools/            Tool tests
+│   ├── tools/            Asset tool tests (P5)
+│   ├── fixtures/         Generated asset fixtures and the decoder checks (P5)
 │   ├── p1/               Character behaviour observation tooling (P1)
 │   ├── p2/               Multi-key phase injection harness (P2)
 │   ├── p3/               Unattended match + engine crash-log watch (P3)
+│   ├── p4/               Match matrix + scripted dummy fixtures (P4)
 │   └── smoke/            Phase 0 smoke tests
 ├── docs/
 │   ├── environment.md          Verified local build environment record
 │   ├── development_status.md   Current phase status
+│   ├── character_asset_tooling.md  Asset tool guide (P5)
+│   ├── evidence/               Raw command output cited by the phase reports
+│   ├── howto/                  Step-by-step procedures for specific checks
 │   ├── iterations/             Engineering log (one record per PR)
 │   └── phase_reports/          Per-phase summaries
 ├── logs/                 Local build / runtime logs (mostly gitignored)

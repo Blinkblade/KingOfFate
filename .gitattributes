@@ -1,0 +1,17 @@
+# KingOfFate -- line ending policy
+#
+# The project is developed on Windows (core.autocrlf=true locally), so git
+# rewrites text files to CRLF in the working tree by default. Two kinds of file
+# must not be rewritten:
+#
+#   * the test fixtures under tests/fixtures/assets/ -- make_fixtures.py --check
+#     and verify_decoders.py compare them BYTE FOR BYTE with what the generator
+#     produces, so a line ending change is a test failure on a fresh checkout;
+#   * anything already treated as binary (SFF/SND containers contain NUL bytes,
+#     so git classifies them as binary on its own).
+#
+# Everything else keeps the default behaviour: LF in the repository, CRLF in the
+# working tree on Windows. The .air parser handles both (it splits on \n and
+# strips \r), so character files are safe either way.
+
+tests/fixtures/assets/**  -text

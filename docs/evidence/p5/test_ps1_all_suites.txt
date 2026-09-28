@@ -1,0 +1,128 @@
+﻿
+=== suite: smoke ===
+
+KingOfFate smoke test
+root: D:\AI\develop\KingOfFate
+------------------------------------------------------------------------
+A. engine submodule / pinned baseline
+B. engine runtime directories
+C. build artifact
+D. basic runtime files
+E. project scaffolding
+------------------------------------------------------------------------
+  [PASS] submodule directory exists   (engine\ikemen-go)
+  [PASS] submodule git metadata exists   (engine\ikemen-go\.git)
+  [PASS] .gitmodules exists   (.gitmodules)
+  [PASS] engine baseline commit matches pin   (expected ba516193bba8 / found ba516193bba8)
+  [PASS] engine on integration branch kingoffate/rc5   (kingoffate/rc5)
+  [PASS] .gitmodules points at the engine fork   (engine/ikemen-go -> Blinkblade/Ikemen-GO)
+  [PASS] runtime dir: data/   (engine\ikemen-go\data)
+  [PASS] runtime dir: font/   (engine\ikemen-go\font)
+  [PASS] runtime dir: external/   (engine\ikemen-go\external)
+  [PASS] runtime dir: chars/   (engine\ikemen-go\chars)
+  [PASS] runtime dir: stages/   (engine\ikemen-go\stages)
+  [PASS] engine executable built   (engine\ikemen-go\Ikemen_GO.exe)
+  [PASS] executable size is plausible (> 5 MB)   (14.94 MB)
+  [PASS] default motif (data/ikemen1/system.def)   (engine\ikemen-go\data\ikemen1\system.def)
+  [PASS] fight screen (data/fight.def)   (engine\ikemen-go\data\fight.def)
+  [PASS] test character (chars/kfm/kfm.def)   (engine\ikemen-go\chars\kfm\kfm.def)
+  [PASS] test stage (stages/stage0.def)   (engine\ikemen-go\stages\stage0.def)
+  [PASS] README.md   (README.md)
+  [PASS] CONTRIBUTING.md   (CONTRIBUTING.md)
+  [PASS] docs/development_status.md   (docs\development_status.md)
+  [PASS] docs/environment.md   (docs\environment.md)
+  [PASS] docs/iterations/README.md   (docs\iterations\README.md)
+  [PASS] .github/pull_request_template.md   (.github\pull_request_template.md)
+  [PASS] scripts/build_engine.ps1   (scripts\build_engine.ps1)
+  [PASS] scripts/run_game.ps1   (scripts\run_game.ps1)
+  [PASS] scripts/test.ps1   (scripts\test.ps1)
+------------------------------------------------------------------------
+smoke test: 26/26 checks passed
+
+SMOKE TEST PASS
+
+
+=== suite: tools ===
+
+KingOfFate asset tool tests
+root:   D:\AI\develop\KingOfFate
+python: python
+------------------------------------------------------------------------
+0. preconditions
+1. fixtures and reader
+2. sffctl inspect
+3. sffctl export
+4. airtool inspect
+5. airtool validate
+6. character_validate
+7. workspace hygiene
+------------------------------------------------------------------------
+  [PASS] 0    python interpreter is available
+  [PASS] 0    tool exists: sffctl.py
+  [PASS] 0    tool exists: airtool.py
+  [PASS] 0    tool exists: validate_character.py
+  [PASS] 0    tool exists: make_fixtures.py
+  [PASS] 0    tool exists: verify_decoders.py
+  [PASS] 0    tool exists: check_export.py
+  [PASS] 1    generated fixtures match the tracker
+  [PASS] 1    decoded pixels match known patterns and goldens
+  [PASS] 2    real container is summarised
+  [PASS] 2    inspect --json runs
+  [PASS] 2    real container is summarised (--json)
+  [PASS] 2    --json exposes version, count, group and axis
+  [PASS] 2    missing file is IO (3)
+  [PASS] 2    directory instead of file is IO (3)
+  [PASS] 2    SFF v1 is UNSUPPORTED (4)
+  [PASS] 2    truncated file is CORRUPT (5)
+  [PASS] 2    bad signature is CORRUPT (5)
+  [PASS] 3    fixture container exports all sprites
+  [PASS] 3    files are named <group>_<image>.png
+  [PASS] 3    written PNGs match the container exactly
+  [PASS] 3    a second export into a fresh directory is byte-identical
+  [PASS] 3    export is deterministic (same bytes)
+  [PASS] 3    existing files are not overwritten by default
+  [PASS] 3    a missing sprite fails with exit 1
+  [PASS] 3    a usage error exits 2
+  [PASS] 4    real animation table is summarised
+  [PASS] 4    a single action can be inspected
+  [PASS] 4    action 1005 reports an -1 hold
+  [PASS] 4    action data is available as JSON
+  [PASS] 4    JSON action carries elements and collision modes
+  [PASS] 4    the active element carries a per-frame attack box
+  [PASS] 4    an unknown action exits 1
+  [PASS] 4    a missing file exits 3
+  [PASS] 5    a clean table validates
+  [PASS] 5    a duplicate action is an error
+  [PASS] 5    an empty action is an error
+  [PASS] 5    a box count mismatch is an error
+  [PASS] 5    a missing sprite is an error
+  [PASS] 5    an impossible time is an error
+  [PASS] 5    an orphan box line is a warning, not an error
+  [PASS] 5    P4 negative: per-frame Clsn1 in front of a -1 hold is flagged
+  [PASS] 5    P4 positive: Clsn1Default in front of a -1 hold is not flagged
+  [PASS] 5    P4 positive: Clsn1Default in front of a -1 hold is not flagged (must not report AIR_ATTACK_NOT_PERSISTENT)
+  [PASS] 5    per-frame hold element collision is parsed as expected
+  [PASS] 5    per-frame hold element: mode=none, boxes=0
+  [PASS] 5    default hold element collision is parsed as expected
+  [PASS] 5    default hold element: mode=default, boxes=1
+  [PASS] 6    a consistent fixture character passes
+  [PASS] 6    the real character _template validates
+  [PASS] 6    the real character test_fighter_a validates
+  [PASS] 6    the real character test_fighter_b validates
+  [PASS] 6    a character with missing files fails
+  [PASS] 6    a script asking for a missing animation fails
+  [PASS] 6    an unsupported SFF version fails
+  [PASS] 6    a missing character exits 3
+  [PASS] 6    the verdict is available as JSON
+  [PASS] 6    JSON verdict lists per-item statuses
+  [PASS] 7    the engine submodule was not modified
+  [PASS] 7    no PNG was written outside logs/
+  [PASS] 7    no character file other than the AIR fixture fix changed
+------------------------------------------------------------------------
+asset tool tests: 61/61 checks passed
+
+ASSET TOOL TESTS PASS
+
+
+ALL TEST SUITES PASS
+

@@ -1,0 +1,257 @@
+﻿KingOfFate P5 -- P6-ready end-to-end run
+character: game/chars/test_fighter_b   engine pin: ba516193
+
+##############################################################################
+# STEP 1  character_validate  game/chars/test_fighter_b
+##############################################################################
+$ python tools\character_validate\validate_character.py game/chars/test_fighter_b
+Character: test_fighter_b
+
+  DEF                 PASS  test_fighter_b.def
+  CMD                 PASS  test_fighter_b.cmd
+  SFF                 PASS  test_fighter_b.sff
+  AIR                 PASS  test_fighter_b.air
+  SND                 PASS  test_fighter_b.snd
+  Constants           PASS  test_fighter_b.const
+  States (st)         PASS  test_fighter_b.zss
+  stcommon            PASS  ../../../engine/ikemen-go/data/common1.cns.zss  (from the engine tree, not the character)
+  movelist            PASS  movelist.dat
+  SFF content         PASS  version 2.0.1.0, 282 sprites, 16 palettes
+  AIR content         PASS  88 actions
+  scripts -> AIR      PASS  4 script file(s), every literal animation reference resolves
+  AIR -> SFF sprites  PASS  all 189 referenced sprites exist
+
+  WARNING AIR_HURTBOX_GAP  action 210 has no hurtbox (Clsn2) on element(s) 1,2,3,6 (16 tick(s) total) while other elements in the same action do have one
+           at D:\AI\develop\KingOfFate\game\chars\test_fighter_b\test_fighter_b.air line 143 action 210
+           hint: a per-frame 'Clsn2:' applies to one element only; use 'Clsn2Default:' to cover the whole action. No hurtbox means the character cannot be hit during those ticks
+  WARNING AIR_HURTBOX_GAP  action 230 has no hurtbox (Clsn2) on element(s) 1,4,5 (8 tick(s) total) while other elements in the same action do have one
+           at D:\AI\develop\KingOfFate\game\chars\test_fighter_b\test_fighter_b.air line 178 action 230
+           hint: a per-frame 'Clsn2:' applies to one element only; use 'Clsn2Default:' to cover the whole action. No hurtbox means the character cannot be hit during those ticks
+  WARNING AIR_HURTBOX_GAP  action 820 has no hurtbox (Clsn2) on element(s) 0,1,2,3,4,5,6,7,8,9,10 (45 tick(s) total) while other elements in the same action do have one
+           at D:\AI\develop\KingOfFate\game\chars\test_fighter_b\test_fighter_b.air line 554 action 820
+           hint: a per-frame 'Clsn2:' applies to one element only; use 'Clsn2Default:' to cover the whole action. No hurtbox means the character cannot be hit during those ticks
+  INFO    AIR_ATTACK_PERSISTENT  action 1005 holds forever (-1) with an attack box inherited from Clsn1Default; the box stays active for the whole hold, which is what a projectile needs
+           at D:\AI\develop\KingOfFate\game\chars\test_fighter_b\test_fighter_b.air line 676 action 1005
+  INFO    AIR_NO_HURTBOX  action 810 has no hurtbox on any element
+           at D:\AI\develop\KingOfFate\game\chars\test_fighter_b\test_fighter_b.air line 533 action 810
+  INFO    AIR_NO_HURTBOX  action 170 has no hurtbox on any element
+           at D:\AI\develop\KingOfFate\game\chars\test_fighter_b\test_fighter_b.air line 1113 action 170
+  INFO    AIR_NO_HURTBOX  action 9003 has no hurtbox on any element
+           at D:\AI\develop\KingOfFate\game\chars\test_fighter_b\test_fighter_b.air line 1672 action 9003
+
+errors: 0   warnings: 3   info: 4
+verdict: WARN
+exit=0
+
+##############################################################################
+# STEP 2  sffctl inspect  test_fighter_b.sff --limit 14
+##############################################################################
+$ python tools\sffctl\sffctl.py inspect game\chars\test_fighter_b\test_fighter_b.sff --limit 14
+File:      game\chars\test_fighter_b\test_fighter_b.sff
+Size:      209010 bytes
+Version:   2.0.1.0
+Sprites:   282  (282 unique group,image keys)
+Palettes:  16
+Data:      lofs=8664  tofs=209010
+
+   index  group image  width height  axisx axisy  format        depth palette
+  ------  ----- -----  ----- ------  ----- -----  ------------  ----- -------
+       3      0     0     47    106     18   105  lz5               5       0
+       4      0     1     48    105     18   104  lz5               5       0
+       5      0     2     49    105     18   104  lz5               5       0
+       6      0     3     50    105     18   104  lz5               5       0
+       7      0     4     51    105     18   104  lz5               5       0
+       8      0     5     51    105     18   104  lz5               5       0
+       9      5     0     42    106     16   105  lz5               5       0
+      10      6     0     44     74     19    73  lz5               5       0
+      11     11     0     49     92     17    91  lz5               5       0
+      12     11     1     49     80     17    79  lz5               5       0
+      13     11     2     50     75     18    73  lz5               5       0
+      14     20     0     49    109     22   108  lz5               5       0
+      15     20     1     43    110     16   109  lz5               5       0
+      16     20     2     38    110     11   109  lz5               5       0
+  ... 268 more (use --limit to change)
+
+palettes (colours is the padded power-of-two length the engine allocates):
+   0  key=(1,1)  declared=32  colours=32  shares_with=0
+   1  key=(1,2)  declared=32  colours=32  shares_with=1
+   2  key=(1,3)  declared=32  colours=32  shares_with=2
+   3  key=(1,4)  declared=32  colours=32  shares_with=3
+   4  key=(1,5)  declared=32  colours=32  shares_with=4
+   5  key=(1,6)  declared=32  colours=32  shares_with=5
+   6  key=(1,7)  declared=32  colours=32  shares_with=6
+   7  key=(1,8)  declared=32  colours=32  shares_with=7
+   8  key=(1,9)  declared=32  colours=32  shares_with=8
+   9  key=(1,10)  declared=32  colours=32  shares_with=9
+  10  key=(1,11)  declared=32  colours=32  shares_with=10
+  11  key=(1,12)  declared=32  colours=32  shares_with=11
+  12  key=(1,13)  declared=32  colours=32  shares_with=12
+  13  key=(1,14)  declared=32  colours=32  shares_with=13
+  14  key=(1,15)  declared=32  colours=32  shares_with=14
+  15  key=(9000,1)  declared=256  colours=256  shares_with=15
+
+OK: parsed 282 sprites
+exit=0
+
+##############################################################################
+# STEP 3  sffctl export  sprites 210,3 (long range normal) and 1000,4 (projectile)
+##############################################################################
+$ python tools\sffctl\sffctl.py export game\chars\test_fighter_b\test_fighter_b.sff --out logs\p5\p6_ready --sprite 210,3 --sprite 1000,4 --overwrite
+source:  game\chars\test_fighter_b\test_fighter_b.sff
+output:  D:\AI\develop\KingOfFate\logs\p5\p6_ready
+  210_3.png        95x104  axis=( 13,103) palette=0   visible=3152    lz5
+  1000_4.png      123x84   axis=( 54, 83) palette=0   visible=2869    lz5
+
+exported 2 of 2 sprite(s) to D:\AI\develop\KingOfFate\logs\p5\p6_ready
+exit=0
+
+##############################################################################
+# STEP 4  airtool inspect  --action 210  (Stand C, the long-range normal)
+##############################################################################
+$ python tools\airtool\airtool.py inspect game\chars\test_fighter_b\test_fighter_b.air --action 210
+File:     game\chars\test_fighter_b\test_fighter_b.air
+Lines:    1675
+Actions:  88  (88 unique numbers)
+
+Action 210   (line 143)
+  Elements:  8
+  Duration:  33 ticks
+  Infinite element: no
+  Finite ticks: 33
+
+   elem  sprite    x    y  time  clsn1        n  clsn2        n
+   ----  ------  ---  ---  ----  -----------  -  -----------  -
+      0  200,  0    0    0     4  none         0  per-frame    2
+      1  210,  0    0    0     4  none         0  none         0
+      2  210,  1    0    0     3  none         0  none         0
+      3  210,  2    0    0     3  none         0  none         0
+      4  210,  3    0    0     4  per-frame    2  per-frame    5
+      5  210,  4    0    0     6  cleared      0  per-frame    3
+      6  210,  5    0    0     6  none         0  none         0
+      7  200,  0    0    0     3  none         0  per-frame    2
+    element 4 Clsn1: (30,-76,105,-56), (62,-72,98,-58)
+    element 0 Clsn2: (-10,-81,19,0), (0,-96,12,-80)
+    element 4 Clsn2: (-11,-32,40,0), (5,-86,34,-32), (13,-97,26,-77), (34,-60,105,-52), (62,-72,98,-58)
+    element 5 Clsn2: (-11,-32,40,0), (5,-86,34,-32), (13,-97,26,-77)
+    element 7 Clsn2: (-10,-81,19,0), (0,-96,12,-80)
+
+exit=0
+
+##############################################################################
+# STEP 5  airtool inspect  --action 1005  (the projectile animation)
+##############################################################################
+$ python tools\airtool\airtool.py inspect game\chars\test_fighter_b\test_fighter_b.air --action 1005
+File:     game\chars\test_fighter_b\test_fighter_b.air
+Lines:    1675
+Actions:  88  (88 unique numbers)
+
+Action 1005   (line 670)
+  Elements:  2
+  Duration:  infinite (has a -1 hold)
+  Infinite element: yes
+  Finite ticks: 4
+
+   elem  sprite    x    y  time  clsn1        n  clsn2        n
+   ----  ------  ---  ---  ----  -----------  -  -----------  -
+      0  1000,  4    0    0     4  default      1  default      1
+      1  1000,  4    0    0    -1  default      1  default      1
+    element 0 Clsn1: (-40,-60,40,60)
+    element 1 Clsn1: (-40,-60,40,60)
+    element 0 Clsn2: (-40,-60,40,60)
+    element 1 Clsn2: (-40,-60,40,60)
+
+exit=0
+
+##############################################################################
+# STEP 6  airtool inspect  --action 1100  (anti-air special)
+##############################################################################
+File:     game\chars\test_fighter_b\test_fighter_b.air
+Lines:    1675
+Actions:  88  (88 unique numbers)
+
+Action 1100   (line 738)
+  Elements:  14
+  Duration:  41 ticks
+  Infinite element: no
+  Finite ticks: 41
+
+   elem  sprite    x    y  time  clsn1        n  clsn2        n
+   ----  ------  ---  ---  ----  -----------  -  -----------  -
+      0  1100,  0    0    0     2  none         0  default      1
+      1  1100,  1    0    0     2  none         0  default      1
+      2  1100,  2    0    0     2  none         0  default      2
+      3  1100,  3    0    0     2  none         0  default      2
+      4  1100,  4    0    0     2  none         0  per-frame    2
+      5  1100,  5    0    0     2  none         0  per-frame    1
+      6  1100,  6    0    0     5  per-frame    1  default      2
+      7  1100,  7    0    0     4  cleared      0  default      2
+      8  1100,  6    0    0     4  none         0  default      2
+      9  1100,  7    0    0     4  none         0  default      2
+     10  1100,  8    0    0     4  none         0  default      2
+     11  1100,  9    0    0     4  none         0  per-frame    2
+     12  200,  1    0    0     2  none         0  default      2
+     13  200,  0    0    0     2  none         0  default      2
+    element 6 Clsn1: (28,-152,62,-60)
+    element 0 Clsn2: (-12,-94,16,0)
+    element 1 Clsn2: (-12,-94,16,0)
+    element 2 Clsn2: (-3,-85,28,0), (23,-92,34,-76)
+    element 3 Clsn2: (-3,-85,28,0), (23,-92,34,-76)
+    element 4 Clsn2: (-3,-85,31,0), (14,-96,27,-80)
+    element 5 Clsn2: (1,-96,32,0)
+    element 6 Clsn2: (1,-96,32,0), (30,-152,44,-93)
+    element 7 Clsn2: (1,-96,32,0), (27,-110,38,-93)
+    element 8 Clsn2: (1,-96,32,0), (27,-110,38,-93)
+    element 9 Clsn2: (1,-96,32,0), (27,-110,38,-93)
+    element 10 Clsn2: (1,-96,32,0), (27,-110,38,-93)
+    element 11 Clsn2: (1,-96,32,0), (32,-97,43,-80)
+    element 12 Clsn2: (-10,-80,19,0), (0,-94,12,-80)
+    element 13 Clsn2: (-10,-80,19,0), (0,-94,12,-80)
+
+exit=0
+
+##############################################################################
+# STEP 7  airtool validate  (whole table)
+##############################################################################
+$ python tools\airtool\airtool.py validate game\chars\test_fighter_b\test_fighter_b.air
+File:     game\chars\test_fighter_b\test_fighter_b.air
+Actions:  88
+SFF:      game\chars\test_fighter_b\test_fighter_b.sff  (auto-detected)
+
+  WARNING AIR_HURTBOX_GAP  action 210 has no hurtbox (Clsn2) on element(s) 1,2,3,6 (16 tick(s) total) while other elements in the same action do have one
+           at game\chars\test_fighter_b\test_fighter_b.air line 143 action 210
+           hint: a per-frame 'Clsn2:' applies to one element only; use 'Clsn2Default:' to cover the whole action. No hurtbox means the character cannot be hit during those ticks
+  WARNING AIR_HURTBOX_GAP  action 230 has no hurtbox (Clsn2) on element(s) 1,4,5 (8 tick(s) total) while other elements in the same action do have one
+           at game\chars\test_fighter_b\test_fighter_b.air line 178 action 230
+           hint: a per-frame 'Clsn2:' applies to one element only; use 'Clsn2Default:' to cover the whole action. No hurtbox means the character cannot be hit during those ticks
+  WARNING AIR_HURTBOX_GAP  action 820 has no hurtbox (Clsn2) on element(s) 0,1,2,3,4,5,6,7,8,9,10 (45 tick(s) total) while other elements in the same action do have one
+           at game\chars\test_fighter_b\test_fighter_b.air line 554 action 820
+           hint: a per-frame 'Clsn2:' applies to one element only; use 'Clsn2Default:' to cover the whole action. No hurtbox means the character cannot be hit during those ticks
+  INFO    AIR_ATTACK_PERSISTENT  action 1005 holds forever (-1) with an attack box inherited from Clsn1Default; the box stays active for the whole hold, which is what a projectile needs
+           at game\chars\test_fighter_b\test_fighter_b.air line 676 action 1005
+  INFO    AIR_NO_HURTBOX  action 810 has no hurtbox on any element
+           at game\chars\test_fighter_b\test_fighter_b.air line 533 action 810
+  INFO    AIR_NO_HURTBOX  action 170 has no hurtbox on any element
+           at game\chars\test_fighter_b\test_fighter_b.air line 1113 action 170
+  INFO    AIR_NO_HURTBOX  action 9003 has no hurtbox on any element
+           at game\chars\test_fighter_b\test_fighter_b.air line 1672 action 9003
+  INFO    AIR_SFF_USED  sprite references checked against game\chars\test_fighter_b\test_fighter_b.sff (282 sprites)
+           at game\chars\test_fighter_b\test_fighter_b.air
+
+errors: 0   warnings: 3   info: 5
+exit=0
+
+##############################################################################
+# STEP 8  check_export  (independent re-read of the two exported PNGs)
+##############################################################################
+  ok 1000_4.png      123x84   visible=2869
+  ok 210_3.png        95x104  visible=3152
+
+export check: 2 file(s) verified, 0 problem(s)
+exit=0
+
+##############################################################################
+# STEP 9  montage of all sprites (for the human eye)
+##############################################################################
+montage: D:\AI\develop\KingOfFate\logs\p5\montage_test_fighter_b.png
+  282 sprite(s) drawn, 16x18 cells of 127x145 px, scale x1
+exit=0

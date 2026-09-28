@@ -1,0 +1,14 @@
+{
+  "fixture_patterns": {
+    "0,0": "d250652d3451704378f58e86afbd8a431245f561ad64d1a8a44febd7caa46030",
+    "1,0": "2d283f7289f0c4fad6301cbeeee302e57e2f9e64d41444c485f6fa2df6335742",
+    "2,0": "e68ac6c0905f9613ed079f55155931f927056b59191b920df01a10567bb09e27"
+  },
+  "note": "sha256 of the decoded RGBA of selected real sprites. Regenerate with: python tests/fixtures/verify_decoders.py --update",
+  "real_sprites": {
+    "game/chars/test_fighter_a/test_fighter_a.sff:0,0": "e794d2661816eca71974eb8541184414bddc8a487469d3ef9d5139e2f12d82a1",
+    "game/chars/test_fighter_b/test_fighter_b.sff:0,0": "e794d2661816eca71974eb8541184414bddc8a487469d3ef9d5139e2f12d82a1",
+    "game/chars/test_fighter_b/test_fighter_b.sff:1000,4": "cad1c9ecfe9ff5a7babd995bf0f6f1d0bc43f39e66c297ac9cb05b67418bf1db",
+    "game/chars/test_fighter_b/test_fighter_b.sff:9000,1": "9adfcad5bde4aed22287bf9b6a12c2207d080bd578e7989d8dbd5613a22190c8"
+  }
+}

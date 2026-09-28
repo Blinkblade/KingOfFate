@@ -4,30 +4,32 @@
     Unified entry point for the KingOfFate test suite.
 
 .DESCRIPTION
-    Locates the project root from its own path (never from the current directory) and
-    runs every test suite that currently exists.
+    Locates the project root from its own path (never from the current directory)
+    and runs every test suite that currently exists:
 
-    Right now that is the Phase 0 smoke test in tests/smoke/.
-    As the project grows, further suites get added here.
+      smoke   tests/smoke/smoke.ps1            project invariants, engine baseline,
+                                               runtime files, build artifact
+      tools   tests/tools/run_tool_tests.ps1   the P5 character asset tools
 
     Exit code: 0 = PASS, non-zero = FAIL.
 
 .PARAMETER RuntimeTest
     Also run the optional engine launch test (verifies start-up health: process,
-    window and responsiveness).
+    window and responsiveness). Only applies to the smoke suite.
 
 .PARAMETER Suite
-    Which suite to run. Defaults to 'smoke'.
+    Which suites to run. Defaults to 'all'.
 
-.EXAMPLE
-    pwsh -File scripts/test.ps1
-    pwsh -File scripts/test.ps1 -RuntimeTest
+.PARAMETER Full
+    Passed to the tools suite: also export all sprites of a real character and
+    render a montage. Slower; use it after changing anything under tools/.
 #>
 [CmdletBinding()]
 param(
     [switch]$RuntimeTest,
-    [ValidateSet('smoke', 'all')]
-    [string]$Suite = 'smoke'
+    [ValidateSet('smoke', 'tools', 'all')]
+    [string]$Suite = 'all',
+    [switch]$Full
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,14 +41,42 @@ if ([string]::IsNullOrWhiteSpace($ScriptDir)) {
 $RepoRoot = (Resolve-Path (Join-Path $ScriptDir '..')).ProviderPath
 
 $smoke = Join-Path $RepoRoot 'tests\smoke\smoke.ps1'
+$tools = Join-Path $RepoRoot 'tests\tools\run_tool_tests.ps1'
 
-if (-not (Test-Path -LiteralPath $smoke)) {
-    Write-Host "[fail] smoke test not found: $smoke" -ForegroundColor Red
-    exit 2
+$failures = @()
+
+function Invoke-Suite {
+    param([string]$Name, [string]$Path, [hashtable]$Arguments)
+    Write-Host ''
+    Write-Host "=== suite: $Name ===" -ForegroundColor White
+    if (-not (Test-Path -LiteralPath $Path)) {
+        Write-Host "[fail] suite script not found: $Path" -ForegroundColor Red
+        $script:failures += $Name
+        return
+    }
+    & $Path @Arguments
+    if ($LASTEXITCODE -ne 0) { $script:failures += $Name }
 }
 
-$smokeArgs = @{ RepoRoot = $RepoRoot }
-if ($RuntimeTest) { $smokeArgs.RuntimeTest = $true }
+if ($Suite -eq 'smoke' -or $Suite -eq 'all') {
+    $smokeArgs = @{ RepoRoot = $RepoRoot }
+    if ($RuntimeTest) { $smokeArgs.RuntimeTest = $true }
+    Invoke-Suite -Name 'smoke' -Path $smoke -Arguments $smokeArgs
+}
 
-& $smoke @smokeArgs
-exit $LASTEXITCODE
+if ($Suite -eq 'tools' -or $Suite -eq 'all') {
+    $toolArgs = @{ RepoRoot = $RepoRoot }
+    if ($Full) { $toolArgs.Full = $true }
+    Invoke-Suite -Name 'tools' -Path $tools -Arguments $toolArgs
+}
+
+Write-Host ''
+if ($failures.Count -gt 0) {
+    Write-Host ("TEST SUITE FAILED: {0}" -f ($failures -join ', ')) -ForegroundColor Red
+    Write-Host ''
+    exit 1
+}
+
+Write-Host 'ALL TEST SUITES PASS' -ForegroundColor Green
+Write-Host ''
+exit 0

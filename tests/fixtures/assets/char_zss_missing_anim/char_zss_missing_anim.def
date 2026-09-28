@@ -1,0 +1,12 @@
+; P5 fixture character whose script asks for an animation the AIR does not define
+[Info]
+name         = "char_zss_missing_anim"
+displayname  = "Fixture zss missing anim"
+mugenversion = 1.0
+
+[Files]
+cmd      = char_zss_missing_anim.cmd
+cns      = char_zss_missing_anim.const
+st       = char_zss_missing_anim.zss
+sprite   = char_zss_missing_anim.sff
+anim     = char_zss_missing_anim.air

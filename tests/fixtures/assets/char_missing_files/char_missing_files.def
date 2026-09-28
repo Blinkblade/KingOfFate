@@ -1,0 +1,12 @@
+; P5 fixture character with deliberately broken file references
+[Info]
+name         = "char_missing_files"
+displayname  = "Fixture missing files"
+mugenversion = 1.0
+
+[Files]
+cmd      = char_missing_files.cmd
+cns      = char_missing_files.const
+st       = char_missing_files.zss
+sprite   = does_not_exist.sff
+anim     = does_not_exist.air
