@@ -142,7 +142,7 @@
 | Super 气耗 | 读 `POW` 前后 | ~~**2000 → 1000（正好 1000）**~~ **无机器证据，已撤下** | 同上 |
 | 未创建第二套资源 | 代码审查 | 只有一个 `power`（`test_fighter_b.const`） | — |
 
-### Gate 6 — Cancel：**BLOCKED**
+### Gate 6 — Cancel：**PASS**
 
 | 项 | 结果 |
 | --- | --- |
@@ -154,6 +154,26 @@
   见 [`docs/howto/gate-verification-in-training-mode.md`](../howto/gate-verification-in-training-mode.md) §5。
   **完整的分步操作手册（含判据数字与已知坑）**：
   [`docs/howto/gate6-cancel-verification.md`](../howto/gate6-cancel-verification.md) |
+
+#### ★ 2026-09-28：取消已实测（PASS）
+
+按 [`docs/howto/gate6-cancel-verification.md`](../howto/gate6-cancel-verification.md)
+跑了一组对照实验，全部数值来自 `tools/read_frame_text.py`（**没有一处是看出来的**）：
+
+| | 对照组（只按 A，不取消） | 取消组（A 之后接 236+A） |
+| --- | --- | --- |
+| 状态 200 存活 | **20 tick**（t007–t026） | **7 tick**（t007–t013） |
+| 之后 | 回到 0（`CTRL: 1`） | **t014 直接进 1000**，中间没有回过 0 |
+
+→ **状态 200 被从 20 tick 打断到 7 tick，且 1000 紧接开始 ⇒ 取消成立，PASS。**
+对照组那 20 tick 与 `moves.csv` 的 3+4+13 完全吻合，是这条判据的锚点。
+
+一个必须说明的读数细节：该字号下引擎的 `2` 与 `Z` 位图几乎一样，工具把状态号读成了
+`Z00`。它保留次优候选，该字 `Z 0.9168` vs `2 0.9125`（差 0.004）—— 配合
+"对照组正好持续 20 tick"、`CTRL: 0 / MoveType: A`、`Time: 3` 三条旁证，判定为 **200**。
+完整逐 tick 序列与判定过程：`docs/evidence/p4/gate6_cancel_sequence.txt`。
+
+（以下为 2026-09-21 的装置修复记录，保留以说明为何当时没做成。）
 
 #### 2026-09-21 的进展：装置修好了，证据还没拿到
 

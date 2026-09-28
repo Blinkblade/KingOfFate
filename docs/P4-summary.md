@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | **阶段** | P4 — Test Fighter B |
-| **状态** | **IN_PROGRESS**（Gate 1/2/3/**4**/5/8/9/10 PASS；**Gate 7 全部 PASS**；**Gate 6 仍 BLOCKED**） |
+| **状态** | **PASS**（Gate 1–10 **全部通过**；Gate 6 / 7 由 2026-09-28 的对照实验补齐，见 §9） |
 | **时间** | 2026-09-18（2026-09-20 全量复查 + 2026-09-21 最终验收，见 §9） |
 | **分支** | `feature/p4-test-fighter-b` |
 | **基线** | `main` @ `18621e4`（含 P3 合并 PR #5） |
@@ -129,8 +129,10 @@ https://github.com/Blinkblade/KingOfFate/pull/new/feature/p4-test-fighter-b
 
 **可直接粘贴的 PR 正文**：见本文 **§9**（含本次目标 / 主要修改 / 测试结果 / Iteration Record / 已知问题）。
 
-**P4 未 PASS，因此本分支的合并不是"阶段完成"，而是"阶段进度"** ——
-Gate 4 已补测转 PASS；剩 Gate 6 / 7 需人工按手册操作并填表，之后按 P4 的 Exit Gate 重新评估。
+**P4 已 PASS**（2026-09-28）：最后两条 Gate 6 / 7 都用对照实验拿到了机器证据，
+本分支的合并因此是"阶段完成"，不再是"阶段进度"。
+过程见 [`20260920-p4-baseline-audit.md`](iterations/20260920-p4-baseline-audit.md) 与
+Phase Report 的 Gate 6 / Gate 7 小节。
 
 ---
 
@@ -150,7 +152,9 @@ Gate 4 已补测转 PASS；剩 Gate 6 / 7 需人工按手册操作并填表，�
 > **遗留项 2–4 不需要注入。** 引擎自带 Training 模式 + 真实键盘即可构造场景
 > （`Guard Mode = all` 让假人必防、`Dummy Mode = jump` 让假人持续跳）。
 > 完整操作手册：[`docs/howto/gate-verification-in-training-mode.md`](howto/gate-verification-in-training-mode.md)，
-> 结论填该手册 §6 的结果记录表。**在此之前 Gate 6 / 7 保持 BLOCKED。**
+> 结论填该手册 §6 的结果记录表。
+> （2026-09-28 更新：Gate 6 / 7 均已用自动化的对照实验完成，不再依赖人工按表；
+> 该手册作为**备选人工路径**仍然有效。）
 
 <details>
 <summary>【已废弃】旧的注入命令模板（不要再照着做）</summary>
@@ -284,7 +288,12 @@ pwsh -File tests\p4\run_matrix.ps1 -Only kfm  # 只跑某一组
    只代表"什么也没发生"**，当时的滞空（≈0.63 s）短于波的飞行时间，假人落地了才挨打；
    把假人的 `jump.neu` 从 `-8.4` 提到 `-25`（**只改假人，被测角色一行没动**）后才是真的穿过。
 
-2. **Gate 6（取消链精确时间序）仍 BLOCKED —— 装置修好了，证据还没拿到。**
+2. **Gate 6 已 PASS（2026-09-28）**：对照实验显示状态 200 从 **20 tick 被压缩到 7 tick**
+   且 1000 紧接开始、中间没回过 0 ⇒ 取消成立。证据：
+   `docs/evidence/p4/gate6_cancel_sequence.txt`；步骤手册
+   `docs/howto/gate6-cancel-verification.md`。**至此 P4 的 10 条 Gate 全部通过。**
+
+   过程中修好的两处装置问题（保留记录）：
    - 本轮给 `framestep_probe.ps1` 补了键位快照/还原，并修掉一个**间歇性崩溃**：
      `GetWindowThreadProcessId` 被声明成返回 `IntPtr`（Win32 实际返回 DWORD），
      传给 `AttachThreadInput(uint,uint,bool)` 时会报"无法将 IntPtr 转为 UInt32"。
@@ -292,7 +301,8 @@ pwsh -File tests\p4\run_matrix.ps1 -Only kfm  # 只跑某一组
      但前置的 `200` 没出现（开头的 x 落在回合开始不可控期），因此不构成"从 200 取消"。
    - 后续两次尝试都失败了：一次所有 `Save-Shot` 返回 FAILED（暂停态下 `PrintWindow`
      对 OpenGL 窗口会阻塞渲染线程），一次 `EXIT=1` 提前结束。
-   - 已确认的是"236+A 能进 1000"；未确认的是"在 200 的取消窗口内切进去"。**不写 PASS。**
+   - 当时的结论是"只确认了 236+A 能进 1000，未确认能在 200 的窗口内切进去"，**不写 PASS**。
+     这句话已于 2026-09-28 被推翻（见上面第 2 条），保留在此以防有人据旧稿判断。
    - **补测步骤已写成手册**：[`docs/howto/gate6-cancel-verification.md`](howto/gate6-cancel-verification.md)
      —— 判据是量出来的：状态 200 起手 3 + 判定 4 + 收招 13 = **20 tick**，
      取消窗口在 `animElem 3` 打开（`test_fighter_b.zss:157-158`）。
