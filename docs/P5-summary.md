@@ -258,17 +258,22 @@ tick 数不变，并有 Runtime 回归证据（`crashlogs : 0 new`）。
 ## 15. Git 收尾
 
 ```text
-分支  : feature/p5-character-asset-tooling
+分支  : feature/p5-character-asset-tooling     （已推送 origin，与远端同步）
 基线  : main @ e279e96（PR #6 合并 P4）
-提交  : 60dfee1  fix: correct a missing sprite reference in test_fighter_b action 410
-                  1 file changed, 5 insertions(+), 1 deletion(-)
-        77deb1c  tool: add character asset inspection, export and validation tools
-                  69 files changed, 6989 insertions(+), 53 deletions(-)
-        后续两个提交只改文档：一个回填本节的 Git 信息，一个记录推送状态
-推送  : 已推送 origin/feature/p5-character-asset-tooling
-        （本机 push 需要本地代理 http://127.0.0.1:7897；不带代理时 GitHub 会
-         在 send-pack 阶段直接掐断连接，报 curl 52/56）
 子模块: engine/ikemen-go @ ba516193（未改动，指针未动）
+
+两个实质提交（其余都是文档）：
+  60dfee1  fix: correct a missing sprite reference in test_fighter_b action 410
+                 1 file changed, 5 insertions(+), 1 deletion(-)
+  77deb1c  tool: add character asset inspection, export and validation tools
+                 69 files changed, 6989 insertions(+), 53 deletions(-)
+  1f402b1  tool: resolve linked sprites, and keep blank ones non-fatal
+                 7 files changed, 131 insertions(+), 11 deletions(-)
+
+完整提交列表以 `git log feature/p5-character-asset-tooling` 为准（tip 51e7314）；
+本节不逐个回填哈希，避免"哈希一变文档就过时"。
+本机 push 需要本地代理 http://127.0.0.1:7897 —— 不带代理时 GitHub 会在 send-pack
+阶段直接掐断连接，报 curl 52 / curl 56。
 ```
 
 `git status` 收尾状态：工作树 clean；改动集**只有**下列内容，没有导出 PNG、
