@@ -295,6 +295,48 @@ Building FFmpeg from source (`BUILD_FFMPEG=auto`, the CI default) is *not* used 
 FFmpeg do compile, but their `make install` `STRIP` step produced 0-byte DLLs on this machine.
 The documented system-FFmpeg option is used instead.
 
+### FFmpeg strategy: why `auto` can fail and what the script does about it
+
+`BUILD_FFMPEG=auto` (the default of both `build/build.sh` and `scripts/build_engine.ps1`) builds a
+libvpx-only local FFmpeg so WebM alpha keeps working. `build.sh` only *skips* that build when both
+of these already exist:
+
+```text
+build/ffmpeg/lib/pkgconfig/libavcodec.pc
+build/ffmpeg-src/config_components.h   (with CONFIG_LIBVPX_VP{8,9}_DECODER 1)
+```
+
+Otherwise it runs `rm -rf build/ffmpeg-src` and re-clones `release/7.1` from github.com, then
+configures, compiles and installs it. That stage has failed here in two independent ways:
+
+1. **the clone dies when the proxy is down** — `error: RPC failed; curl 56 Recv failure`,
+   `fatal: early EOF`, `fatal: fetch-pack: invalid index-pack output`
+   (observed 2026-09-19, `logs/build/20260919/build-engine.log`);
+2. **`make install` STRIP produces 0-byte DLLs**, after which `build.sh` aborts with
+   `ERROR: FFmpeg pkg-config files still not visible after build`.
+
+Both abort the whole engine build with exit code 1 even though the engine source is untouched —
+which is exactly the confusing situation to avoid.
+
+`scripts/build_engine.ps1` therefore decides the strategy before it builds:
+
+| Situation | What happens |
+| --- | --- |
+| a local alpha-capable FFmpeg already exists | `auto` is kept; `build.sh` skips the rebuild |
+| no local build, FFmpeg sources reachable (`git ls-remote` probe, 25 s) | `auto` is kept; sources are cloned and built (slow, needs the proxy) |
+| no local build, sources **not** reachable | degrade to **`no`** up front, with a warning |
+| `auto` was kept but the FFmpeg stage still fails (clone dropped mid-transfer, install failed, …) | one automatic retry with **`no`**, with a warning |
+
+Only `auto` degrades. `-BuildFfmpeg yes` keeps the strict behaviour and is allowed to fail, and
+`-BuildFfmpeg no` never touches the network at all. The failure message also names the FFmpeg
+stage explicitly when it is the culprit, so a red build is not mistaken for a code defect.
+
+Offline (or when the proxy is not running), this is the command that always works:
+
+```powershell
+pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no
+```
+
 ---
 
 ## Run

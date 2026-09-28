@@ -1,0 +1,74 @@
+P4 Gate 6 — cancel chain 200 -> 1000 (2026-09-28)
+=================================================
+
+Question
+--------
+Not "can 236+A be fired" (that was already proven). The question is whether the
+standing light punch (state 200) can be CANCELLED into the projectile (state
+1000) from inside 200's own cancel window, instead of the punch simply finishing
+first.
+
+Pass criterion (both numbers read from the repo, not assumed)
+-------------------------------------------------------------
+- design/characters/test_fighter_b/moves.csv: Stand A (state 200) is
+  startup 3 + active 4 + recovery 13 = 20 ticks.
+- test_fighter_b.zss:157-158 opens the cancel window at animElem 3 (var(4) := 1);
+  command.zss:81 releases it (strictly higher level, var(4)=1, var(0)=0).
+
+So: a cancel shows state 200 running far SHORTER than 20 ticks, with 1000
+starting on the adjacent tick and no return to state 0 in between.
+
+Method
+------
+tests/p2/framestep_probe.ps1 (pause + one SCROLLLOCK = one game tick), the
+inert fixture test_dummy_plain from tests/p4/make_dummy.ps1, and
+tools/read_frame_text.py for every number below. -Ai1 0 -Ai2 0.
+
+  control : -Steps 'none:6,0x09:2,none:24'                       (prefix g6r_base)
+  cancel  : -Steps 'none:6,0x09:2,none:2,0x28:1,0x28+0x27:1,0x27:1,0x09:1,none:18'
+                                                                  (prefix g6r_cancel)
+
+Both runs: 32 ticks, 32 frames, keymap hash identical before and after.
+
+Results (P1 State No, per tick)
+-------------------------------
+  control   t001-t006 : 0
+            t007-t026 : 200     <- 20 ticks, the full move
+            t027-t032 : 0       (CTRL back to 1)
+
+  cancel    t001-t006 : 0
+            t007-t013 : 200     <- only 7 ticks
+            t014-t032 : 1000    <- starts on the very next tick
+
+No frame between t007 and t014 in the cancel run shows state 0.
+
+Why "200" is a safe reading (this is the part worth checking)
+-------------------------------------------------------------
+At this glyph size (~6 px) the overlay's '2' and 'Z' are close to identical, and
+read_frame_text.py reported the state number as "Z00". The tool keeps its
+runner-up candidates, and for that glyph it scored:
+
+    x=147  'Z' 0.9168  vs  '2' 0.9125   (difference 0.0043)
+
+i.e. the pixels are a coin flip between 2 and Z. Three independent facts settle
+it in favour of 200:
+
+1. Control run shows the value for exactly 20 ticks (t007-t026) and then a
+   genuine single-digit 0 at t027 -- matching startup 3 + active 4 + recovery 13.
+2. Those frames report CTRL: 0 and MoveType: A (an attack state); t027 reports
+   CTRL: 1, MoveType: I (standing).
+3. At t010 the row reads Time: 3, i.e. animElem 3 -- exactly the frame the cancel
+   window opens on, consistent with 200's documented timing.
+
+Verdict
+-------
+| check                        | control | cancel        |
+| ---------------------------- | ------- | ------------- |
+| how long does 200 live       | 20 ticks| 7 ticks       |
+| does 1000 follow immediately | n/a     | yes, t014     |
+| did it return to 0 in between| yes     | no            |
+
+State 200 was cut from 20 ticks to 7 and state 1000 began on the next tick, with
+no idle frame in between: the projectile really is cancelled out of the punch.
+
+**Gate 6: PASS.**

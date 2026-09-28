@@ -6,7 +6,7 @@
 > It is updated whenever a phase changes state. Never mark a phase `PASS` while any
 > of its gates is unmet.
 
-Last updated: 2026-09-15
+Last updated: 2026-09-18
 
 ---
 
@@ -18,7 +18,7 @@ Last updated: 2026-09-15
 | **P1** | IKEMEN Character Architecture | **PASS** |
 | **P2** | Base Fighter Template | **PASS** |
 | **P3** | Test Fighter A | **PASS** |
-| P4 | Test Fighter B | NOT_STARTED |
+| P4 | Test Fighter B | **PASS** |
 | P5 | Character Asset Tooling | NOT_STARTED |
 | P6 | First Final-Art Character | NOT_STARTED |
 | P7 | Character Skills & Presentation | NOT_STARTED |
@@ -235,7 +235,86 @@ its combat logic was deliberately left untouched.
 
 ## P4 — Test Fighter B
 
-**Status: NOT_STARTED**
+**Status: PASS** (2026-09-28)
+
+All ten gates passed. The last two were settled by controlled experiments rather
+than by assertion:
+
+- Gate 6 (cancel out of state 200 into the projectile): a control run shows state
+  200 living its full 20 ticks, a cancel run shows it cut to 7 ticks with state
+  1000 starting on the next tick and no idle frame in between
+  (`docs/evidence/p4/gate6_cancel_sequence.txt`).
+- Gate 7 (projectile guarded / jumped over): scripted dummies driven from their
+  own `[StateDef -3]` — `assertSpecial{flag: autoGuard}` and
+  `assertInput{flag: U}`. P2 life 1000->994 when guarding, 1000->1000 when the
+  projectile passes under a jumping dummy, against a 1000->940 control
+  (`docs/evidence/p4/gate7_dummy_matrix.txt`).
+
+The character is complete and playable, and the phase's central question is
+answered (the same `_template` does carry a second, very different fighting
+style).
+
+- Phase report: [`docs/phase_reports/P4-test-fighter-b.md`](phase_reports/P4-test-fighter-b.md)
+- One-pager: [`docs/P4-summary.md`](P4-summary.md)
+- Character handbook: [`game/chars/test_fighter_b/README.md`](../game/chars/test_fighter_b/README.md)
+- Frame data: [`design/characters/test_fighter_b/moves.csv`](../design/characters/test_fighter_b/moves.csv)
+- Iteration log: [`docs/iterations/20260918-p4-test-fighter-b.md`](iterations/20260918-p4-test-fighter-b.md)
+- Baseline audit (2026-09-20): [`docs/iterations/20260920-p4-baseline-audit.md`](iterations/20260920-p4-baseline-audit.md)
+
+**Evidence channel (added 2026-09-20).** A batch of earlier runtime numbers turned
+out to have no machine source: they had been read off screenshots, which cannot be
+audited. Those claims were withdrawn (Phase Report §5.x). Runtime values are now
+read programmatically from the debug overlay with
+`tools/read_frame_text.py`, and multi-combination matches are run by
+`tests/p4/run_matrix.ps1` (6 combinations — both seat orders, mirrors, asymmetric
+AI, and vs the reference KFM — all clean, `crashlogs: 0 new`).
+
+Delivered: `game/chars/test_fighter_b/` — a **Zoner** cloned from `_template`
+(not from Fighter A), with a native `projectile{}` special, a long-reach
+Standing Heavy Punch (hitbox to `x=105`, no `posAdd`), two anti-air tools
+(410 to `y=-112`, 1100 to `y=-152`), a two-shot EX and a three-shot Super, its own
+`CanChain` levels and its own Zoner AI. Engine baseline unchanged; submodule clean.
+
+**Gate status**: 1–10 **all PASS** (2026-09-28).
+
+Gates 6 and 7 used to be BLOCKED. For the record, the path that got there:
+
+- Gate 6 (cancel 200 -> 1000): the injection blockers below were fixed first;
+  the gate itself was then settled by stepping one tick at a time and comparing a
+  control run against a cancel run — 20 ticks of state 200 versus 7, with state
+  1000 starting on the next tick (`docs/evidence/p4/gate6_cancel_sequence.txt`).
+- Gate 7 (projectile guarded / jumped over): solved without any human at the
+  menu. The engine exposes `assertSpecial{flag: autoGuard}` and
+  `assertInput{flag: U}` (the very calls its own `data/training.zss` uses), so a
+  generated fixture character drives itself — see `tests/p4/make_dummy.ps1`.
+  Recording this because the earlier note claiming "a human has to press the
+  keys" was simply wrong, and it cost a round of work.
+
+Earlier blockers, all fixed: synthetic directional input, and this machine's
+injection silently failing for arrow keys. Root cause found and fixed —
+`tests/p2/inject_phases.ps1` was missing `KEYEVENTF_EXTENDEDKEY` (arrow keys share
+scan codes with the numeric keypad, so the engine saw "numpad 8" instead of "up").
+A second, subtler blocker was also found and fixed: the harness burst-captures
+during a phase, and `PrintWindow` blocks this OpenGL window's render thread, which
+starved the engine down to ~10% speed so every injection landed in the
+round-intro "FIGHT!" window where the character is not controllable. After both
+fixes, Gate 4's anti-air hit was captured on an airborne opponent
+(`logs/p2/shots/p4v_aa5_06.png`). Gates 6 / 7 were "not yet measured", and now
+they are measured — see above.
+
+Two engine-level findings worth carrying forward:
+
+- **A projectile's attack box must use `Clsn1Default`, not `Clsn1`.** A per-frame
+  `Clsn1:` declaration only covers the frame it precedes; the `-1` hold frame of a
+  projectile animation then carries no attack box at all, so the projectile flies
+  beautifully and never hits. Symptom shape: small hitboxes all miss, only a huge
+  one connects.
+- **`animElem = N` is true for the whole duration of element N**, so firing a
+  projectile from `animElem` needs an explicit latch (`var(10)` here).
+
+Verdict on re-injecting into `_template`: **no**. Only documentation was changed
+(two factual errors corrected) plus the two harness defects; the template's combat
+logic is untouched and Fighter B's moves stay as a reference sample.
 
 ---
 

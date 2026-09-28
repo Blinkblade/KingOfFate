@@ -1,0 +1,11 @@
+P4 match matrix summary
+generated: 2026-09-21 00:28:12
+
+b_vs_a     test_fighter_b   vs test_fighter_a   ai=8/8   exit=0    crash=0 new during the run     PASS
+a_vs_b     test_fighter_a   vs test_fighter_b   ai=8/8   exit=0    crash=0 new during the run     PASS
+mirror_b   test_fighter_b   vs test_fighter_b   ai=8/8   exit=0    crash=0 new during the run     PASS
+mirror_a   test_fighter_a   vs test_fighter_a   ai=8/8   exit=0    crash=0 new during the run     PASS
+asym_ai    test_fighter_b   vs test_fighter_a   ai=3/8   exit=0    crash=0 new during the run     PASS
+vs_kfm     test_fighter_b   vs kfm_zss          ai=8/8   exit=0    crash=0 new during the run     PASS
+
+total=6  FAIL=0

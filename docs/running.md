@@ -154,6 +154,33 @@ MSYS2 `mingw64\bin` 里的约 100 个 DLL（`avcodec-63.dll`、`avformat-63.dll`
 
 ## 6. 退出与验证
 
+### 6.1 跑起来之后，怎么拿到"数字"
+
+引擎是 GUI 子系统程序，stdout 抓不到；`logs/` 下的 harness 报告也只有
+`pid / hwnd / focus / 截图列表 / crashlog 行数`，**不含任何游戏数值**。
+要看 `LIF` / `POW` / `State No` 这类运行时数据，用下面两条：
+
+| 想要 | 命令 |
+| --- | --- |
+| 把截图里的调试覆盖层读成文本 | `python tools\read_frame_text.py <png 或目录> [--verbose]` |
+| 逐字打印像素点阵（**核对**上面那一步有没有读错） | `python tools\dump_glyphs.py <png> --band 1` |
+
+两者都需要 numpy + Pillow。前者利用"覆盖层用已知 TrueType 字体（`font/debug.def`）
+且行格式写死在 `external/script/debug.lua:179-227`"做程序化识别，每次都会同时打印
+原始串、修复结果与每一处改动；后者把像素原样打成 ASCII 点阵，用来复核。
+
+| 想要 | 命令 |
+| --- | --- |
+| 无人值守跑一局并盯崩溃日志 | `pwsh -File tests/p3/run_match_watch.ps1 -P1 ... -P2 ... -ShowDebug` |
+| 一次跑 6 种对战组合 | `pwsh -File tests/p4/run_matrix.ps1` |
+| 逐帧取证（暂停 + 单 tick 步进） | `pwsh -File tests/p2/framestep_probe.ps1 -Steps 'none:4,0x09:2'` |
+| 合成按键注入（会自动还原键位） | `pwsh -File tests/p2/inject_phases.ps1 -Phases '0x09:0.20'` |
+
+> 注入类脚本会临时改写 `save/config.ini` 的 `[Keys_P1]`，但**由脚本自己在 `finally`
+> 中还原**（Ctrl-C 也会还原）。不要再手工改这个文件 —— 此前两次键位失灵就是这么来的。
+
+### 6.2 退出
+
 - 正常退出：游戏内选退出，或关闭窗口。
 - 脚本验证退出码：`pwsh -File scripts/run_game.ps1 -Wait`，`$LASTEXITCODE` 即游戏退出码。
 - 自动化验证：`pwsh -File scripts/test.ps1 -RuntimeTest` 会启动引擎、确认创建窗口并
