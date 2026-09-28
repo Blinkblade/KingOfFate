@@ -317,6 +317,13 @@ $report.Add('args      : ' + ($argList -join ' '))
 $report.Add('steps     : ' + $Steps)
 $report.Add('outdir    : ' + $OutDir)
 
+# try/finally, not "restore before every exit". On 2026-09-21 this script died
+# mid-run with an exception from AttachThreadInput, which skipped the manual
+# restore calls and left [Keys_P1] patched to `x = TAB` -- the exact leftover
+# that kills the user's own controls. Worse, the next run then compared
+# before/after hashes against an already-patched file and happily reported
+# "keymap restored". A finally block cannot be skipped like that.
+try {
 $keymapBackup = Set-InjectionKeymap
 
 $proc = Start-Process -FilePath $Exe -WorkingDirectory $RuntimeRoot -ArgumentList $argList -PassThru
@@ -325,7 +332,6 @@ $report.Add("process   : pid=$($proc.Id)")
 Start-Sleep -Seconds $WarmupSec
 if ($proc.HasExited) {
     $report.Add("early exit: exitcode=$($proc.ExitCode)")
-    Restore-InjectionKeymap $keymapBackup
     $report | Out-File -Encoding utf8 (Join-Path $OutDir "${Prefix}_report.txt")
     $report | ForEach-Object { Write-Host $_ }
     exit 1
@@ -340,7 +346,6 @@ $report.Add("window    : hwnd=$script:hwnd")
 if ($script:hwnd -eq [IntPtr]::Zero) {
     $report.Add('window    : NO WINDOW HANDLE')
     Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-    Restore-InjectionKeymap $keymapBackup
     $report | Out-File -Encoding utf8 (Join-Path $OutDir "${Prefix}_report.txt")
     $report | ForEach-Object { Write-Host $_ }
     exit 2
@@ -434,10 +439,13 @@ else {
     $report.Add("stop      : engine exited by itself, exitcode=$($proc.ExitCode)")
 }
 $report.Add("ticks     : $tick")
-Restore-InjectionKeymap $keymapBackup
-$report.Add('keymap    : restored to the pre-run state')
-
-$reportPath = Join-Path $OutDir "${Prefix}_report.txt"
-$report | Out-File -Encoding utf8 $reportPath
-$report | ForEach-Object { Write-Host $_ }
+}
+finally {
+    # Runs on the normal path, on `exit N`, and on an unhandled exception.
+    Restore-InjectionKeymap $keymapBackup
+    $report.Add('keymap    : restored to the pre-run state')
+    $reportPath = Join-Path $OutDir "${Prefix}_report.txt"
+    $report | Out-File -Encoding utf8 $reportPath
+    $report | ForEach-Object { Write-Host $_ }
+}
 exit 0
