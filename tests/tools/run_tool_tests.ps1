@@ -428,6 +428,31 @@ Add-Check -Group '6' -Name 'JSON verdict lists per-item statuses' `
     -Detail $jsonError
 
 # ---------------------------------------------------------------------------
+# 6b. asset_report (the one-command character summary)
+# ---------------------------------------------------------------------------
+Write-Host '6b. asset_report' -ForegroundColor Cyan
+
+$AssetReport = Join-Path $ToolsDir 'asset_report.py'
+$reportOut = Join-Path $WorkDir 'asset_report'
+
+Invoke-Tool -Group '6b' -Label 'a consistent fixture character gets a passing report' `
+    -Arguments @($AssetReport, (Join-Path $Fixtures 'char_ok'), '--out', "$reportOut\char_ok") -Expect 0 `
+    -MustContain @('STEP 1', 'STEP 5', 'report: 0 step(s) reported a failure') | Out-Null
+
+Invoke-Tool -Group '6b' -Label 'a broken fixture character gets a failing report' `
+    -Arguments @($AssetReport, (Join-Path $Fixtures 'char_missing_files'), '--out', "$reportOut\broken") -Expect 1 `
+    -MustContain @('DEF_UNRESOLVED_FILE', 'reported a failure') | Out-Null
+
+$written = Join-Path $reportOut 'char_ok_report.txt'
+Invoke-Tool -Group '6b' -Label 'a report can be written to a file with --report' `
+    -Arguments @($AssetReport, (Join-Path $RepoRoot 'game\chars\test_fighter_b'),
+        '--out', $reportOut, '--report', $written) -Expect 0 | Out-Null
+Add-Check -Group '6b' -Name 'the written report contains every step' `
+    -Passed ((Test-Path -LiteralPath $written) -and
+             ((Get-Content -LiteralPath $written -Raw) -match 'STEP 1' -and
+              (Get-Content -LiteralPath $written -Raw) -match 'STEP 5'))
+
+# ---------------------------------------------------------------------------
 # 7. nothing was left behind
 # ---------------------------------------------------------------------------
 Write-Host '7. workspace hygiene' -ForegroundColor Cyan

@@ -55,6 +55,7 @@ python: python
 4. airtool inspect
 5. airtool validate
 6. character_validate
+6b. asset_report
 7. workspace hygiene
 ------------------------------------------------------------------------
   [PASS] 0    python interpreter is available
@@ -119,11 +120,15 @@ python: python
   [PASS] 6    a missing character exits 3
   [PASS] 6    the verdict is available as JSON
   [PASS] 6    JSON verdict lists per-item statuses
+  [PASS] 6b   a consistent fixture character gets a passing report
+  [PASS] 6b   a broken fixture character gets a failing report
+  [PASS] 6b   a report can be written to a file with --report
+  [PASS] 6b   the written report contains every step
   [PASS] 7    the engine submodule was not modified
   [PASS] 7    no PNG was written outside logs/
   [PASS] 7    no character file other than the AIR sprite fix changed
 ------------------------------------------------------------------------
-asset tool tests: 65/65 checks passed
+asset tool tests: 69/69 checks passed
 
 ASSET TOOL TESTS PASS
 
