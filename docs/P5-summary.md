@@ -34,27 +34,28 @@ AIR 怎么引用精灵、哪里引用错了、这个角色够不够格进 Runtim
 | sffctl | `python tools\sffctl\sffctl.py inspect / export / montage` | SFF 结构、精灵导出、拼图 |
 | airtool | `python tools\airtool\airtool.py inspect / validate` | 动画表读取与静态校验 |
 | validate_character | `python tools\character_validate\validate_character.py <目录\|.def>` | 角色级验证（文件引用 + AIR↔SFF + 脚本↔AIR） |
+| asset_report | `python tools\asset_report.py <目录\|.def>` | **一条命令出完整报告**：按顺序调用上面三件 + 独立回读校验，攻击动作与 `-1` 保持动作自动选入明细 |
 | （共享库） | `tools/kofassets/` | 只读解析库，三件工具共用同一套规则与语义 |
 
-所有工具：**只读**、**默认不覆盖**、**支持 `--json`**、**有明确退出码**、**纯标准库**。
+所有工具：**只读**、**默认不覆盖**、**有明确退出码**、**纯标准库**。
 
 ---
 
 ## 3. 常用命令（可直接复制）
 
 ```powershell
-# 角色体检（最常用的一条）
+# ★ 一条命令出完整报告（P6 拿到新素材先跑这个）
+python tools\asset_report.py game\chars\test_fighter_b --out logs\p5\report --montage
+
+# 也可以把报告写成文件存档
+python tools\asset_report.py <角色> --out logs\p5\report --report docs\evidence\p6\xxx.txt
+
+# 单件工具（asset_report 内部就是按这个顺序调它们的）
 python tools\character_validate\validate_character.py game\chars\test_fighter_b
-
-# 看容器
-python tools\sffctl\sffctl.py inspect game\chars\test_fighter_b\test_fighter_b.sff --limit 20
-
-# 导出并肉眼核对
+python tools\sffctl\sffctl.py inspect <sff> --limit 20
 python tools\sffctl\sffctl.py export <sff> --out logs\p5\export_all
 python tools\sffctl\sffctl.py montage <sff> --out logs\p5\montage.png --columns 16
 python tests\tools\check_export.py --sff <sff> --out logs\p5\export_all
-
-# 看动画
 python tools\airtool\airtool.py inspect <air> --action 210
 python tools\airtool\airtool.py validate <air>
 
@@ -156,8 +157,8 @@ Python 3.8+，只用标准库（struct / zlib / json / argparse / re / hashlib /
 
 | 命令 | 内容 | 实测结果 |
 | --- | --- | --- |
-| `pwsh -File scripts\test.ps1` | smoke（26）+ tools（65） | **PASS** |
-| `pwsh -File scripts\test.ps1 -Full` | tools 70 项（含 282 个精灵全导出 + montage 确定性） | **PASS**，22.4 s |
+| `pwsh -File scripts\test.ps1` | smoke（26）+ tools（69） | **PASS** |
+| `pwsh -File scripts\test.ps1 -Full` | tools 74 项（含 282 个精灵全导出 + montage 确定性 + asset_report 报告断言） | **PASS**，33.3 s |
 | `python tests\fixtures\verify_decoders.py` | 夹具逐像素相等 + 真实容器 golden + 全精灵解码 + 链接/空白精灵 | **48/48 PASS** |
 | `python tests\fixtures\make_fixtures.py --check` | 夹具与生成器一致 | 39 文件 0 问题 |
 | 引擎解码器逐字节对照 | 1128 个精灵 vs 引擎自己的 `Lz5Decode` | **0 处不一致** |

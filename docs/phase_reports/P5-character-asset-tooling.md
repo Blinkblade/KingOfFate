@@ -197,8 +197,8 @@ STEP 9  montage                       282 精灵 → 16x18 拼图          exit=
 
 | 检查 | 结果 |
 | --- | --- |
-| `pwsh -File scripts/test.ps1` | smoke **26/26** + tools **65/65** = PASS → [`evidence/p5/test_ps1_all_suites.txt`](../evidence/p5/test_ps1_all_suites.txt) |
-| `pwsh -File scripts/test.ps1 -Full` | tools **70/70**（含全部 282 个精灵导出 + montage 确定性）→ [`evidence/p5/tool_tests_full.txt`](../evidence/p5/tool_tests_full.txt) |
+| `pwsh -File scripts/test.ps1` | smoke **26/26** + tools **69/69** = PASS → [`evidence/p5/test_ps1_all_suites.txt`](../evidence/p5/test_ps1_all_suites.txt) |
+| `pwsh -File scripts/test.ps1 -Full` | tools **74/74**（含全部 282 个精灵导出 + montage 确定性 + asset_report 报告断言）→ [`evidence/p5/tool_tests_full.txt`](../evidence/p5/tool_tests_full.txt) |
 | Fighter A / Fighter B 基础回归 | `run_matrix.ps1 -Only b_vs_a` PASS，`crashlogs : 0 new` → [`evidence/p5/runtime_regression.txt`](../evidence/p5/runtime_regression.txt) |
 | 工具测试 | 见上（**65** 项 / `-Full` **70** 项，含链接精灵与空白精灵两个夹具） |
 | 解码器校验 | `python tests\fixtures\verify_decoders.py` → **48/48 PASS**（含链接精灵与空白精灵断言） |
@@ -301,7 +301,7 @@ tests/fixtures/expected/decoder_goldens.json
 tests/fixtures/assets/**                  39 个生成夹具
 tests/fixtures/README.md                  夹具来源 / 用途 / License
 tests/tools/check_export.py               导出 PNG 的独立回读校验
-tests/tools/run_tool_tests.ps1            65 项工具测试（-Full 70 项）
+tests/tools/run_tool_tests.ps1            69 项工具测试（-Full 74 项）
 scripts/test.ps1                          接入 tools 套件
 docs/character_asset_tooling.md           工具手册
 docs/P5-summary.md                        交接说明

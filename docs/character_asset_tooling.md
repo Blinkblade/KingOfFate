@@ -19,8 +19,11 @@
 | **sffctl** | `python tools/sffctl/sffctl.py` | SFF 里有什么？每个精灵多大、原点在哪、什么格式？把它导成 PNG。 |
 | **airtool** | `python tools/airtool/airtool.py` | 这个 `.air` 有多少 Action、每个 Action 有几个元素、持续多少 tick、判定框在哪一帧生效？ |
 | **validate_character** | `python tools/character_validate/validate_character.py` | 这个角色目录完整吗？引用都对得上吗？能不能进 Runtime？ |
+| **asset_report** | `python tools/asset_report.py` | 上面那一整套跑一遍是什么结果？一条命令，输出一份带命令行的报告。 |
 
-三者共享一个只用标准库的小解析库 `tools/kofassets/`（见 §8）。
+三者共享一个只用标准库的小解析库 `tools/kofassets/`（见 §8）；`asset_report` 不加
+任何自己的逻辑，它只是按固定顺序调用上面三件 + `check_export`，把每步的命令行与
+输出写进一份报告——所以报告永远不可能和单件工具自己说的不一致。
 
 ---
 
@@ -345,6 +348,14 @@ AI 生成精灵
 
 ## 10. P6 推荐工作流
 
+**先跑这一条**（它就是下面 1–5 步的合集，顺序、命令、输出全部写进一份报告）：
+
+```powershell
+python tools\asset_report.py <角色目录> --out logs\p5\report --montage
+```
+
+需要某一步的细节时，再单独用对应的工具：
+
 ```text
 拿到一套新的 Sprite / SFF / AIR
    │
@@ -372,6 +383,38 @@ AI 生成精灵
 **工具是只读的，静态检查永远不能替代 Runtime。** "资产静态检查 + Runtime 冒烟"的组合
 才是完整判据：静态能查出"引用不存在"这类必然错，而"判定框到底有没有打到人"只有
 Runtime 能回答（P4 的投射物 bug 就是两者结合才定位的）。
+
+---
+
+## 10.1 asset_report —— 一条命令出完整报告
+
+```powershell
+python tools\asset_report.py <角色目录|.def> [--out DIR] [--report FILE] [--montage]
+```
+
+它按顺序做这些事，每步都把**命令行本身**和**输出**写进报告：
+
+```text
+STEP 1  character_validate                 文件/引用/AIR↔SFF/脚本↔AIR 逐项结论
+STEP 2  sffctl inspect                     版本、精灵数、尺寸、原点、格式
+STEP 3  sffctl export + check_export        导出全部精灵，再从磁盘回读逐像素对照
+        （--montage 时再画一张拼图）
+STEP 4  airtool inspect --action N          自动挑选：带攻击框的动作 + 所有 -1 保持动作
+STEP 5  airtool validate                    引用缺失 / 判定框作用域 / 受击框缺口
+```
+
+要点：
+
+- **不加自己的逻辑**：每步都是调用现有工具，所以报告不可能和单件工具自己说的不一致。
+- **路径是仓库相对的**（传相对路径、在仓库根运行），所以同一份报告在任何机器上
+  重新生成都应该长得一样 —— 这也是它能作为证据存档的原因。
+- `--out` 默认 `logs/p5/asset_report`（已 gitignore），精灵导出到 `<out>/export`。
+- 退出码：`0` = 每一步都通过；`1` = 有步骤失败（**报告照样写出来**，失败的报告才是重点）。
+- 报告里"自动挑选"的动画：所有带攻击框的动作（最多 8 个）+ 所有 `-1` 保持动作
+  （最多 6 个），顺序固定，所以重跑是确定的。
+
+`scripts/test.ps1` 里 `6b` 组就是它的测试：一个一致的夹具角色必须 `exit 0`，
+一个缺文件的夹具角色必须 `exit 1` 且报告里出现 `DEF_UNRESOLVED_FILE`。）。
 
 `scripts/test.ps1` 已经把这套工具测试接进了项目回归：
 

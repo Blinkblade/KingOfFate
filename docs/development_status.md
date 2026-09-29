@@ -326,8 +326,9 @@ whether a character directory is complete enough to reach Runtime at all. Nothin
 engine was changed, and the tools are read-only.
 
 Delivered: `tools/kofassets/` (a standard-library-only reader), `tools/sffctl/`,
-`tools/airtool/`, `tools/character_validate/`, a fixture set under `tests/fixtures/`,
-`tests/tools/run_tool_tests.ps1` (61 checks, 66 with `-Full`), the tool guide
+`tools/airtool/`, `tools/character_validate/`, `tools/asset_report.py` (the whole
+workflow as one command), a fixture set under `tests/fixtures/`,
+`tests/tools/run_tool_tests.ps1` (69 checks, 74 with `-Full`), the tool guide
 `docs/character_asset_tooling.md`, and the P6-ready end-to-end run recorded in
 `docs/evidence/p5/p6_ready_run.txt`.
 
