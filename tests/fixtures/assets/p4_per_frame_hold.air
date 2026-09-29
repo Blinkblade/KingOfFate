@@ -1,0 +1,7 @@
+; P4 negative case: a per-frame attack box in front of an -1 hold.
+; The box covers one element only, so the hold carries no attack box at all.
+[Begin Action 1005]
+Clsn1: 1
+ Clsn1[0] = -4,-3, 4,3
+1,0, 0,0, 3
+1,0, 0,0, -1

@@ -1,0 +1,49 @@
+﻿KingOfFate P5 -- runtime regression after the test_fighter_b.air sprite fix
+engine pin: ba516193   binary: kingoffate-rc5 Build Time 2026.09.21
+
+# engine crash-log population before / after the run
+before=11
+sync-exit=0
+matrix-exit=0
+after=11
+
+# pwsh -File scripts\sync_game_content.ps1
+[sync ] runtime : D:\AI\develop\KingOfFate\engine\ikemen-go
+[sync ] chars/ -> D:\AI\develop\KingOfFate\engine\ikemen-go\chars
+         dir  _template
+         dir  p1_kfm_zss_lab
+         dir  test_fighter_a
+         dir  test_fighter_b
+[sync ] data/ -> D:\AI\develop\KingOfFate\engine\ikemen-go\data
+         file select.def
+
+[sync ] done: 5 item(s) copied, 0 skipped
+[sync ] note : runtime content is git-ignored inside the engine submodule;
+               the tracked source of truth stays under game/.
+
+# pwsh -File tests\p4\run_matrix.ps1 -Only b_vs_a -RunSec 15
+============================================================
+ P4 match matrix
+   repo     : D:\AI\develop\KingOfFate
+   outdir   : D:\AI\develop\KingOfFate\logs\p4\matrix
+   configs  : b_vs_a
+============================================================
+
+--- b_vs_a : test_fighter_b vs test_fighter_a (ai 8/8) ---
+      [ info] DLL path: D:\msys64\mingw64\bin
+      [p3   ] pid=5960  args=-p1 test_fighter_b -p2 test_fighter_a -s stage0 -windowed -nosound -time 60 -p1.ai 8 -p2.ai 8
+      [p3   ] report: D:\AI\develop\KingOfFate\logs\p4\matrix\m_b_vs_a_report.txt
+      [p3   ] no engine crash log was produced
+      => PASS   (harness exit=0, crash line: crashlogs : 0 new during the run)
+
+============================================================
+ matrix summary
+============================================================
+
+Config P1             P2             Ai  Exit CrashLog             Verdict
+------ --             --             --  ---- --------             -------
+b_vs_a test_fighter_b test_fighter_a 8/8    0 0 new during the run PASS
+
+
+written: D:\AI\develop\KingOfFate\logs\p4\matrix\matrix_summary.txt
+MATCH MATRIX PASS

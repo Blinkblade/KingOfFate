@@ -1,0 +1,7 @@
+; P4 positive case: the same animation, but the attack box is a default,
+; so every element -- including the -1 hold -- carries it.
+[Begin Action 1005]
+Clsn1Default: 1
+ Clsn1[0] = -4,-3, 4,3
+1,0, 0,0, 3
+1,0, 0,0, -1

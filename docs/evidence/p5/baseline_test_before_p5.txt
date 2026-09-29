@@ -1,0 +1,41 @@
+﻿
+KingOfFate smoke test
+root: D:\AI\develop\KingOfFate
+------------------------------------------------------------------------
+A. engine submodule / pinned baseline
+B. engine runtime directories
+C. build artifact
+D. basic runtime files
+E. project scaffolding
+------------------------------------------------------------------------
+  [PASS] submodule directory exists   (engine\ikemen-go)
+  [PASS] submodule git metadata exists   (engine\ikemen-go\.git)
+  [PASS] .gitmodules exists   (.gitmodules)
+  [PASS] engine baseline commit matches pin   (expected ba516193bba8 / found ba516193bba8)
+  [PASS] engine on integration branch kingoffate/rc5   (kingoffate/rc5)
+  [PASS] .gitmodules points at the engine fork   (engine/ikemen-go -> Blinkblade/Ikemen-GO)
+  [PASS] runtime dir: data/   (engine\ikemen-go\data)
+  [PASS] runtime dir: font/   (engine\ikemen-go\font)
+  [PASS] runtime dir: external/   (engine\ikemen-go\external)
+  [PASS] runtime dir: chars/   (engine\ikemen-go\chars)
+  [PASS] runtime dir: stages/   (engine\ikemen-go\stages)
+  [PASS] engine executable built   (engine\ikemen-go\Ikemen_GO.exe)
+  [PASS] executable size is plausible (> 5 MB)   (14.94 MB)
+  [PASS] default motif (data/ikemen1/system.def)   (engine\ikemen-go\data\ikemen1\system.def)
+  [PASS] fight screen (data/fight.def)   (engine\ikemen-go\data\fight.def)
+  [PASS] test character (chars/kfm/kfm.def)   (engine\ikemen-go\chars\kfm\kfm.def)
+  [PASS] test stage (stages/stage0.def)   (engine\ikemen-go\stages\stage0.def)
+  [PASS] README.md   (README.md)
+  [PASS] CONTRIBUTING.md   (CONTRIBUTING.md)
+  [PASS] docs/development_status.md   (docs\development_status.md)
+  [PASS] docs/environment.md   (docs\environment.md)
+  [PASS] docs/iterations/README.md   (docs\iterations\README.md)
+  [PASS] .github/pull_request_template.md   (.github\pull_request_template.md)
+  [PASS] scripts/build_engine.ps1   (scripts\build_engine.ps1)
+  [PASS] scripts/run_game.ps1   (scripts\run_game.ps1)
+  [PASS] scripts/test.ps1   (scripts\test.ps1)
+------------------------------------------------------------------------
+smoke test: 26/26 checks passed
+
+SMOKE TEST PASS
+

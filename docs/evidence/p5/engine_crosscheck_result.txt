@@ -1,0 +1,8 @@
+﻿# regenerate with: python .tmp/xcheck_compare.py (helper program not committed)
+game/chars/_template/_template.sff            compared 282 sprites
+game/chars/test_fighter_a/test_fighter_a.sff  compared 282 sprites
+game/chars/test_fighter_b/test_fighter_b.sff  compared 282 sprites
+game/chars/p1_kfm_zss_lab/kfm.sff             compared 282 sprites
+
+cross-check: 1128 sprite(s) compared against the engine's own decoder, 0 mismatch
+by decode path: {'indices': 1128}

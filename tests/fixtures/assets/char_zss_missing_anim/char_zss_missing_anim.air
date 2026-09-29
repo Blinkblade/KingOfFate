@@ -1,0 +1,17 @@
+; a clean, small animation table
+[Begin Action 0]
+Clsn2Default: 1
+ Clsn2[0] = -3, 0, 3, -7
+0,0, 0,0, 6
+1,0, 0,0, 6
+
+[Begin Action 200]
+Clsn2: 2
+ Clsn2[0] = -3, 0, 3, -7
+ Clsn2[1] = 4, 0, 7, -5
+0,0, 0,0, 2
+Clsn1: 1
+ Clsn1[0] = 4,-6, 9,-3
+2,0, 0,0, 3
+Clsn1: 0
+0,0, 0,0, 3

@@ -1,0 +1,51 @@
+﻿# regenerate with: python tests/fixtures/verify_decoders.py
+  [PASS] fixture 0,0 exists
+  [PASS] fixture 0,0 size is 8x8
+  [PASS] fixture 0,0 axis is (3,7)
+  [PASS] fixture 0,0 decodes to the expected pixels
+  [PASS] fixture 0,0 has both opaque and transparent pixels
+  [PASS] fixture 1,0 exists
+  [PASS] fixture 1,0 size is 8x8
+  [PASS] fixture 1,0 axis is (1,2)
+  [PASS] fixture 1,0 decodes to the expected pixels
+  [PASS] fixture 1,0 has both opaque and transparent pixels
+  [PASS] fixture 2,0 exists
+  [PASS] fixture 2,0 size is 5x3
+  [PASS] fixture 2,0 axis is (5,0)
+  [PASS] fixture 2,0 decodes to the expected pixels
+  [PASS] fixture 2,0 has both opaque and transparent pixels
+  [PASS] linked sprite is recognised
+  [PASS] linked sprite decodes to the pixels it shares
+  [PASS] linked sprite records its source
+  [PASS] a sprite the engine leaves blank is still the declared size
+  [PASS] that sprite is entirely transparent
+  [PASS] the reader reports it
+  [PASS] PNG round-trip keeps the exact pixels
+  [PASS] PNG round-trip is deterministic
+  [PASS] v1 refused with a clear message
+  [PASS] truncated refused with a clear message
+  [PASS] bad signature refused with a clear message
+  [PASS] test_fighter_b.sff 0,0 exists
+  [PASS] test_fighter_b.sff 0,0 metadata
+  [PASS] test_fighter_b.sff 0,0 decoded size
+  [PASS] test_fighter_b.sff 0,0 matches its golden
+  [PASS] test_fighter_b.sff 1000,4 exists
+  [PASS] test_fighter_b.sff 1000,4 metadata
+  [PASS] test_fighter_b.sff 1000,4 decoded size
+  [PASS] test_fighter_b.sff 1000,4 matches its golden
+  [PASS] test_fighter_b.sff 9000,1 exists
+  [PASS] test_fighter_b.sff 9000,1 metadata
+  [PASS] test_fighter_b.sff 9000,1 decoded size
+  [PASS] test_fighter_b.sff 9000,1 matches its golden
+  [PASS] test_fighter_a.sff 0,0 exists
+  [PASS] test_fighter_a.sff 0,0 metadata
+  [PASS] test_fighter_a.sff 0,0 decoded size
+  [PASS] test_fighter_a.sff 0,0 matches its golden
+  [PASS] _template.sff: all 282 sprites decode
+  [PASS] _template.sff: every sprite has visible pixels
+  [PASS] test_fighter_a.sff: all 282 sprites decode
+  [PASS] test_fighter_a.sff: every sprite has visible pixels
+  [PASS] test_fighter_b.sff: all 282 sprites decode
+  [PASS] test_fighter_b.sff: every sprite has visible pixels
+
+decoder checks: 48/48 passed

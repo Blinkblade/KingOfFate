@@ -1,0 +1,5 @@
+# P5 fixture state script
+[StateDef 200; anim: 200;]
+if time = 0 {
+	changeAnim{value: 200}
+}

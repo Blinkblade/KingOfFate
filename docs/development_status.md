@@ -6,7 +6,7 @@
 > It is updated whenever a phase changes state. Never mark a phase `PASS` while any
 > of its gates is unmet.
 
-Last updated: 2026-09-18
+Last updated: 2026-09-29
 
 ---
 
@@ -18,15 +18,15 @@ Last updated: 2026-09-18
 | **P1** | IKEMEN Character Architecture | **PASS** |
 | **P2** | Base Fighter Template | **PASS** |
 | **P3** | Test Fighter A | **PASS** |
-| P4 | Test Fighter B | **PASS** |
-| P5 | Character Asset Tooling | NOT_STARTED |
-| P6 | First Final-Art Character | NOT_STARTED |
-| P7 | Character Skills & Presentation | NOT_STARTED |
-| P8 | CPU AI v1 | NOT_STARTED |
-| P9 | Utility AI | NOT_STARTED |
-| P10 | Automated Match & Balance | NOT_STARTED |
-| P11 | UI / Stage / Audio | NOT_STARTED |
-| P12 | Windows Release | NOT_STARTED |
+| **P4** | Test Fighter B | **PASS** |
+| **P5** | Character Asset Tooling | **PASS** |
+| **P6** | First Final-Art Character | **NEXT** |
+| **P7** | Character Skills & Presentation | NOT_STARTED |
+| **P8** | CPU AI v1 | NOT_STARTED |
+| **P9** | Utility AI | NOT_STARTED |
+| **P10** | Automated Match & Balance | NOT_STARTED |
+| **P11** | UI / Stage / Audio | NOT_STARTED |
+| **P12** | Windows Release | NOT_STARTED |
 
 ---
 
@@ -231,10 +231,7 @@ routing. Template gaps found while cloning (missing `displayname` and README
 steps, no clone-verification step) were fixed in the template's documentation;
 its combat logic was deliberately left untouched.
 
----
-
 ## P4 — Test Fighter B
-
 **Status: PASS** (2026-09-28)
 
 All ten gates passed. The last two were settled by controlled experiments rather
@@ -320,13 +317,61 @@ logic is untouched and Fighter B's moves stay as a reference sample.
 
 ## P5 — Character Asset Tooling
 
-**Status: NOT_STARTED**
+**Status: PASS** (2026-09-29)
+
+All ten exit gates pass. The phase built the smallest tool chain that lets P6 look at a
+new character's assets *before* putting them in the game: read an SFF, export its
+sprites, read an animation table, find reference and collision mistakes, and judge
+whether a character directory is complete enough to reach Runtime at all. Nothing in the
+engine was changed, and the tools are read-only.
+
+Delivered: `tools/kofassets/` (a standard-library-only reader), `tools/sffctl/`,
+`tools/airtool/`, `tools/character_validate/`, `tools/asset_report.py` (the whole
+workflow as one command), a fixture set under `tests/fixtures/`,
+`tests/tools/run_tool_tests.ps1` (69 checks, 74 with `-Full`), the tool guide
+`docs/character_asset_tooling.md`, and the P6-ready end-to-end run recorded in
+`docs/evidence/p5/p6_ready_run.txt`.
+
+The tools found a real defect on their first run: `test_fighter_b.air` action 410
+referenced sprite `410,5`, which the placeholder SFF does not have (the engine logs a
+missing sprite and draws nothing for those five ticks). It was fixed to `410,4` with the
+tick count unchanged, and a runtime regression (`run_matrix.ps1 -Only b_vs_a`) confirms
+`crashlogs : 0 new`.
+
+- Phase report: [`docs/phase_reports/P5-character-asset-tooling.md`](phase_reports/P5-character-asset-tooling.md)
+- One-pager: [`docs/P5-summary.md`](P5-summary.md)
+- Tool guide: [`docs/character_asset_tooling.md`](character_asset_tooling.md)
+- Iteration log: [`docs/iterations/20260929-p5-character-asset-tooling.md`](iterations/20260929-p5-character-asset-tooling.md)
+
+Two things from P4 are now stated on the tool side rather than in prose:
+`Clsn1`/`Clsn2` apply to the single element that follows them while
+`Clsn1Default`/`Clsn2Default` apply to every element of the action (so a projectile's
+`-1` hold frame needs the default form), and the tools print that per element.
+
+**Known limitations carried into P6** (all documented, none blocking):
+
+- SFF v1 and raw true-colour SFFv2 sprites are refused rather than guessed at. No
+  character asset in this repository uses either.
+- No SFF write-back, no AIR editing, no SND, no palette editing, no GUI, no sprite-sheet
+  cutting. Deliberately out of scope until P6 says otherwise.
+- All three characters carry three `AIR_HURTBOX_GAP` warnings each (actions 210 / 230 /
+  820) inherited from `_template`'s authoring style: a per-frame `Clsn2` covers one
+  element only, so the character has no hurtbox for those ticks. Real but not
+  gameplay-measurable; P6 should use `Clsn2Default`.
+- The `.air` comments in the three characters say "`Clsn1` carries over to the next
+  declaration", which does not match the engine. Recorded, not edited here.
+- The carried-over P4 item (re-checking the values in P1–P3 that were read off
+  screenshots) is still open; it did not block P5.
 
 ---
 
 ## P6 — First Final-Art Character
 
-**Status: NOT_STARTED**
+**Status: NEXT**
+
+Not started. The entry point is `docs/P5-summary.md`: the asset tool chain is in place,
+so this phase starts by running the new tools against the first real art set rather than
+by writing tooling.
 
 ---
 
