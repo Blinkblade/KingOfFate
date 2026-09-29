@@ -293,7 +293,7 @@ A  docs/iterations/20260929-p5-character-asset-tooling.md
 A  docs/evidence/p5/**
 ```
 
-**创建 PR（本机无 `gh`，需手动开）**：
+**创建 PR（本机无 `gh`，需手动开）**：PR 标题与可直接粘贴的正文见 §16。
 
 ```text
 https://github.com/Blinkblade/KingOfFate/pull/new/feature/p5-character-asset-tooling
@@ -301,6 +301,122 @@ https://github.com/Blinkblade/KingOfFate/pull/new/feature/p5-character-asset-too
 
 **PR 标题建议**：`P5: Character Asset Tooling（角色资产工具链）`
 
-**PR 正文**：与 Phase Report §2（逐 Gate 证据）、§4（发现的缺陷）、§5（关键决策）同源，
-可直接复制。
+**PR 正文**：见 §16（可直接粘贴）。
+
+---
+
+## 16. PR 标题与正文（可直接粘贴）
+
+**标题**
+
+```text
+P5: Character Asset Tooling（角色资产工具链）
+```
+
+**正文**
+
+````text
+## 一句话
+
+为 P6 准备好"拿到一套新素材后不用进游戏就能看清它"的最小工具链：读 SFF、导出精灵、
+读并校验动画表、判断角色目录能不能进 Runtime。全部只读、纯标准库、有明确退出码。
+**引擎子模块全程未改动**（仍 pin 在 ba516193 / v1.0.0-rc.5）。
+
+## 为什么
+
+P6 是第一个正式美术角色。在此之前，"这套 SFF/AIR 里到底有什么、引用对不对、动画
+怎么引用精灵"只能靠进游戏试。P5 把这几件事变成可离线、可重复、可自动检查的命令。
+
+## 新增
+
+- tools/kofassets/  只读解析库（sff / air / chardef / checks / report / pngio），
+  解析算法逐行移植自 engine/ikemen-go/src/{image,anim}.go，并补上引擎没有的边界检查
+- tools/sffctl/sffctl.py              inspect / export / montage
+- tools/airtool/airtool.py            inspect / validate
+- tools/character_validate/validate_character.py
+- tools/asset_report.py               ★ 一条命令跑完整个工作流并出报告
+- tests/fixtures/                     39 个合成夹具 + 生成器 + 解码校验器 + goldens
+- tests/tools/run_tool_tests.ps1      + check_export.py（导出后从磁盘回读逐像素对照）
+- docs/character_asset_tooling.md（工具手册）、docs/P5-summary.md、docs/phase_reports/
+  P5-character-asset-tooling.md、docs/evidence/p5/（11 份原始输出）
+
+修改：scripts/test.ps1（现在跑 smoke + tools 两个套件）、README.md、
+docs/development_status.md、.gitignore（精简，见下）、.gitattributes（新增）、
+game/chars/test_fighter_b/test_fighter_b.air（修一处真实缺陷，见下）。
+
+## 能力
+
+| 工具 | 作用 |
+| --- | --- |
+| sffctl | SFF 版本/精灵数/尺寸/原点/格式/调色板；导出 PNG（`<group>_<image>.png`，默认不覆盖，目录必填）；拼图供人眼核对 |
+| airtool | Action/元素/tick/`-1`/判定框；13 条规则（引用缺失、重复 Action、判定框作用域、受击框缺口…） |
+| validate_character | 文件完整性 + AIR→SFF 精灵引用 + 脚本→AIR 字面量动画引用 + 判定框语义，逐项给结论 |
+| asset_report | 按顺序调用上面三件 + 回读校验，每步把命令行和输出写进一份报告 |
+
+退出码：0 OK / 1 有 ERROR / 2 用法 / 3 IO / 4 不支持（SFF v1、raw 真彩）/ 5 损坏。
+**4 与 5 刻意分开**："我不支持"和"这个文件坏了"是两件事。
+
+## Exit Gate（10 条全过，详见 Phase Report §2）
+
+| Gate | 结果 | 关键证据 |
+| --- | --- | --- |
+| 1 基线 | PASS | test.ps1 26/26；run_matrix -Only b_vs_a PASS，crashlogs : 0 new |
+| 2 SFF Inspect | PASS | 三个角色均 2.0.1.0 / 282 精灵 / 16 调色板 |
+| 3 Sprite Export | PASS | 282 个精灵导出并逐像素回读；**解码与引擎逐字节对照 1128 个精灵 0 处不一致** |
+| 4 AIR Inspect | PASS | Action/元素/tick/`-1`/Default collision，三个角色各跑通 |
+| 5 Animation Validation | PASS | 缺精灵、重复 Action、框数不符、非法时间 → ERROR；孤立框行 → WARNING |
+| 6 P4 投射物案例 | PASS | 正例（Clsn1Default）不报、反例（逐帧 Clsn1）报，并在数据层断言 mode/count 不同 |
+| 7 Character Validation | PASS | _template / A / B 三个都是 errors 0、退出码 0 |
+| 8 负例 | PASS | 缺文件 3 / 不支持 4 / 截断与坏签名 5 / 用法 2，都不崩溃、不挂死 |
+| 9 P6 Ready 端到端 | PASS | 9 步全 exit 0，工具读数与角色帧数据表逐项吻合（210=33 tick、判定到 x=105…） |
+| 10 回归与文档 | PASS | test.ps1：smoke 26/26 + tools 69/69（`-Full` 74/74） |
+
+## 怎么验证
+
+```powershell
+pwsh -File scripts\test.ps1            # smoke 26/26 + tools 69/69
+pwsh -File scripts\test.ps1 -Full      # + 282 精灵全导出、montage 确定性（约 33 s）
+python tests\fixtures\verify_decoders.py   # 48/48（夹具逐像素相等 + golden + 链接/空白精灵）
+python tools\asset_report.py game\chars\test_fighter_b --out logs\p5\report --montage
+```
+
+需要 Python 3.8+，**无第三方依赖**。
+
+## 关键决策
+
+1. **不复用引擎的 Go 解析器**（都在 package main，主仓无法导入；给引擎加 CLI 违反
+   "engine 只读"）→ 最小独立实现 + 忠实移植，出处写进每个模块 docstring。
+2. **纯标准库**（PNG 只靠 zlib），避免可选依赖让 scripts/test.ps1 整体失效。
+3. **不做 SFF 写回 / AIR 编辑**：P6 是否需要等素材流程确定，提前做 writer 是负债。
+4. **删掉了"角色应该有哪些动画"的硬编码清单**：它把 _template 判错（模板本来就
+   没有蹲姿）。改为只检查"角色自己的脚本要什么"。
+5. **不把引擎公共状态索要的动画当必需**：多数有 selfAnimExist 保护或位于引擎标注
+   Deprecated 的状态，报出来只会让每个角色多 9 条无法处理的警告。
+6. **用"与引擎解码器逐字节对照"替代"人眼看拼图"**作为解码正确性的主证据
+   （1128 精灵 0 处不一致）；对照用的 Go 程序刻意不提交（引擎代码副本 + 不让 Go
+   进依赖表），重建方法写在 docs/evidence/p5/engine_decoder_crosscheck.txt。
+
+## 顺带查出并修掉的既有缺陷
+
+test_fighter_b.air 的 Action 410（对空 Normal）第 4 个元素引用精灵 410,5，
+占位 SFF（KFM 容器）只有 410,0…410,4 → 引擎记 missing sprite 并在那 5 tick 不画角色。
+按注释声明的"收招 11 tick"改成 410,4，tick 数不变。Runtime 回归 crashlogs : 0 new。
+
+## 已知限制（不影响合并）
+
+- 不支持 SFF v1 与 raw 真彩精灵（遇到明确报错，不误解码）；本仓库无素材使用。
+- 三个角色各有 3 条 AIR_HURTBOX_GAP 警告（Action 210/230/820，继承 _template 写法），
+  是真实的语义缺口但对现有玩法无可测影响，**不是本次引入的回归**，P6 用 Clsn2Default 即可。
+- .air 注释里"Clsn1 沿用到下一次声明"与引擎语义不符（逐帧只覆盖紧邻一个元素），
+  本次**只记录未改注释**，列入遗留。
+- 判定框作用域结论来自引擎源码 + P4 对 Clsn1 的 Runtime A/B；对 Clsn2 未单独实测。
+- P4 遗留项（P1–P3 中"读截图得来的数值"复核）仍未做，不阻塞本阶段。
+
+## 合并前 checklist
+
+- [ ] scripts/test.ps1 通过（26/26 + 69/69）
+- [ ] 引擎子模块未改动（git submodule status 显示 ba516193，无 + 号）
+- [ ] 工作树无导出 PNG / logs 残留（logs/ 已 gitignore）
+- [ ] docs/development_status.md 显示 P5 = PASS、P6 = NEXT
+````
 
