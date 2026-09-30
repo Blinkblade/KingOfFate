@@ -72,9 +72,14 @@
   朝向=素材默认面向右（引擎自动翻转处理 P1 侧）。
 - **调色板**：源素材即色；不做 12 色调色板系统（非商用同人，无需换色功能）。
 - **镜像策略**：双刀/衣服左右不对称细节在验收时逐帧核对（见 §6）。
-- **素材来源**：负责人下载 MUGEN 社区 Archer 角色包/精灵资源后放入
-  `assets/imports/archer/`；来源、作者、许可登记进 `assets/LICENSE_MANIFEST.csv`
-  （usage=noncommercial_fanwork）。
+- **素材来源**：P6 第一版用 kuri 的 MUGEN Archer（2005，SFF v1，已下载并登记）。
+  **2026-09-30 决定换精度更高的源**：负责人要求"现阶段素材越精细越好，方便后期 AI 重绘"。
+  经查证，原计划路线"C. 用《Fate/Unlimited Codes》街机精灵"**不可行**——FUC 是 3D 建模
+  游戏，没有 2D 精灵表（The Spriters Resource 上该游戏资产数为 0）。
+  改为使用 **`EMIYA (Custom Sprited High Res)` by aka65535 / Sho**（2017 手绘高清版），
+  它同样是 MUGEN 角色包 → 现有 SFF 流水线**无需新增切割工具**即可使用。
+  落地位置与下载说明见 [`assets/imports/archer_hires/README.md`](../../assets/imports/archer_hires/README.md)。
+  来源、作者、许可登记进 `assets/LICENSE_MANIFEST.csv`（usage=noncommercial_fanwork）。
 
 ## 5. 动作与素材清单（asset_map.csv 覆盖范围）
 
