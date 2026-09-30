@@ -192,13 +192,20 @@ if ($null -ne $json) {
 foreach ($c in @(
         @{ n = 'missing file is IO (3)'; p = (Join-Path $Fixtures 'nope.sff'); e = 3; m = 'no such file' },
         @{ n = 'directory instead of file is IO (3)'; p = $Fixtures; e = 3; m = 'is a directory' },
-        @{ n = 'SFF v1 is UNSUPPORTED (4)'; p = (Join-Path $Fixtures 'unsupported_v1.sff'); e = 4; m = 'SFF v1' },
         @{ n = 'truncated file is CORRUPT (5)'; p = (Join-Path $Fixtures 'truncated.sff'); e = 5; m = 'truncated or corrupt' },
         @{ n = 'bad signature is CORRUPT (5)'; p = (Join-Path $Fixtures 'bad_signature.sff'); e = 5; m = 'bad SFF signature' }
     )) {
     Invoke-Tool -Group '2' -Label $c.n -Arguments @($Sffctl, 'inspect', $c.p) `
         -Expect $c.e -MustContain @($c.m) | Out-Null
 }
+# SFF v1 became readable in P6 (PCX sprites, chained subheaders). The fixture
+# holds one sprite per v1 palette path.
+Invoke-Tool -Group '2' -Label 'SFF v1 is read (0)' `
+    -Arguments @($Sffctl, 'inspect', (Join-Path $Fixtures 'v1_minimal.sff')) -Expect 0 `
+    -MustContain @('1.0.1.0', 'Sprites:   3') | Out-Null
+Invoke-Tool -Group '2' -Label 'SFF v1 fixture reports its palette paths' `
+    -Arguments @($Sffctl, 'inspect', (Join-Path $Fixtures 'v1_minimal.sff'), '--limit', '3') -Expect 0 `
+    -MustContain @('pcx (sff v1)') | Out-Null
 
 # Two sprite-sharing paths the engine has and that production data uses: a linked
 # sprite (data size 0, reuse the pixels of `link`) and a sprite the engine leaves
@@ -410,9 +417,9 @@ Invoke-Tool -Group '6' -Label 'a character with missing files fails' `
 Invoke-Tool -Group '6' -Label 'a script asking for a missing animation fails' `
     -Arguments @($Validate, (Join-Path $Fixtures 'char_zss_missing_anim')) -Expect 1 `
     -MustContain @('ZSS_MISSING_ACTION') | Out-Null
-Invoke-Tool -Group '6' -Label 'an unsupported SFF version fails' `
-    -Arguments @($Validate, (Join-Path $Fixtures 'char_v1_sprite')) -Expect 1 `
-    -MustContain @('SFF_UNSUPPORTED') | Out-Null
+Invoke-Tool -Group '6' -Label 'a v1 character validates' `
+    -Arguments @($Validate, (Join-Path $Fixtures 'char_v1_sprite')) -Expect 0 `
+    -MustContain @('1.0.1.0') | Out-Null
 Invoke-Tool -Group '6' -Label 'a missing character exits 3' `
     -Arguments @($Validate, (Join-Path $Fixtures 'no_such_character')) -Expect 3 `
     -MustContain @('no such character') | Out-Null

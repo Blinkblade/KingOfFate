@@ -71,7 +71,13 @@ param(
     [string]$Phases = '',
     [double]$SettleSec = 0.3,
     [switch]$NoStillShots,
-    [switch]$NoBurst
+    [switch]$NoBurst,
+    # Which character buttons to rebind to injectable keys, as "button=KEY" pairs
+    # separated by commas. Only TAB (0x09) and RETURN (0x0D) are known to reach
+    # the engine, so at most two buttons can be driven per run. The default is
+    # the historical single mapping (only `x`), which keeps every existing
+    # invocation identical. Example: -ButtonMap 'x=TAB,y=RETURN'.
+    [string]$ButtonMap = 'x=TAB'
 )
 
 Set-StrictMode -Version Latest
@@ -235,26 +241,60 @@ function Set-InjectionKeymap {
         Write-Host '[warn ] save/config.ini not found - running with the current keymap' -ForegroundColor Yellow
         return $null
     }
+    # Parse the requested map ("x=TAB,y=RETURN") into button/key pairs.
+    # NOTE: every collection below is wrapped in @() on purpose. Under
+    # Set-StrictMode, `Where-Object` with a single match unwraps to a scalar and
+    # `.Count` then raises "property Count cannot be found on this object".
+    $pairs = @()
+    foreach ($token in ($ButtonMap -split ',')) {
+        $token = $token.Trim()
+        if (-not $token) { continue }
+        $kv = @($token -split '=')
+        if ($kv.Count -ne 2 -or -not $kv[0].Trim() -or -not $kv[1].Trim()) {
+            Write-Host "[warn ] ignoring malformed -ButtonMap entry '$token' (expected button=KEY)" -ForegroundColor Yellow
+            continue
+        }
+        $pairs += , @($kv[0].Trim(), $kv[1].Trim())
+    }
+    if ($pairs.Count -eq 0) {
+        Write-Host '[warn ] -ButtonMap has no usable entries; running with the current keymap' -ForegroundColor Yellow
+        return $null
+    }
+
     $orig = [System.IO.File]::ReadAllBytes($RuntimeConfig)
     $text = [System.Text.Encoding]::UTF8.GetString($orig)
-    if ($text -match '(?m)^\s*x\s*=\s*TAB\s*$') {
-        Write-Host '[ info] keymap already in injection mode (x = TAB)'
+    $alreadyHits = @($pairs | Where-Object {
+            $text -match ('(?m)^\s*' + [regex]::Escape($_[0]) + '\s*=\s*' + [regex]::Escape($_[1]) + '\s*$')
+        })
+    if ($alreadyHits.Count -eq $pairs.Count) {
+        Write-Host '[ info] keymap already in the requested injection mode; leaving it as is'
         return $null
+    }
+    if ($text -match '(?m)^\s*(a|b|c|x|y|z)\s*=\s*TAB\s*$') {
+        Write-Host '[warn ] pre-run keymap ALREADY has a button bound to TAB; the backup may be a patched state' -ForegroundColor Yellow
     }
     # only the first [Keys_P1] block, up to the next section header
     $patched = [regex]::Replace($text, '(?ms)(^\[Keys_P1\]\r?\n.*?)(?=\r?\n\[)', {
             param($m)
             $b = $m.Groups[1].Value
-            $b = [regex]::Replace($b, '(?m)^\s*x\s*=.*$', 'x        = TAB')
+            foreach ($pair in $pairs) {
+                $button = [regex]::Escape($pair[0])
+                $key = $pair[1]
+                $b = [regex]::Replace($b, "(?m)^\s*$button\s*=.*$", ("{0,-8} = {1}" -f $pair[0], $key))
+            }
             $b = [regex]::Replace($b, '(?m)^\s*start\s*=.*$', 'start    = Not used')
             $b
         }, 1)
-    if ($patched -notmatch '(?m)^\s*x\s*=\s*TAB\s*$') {
-        Write-Host '[warn ] could not patch [Keys_P1]; injection may not work' -ForegroundColor Yellow
+    $patchedHits = @($pairs | Where-Object {
+            $patched -match ('(?m)^\s*' + [regex]::Escape($_[0]) + '\s*=\s*' + [regex]::Escape($_[1]) + '\s*$')
+        })
+    if ($patchedHits.Count -ne $pairs.Count) {
+        Write-Host '[warn ] could not patch every requested button; injection may not work' -ForegroundColor Yellow
         return $null
     }
     [System.IO.File]::WriteAllText($RuntimeConfig, $patched, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host '[ info] keymap patched for injection (x = TAB, start = Not used)'
+    $label = ($pairs | ForEach-Object { "$($_[0])=$($_[1])" }) -join ', '
+    Write-Host "[ info] keymap patched for injection ($label; start = Not used)"
     return $orig
 }
 
@@ -317,6 +357,7 @@ $report = New-Object System.Collections.Generic.List[string]
 $report.Add("harness   : tests/p2/inject_phases.ps1")
 $report.Add("args      : " + ($argList -join ' '))
 $report.Add("outdir    : $OutDir")
+$report.Add("buttonmap : $ButtonMap")
 $report.Add("phases    : " + ($Phases -join ' | '))
 
 # Patch the keymap only while this run needs it; the finally block below takes
