@@ -36,20 +36,21 @@ test_fighter_b, stages/stage0.def
  ; Archer（P6）—— 第一个正式美术角色：架构沿用 Test Fighter B 的 Zoner 骨架，
  ; 美术来自 kuri 的 MUGEN Archer/EMIYA（assets/LICENSE_MANIFEST.csv 有登记）。
  ; 当前是**简化指令版**（方向 + c/z 单键）以便手验；正式交付前改回 236/623/236236。
+ ;
+ ; ★ 这里**只保留 archer**。之前还挂过两个素材预览条目（emiya / emiya_v2），
+ ;   它们只存在于 engine/ikemen-go/chars/（gitignored），不在 game/ 真值里，
+ ;   换台机器同步后条目会指向不存在的角色 —— 已移除。想对照原作姿态时用命令行：
+ ;     pwsh -File scripts\run_game.ps1 -ExtraArgs '-p1','emiya_v2','-s','stage0'
 archer, stages/stage0.def
 
  ; 基础模板 _template **不要**加进来：它是用来复制的骨架，不是可玩角色
  ; （见 game/chars/_template/README.md）。确实要试玩模板时再取消下面这行注释：
  ;_template, stages/stage0.def
 
- ; --- P6 素材预览（临时条目，等 game/chars/archer 建好后替换）---
- ; kuri 的 MUGEN Archer/EMIYA（SFF v1 原件 + 经 sffpack 转出的 v2）。
- ; 用途：让负责人现在就**在菜单里**试玩 P6 的正式美术素材。
- ; 注意：这两个不是 KingOfFate 角色——它们带着原作者 kuri 的 CNS 逻辑，
- ;       `archer`（game/chars/archer，Zoner 骨架）建好后这两行应当删除。
- ; 素材登记见 assets/LICENSE_MANIFEST.csv（emiya_kuri_pack）。
-emiya_v2, stages/stage0.def
-emiya, stages/stage0.def
+ ; ★ 已移除（2026-09-30）：emiya / emiya_v2 两条素材预览。
+ ; 它们只存在于 engine/ikemen-go/chars/（gitignored），不在 game/ 真值里 ——
+ ; select.def 引用它们会让仓库同步后指向不存在的角色。
+ ; 且它们跑的是原作者 kuri 的 CNS 逻辑，容易和正式角色 archer 混淆。
 
  ; 随机选择图标（独占一行）
 randomselect
