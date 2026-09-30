@@ -1,4 +1,4 @@
-"""SFF v2 reader (read-only).
+"""SFF reader (read-only) -- v2 and v1.
 
 What is supported
 -----------------
@@ -7,8 +7,13 @@ uses (`game/chars/_template/_template.sff`, `test_fighter_a.sff`,
 `test_fighter_b.sff` and the P1 lab `kfm.sff` are all `2.0.1.0` with 282 sprites
 and 16 palettes).
 
+SFF **v1** containers (added in P6 for the Archer asset import) -- the classic
+WinMUGEN format with PCX sprites stored inline after each 32-byte subheader,
+subheaders chained through their `ofs` field. Read-only, same guarantees as v2.
+
 Per-sprite image formats:
 
+    1   PCX (SFF v1)  palette indices, PCX RLE, palette at the end of the block
     2   RLE8          palette indices, RLE8 compressed
     3   RLE5          palette indices, RLE5 compressed
     4   LZ5           palette indices, LZ5 compressed   <- 280/282 sprites here
@@ -20,16 +25,16 @@ Per-sprite image formats:
 
 What is deliberately *not* supported (and is reported as such, never guessed at)
 ------------------------------------------------------------------------------
-    SFF v1                      -- detected, then refused with a clear message
     format 0 with depth 24/32   -- raw true-colour; no asset here uses it and its
                                    byte order cannot be verified from the project's
                                    own data, so the tool refuses rather than lie
     interlaced PNG inside an SFF
 
 Algorithms are ports of ``engine/ikemen-go/src/image.go`` (``SffHeader.Read``,
+``readHeader``, ``read`` (v1 PCX path), ``readPcxHeader``, ``RlePcxDecode``,
 ``readHeaderV2``, ``readV2``, ``Rle8Decode``, ``Rle5Decode``, ``Lz5Decode``,
-``loadPalettes``, ``ReadPalette``), with the difference that every decoders keep
-their bounds checks and raise instead of panicking.
+``loadPalettes``, ``ReadPalette``), with the difference that every decoder keeps
+its bounds checks and raises instead of panicking.
 """
 
 from __future__ import annotations
@@ -41,7 +46,9 @@ from . import pngio
 
 SIGNATURE = b"ElecbyteSpr\x00"
 
-# SFF v2 per-sprite formats we can decode.
+# SFF per-sprite formats we can decode. Format 1 is unused in v2; we use it to
+# tag v1 PCX sprites so the pixel decoder can branch.
+FMT_V1_PCX = 1
 FMT_RLE8 = 2
 FMT_RLE5 = 3
 FMT_LZ5 = 4
@@ -51,6 +58,7 @@ FMT_PNG_RGBA2 = 12
 FMT_RAW = 0
 
 FORMAT_NAMES = {
+    FMT_V1_PCX: "pcx (sff v1)",
     FMT_RLE8: "rle8",
     FMT_RLE5: "rle5",
     FMT_LZ5: "lz5",
@@ -92,6 +100,7 @@ class Sprite:
         "index", "group", "number", "width", "height", "axis_x", "axis_y",
         "link", "format", "coldepth", "data_offset", "data_size", "pal_index",
         "flags", "linked_source_index", "warnings",
+        "v1_rle_offset", "v1_rle_size",
     )
 
     def __init__(self, index, group, number, width, height, axis_x, axis_y, link,
@@ -112,6 +121,10 @@ class Sprite:
         self.flags = flags
         self.linked_source_index = None
         self.warnings = []
+        # SFF v1 only: where this sprite's PCX RLE stream lives (PCX header is at
+        # v1_rle_offset - 128). None for v2 sprites.
+        self.v1_rle_offset = None
+        self.v1_rle_size = None
 
     @property
     def key(self):
@@ -348,6 +361,47 @@ def lz5_decode(rle: bytes, pixel_count: int) -> bytes:
     return bytes(out)
 
 
+def pcx_decode(rle: bytes, pixel_count: int, width: int, bpl: int) -> bytes:
+    """Port of ``Sprite.RlePcxDecode`` (SFF v1 PCX RLE).
+
+    The stream is row-based: ``bpl`` is the PCX bytes-per-line value; bytes
+    beyond ``width`` in a row are padding and skipped, exactly like the engine
+    (``k`` counts bytes in the row, ``j`` counts emitted pixels). The Go
+    source's ``if i < len(rle)-1 { i++ }`` quirk (the last byte can be read
+    twice) is reproduced.
+    """
+    if not rle or bpl <= 0:
+        return rle
+    out = bytearray(pixel_count)
+    i = j = k = 0
+    budget = _DECODE_ITERATION_BUDGET
+    while j < pixel_count:
+        budget -= 1
+        if budget <= 0:
+            raise SffCorruptError("pcx decoder exceeded its iteration budget")
+        _need(rle, i, "pcx")
+        n = 1
+        d = rle[i]
+        if i < len(rle) - 1:
+            i += 1
+        if d >= 0xC0:
+            n = d & 0x3F
+            _need(rle, i, "pcx")
+            d = rle[i]
+            if i < len(rle) - 1:
+                i += 1
+        while n > 0:
+            if k < width and j < pixel_count:
+                out[j] = d
+                j += 1
+            k += 1
+            if k == bpl:
+                k = 0
+                n = 1
+            n -= 1
+    return bytes(out)
+
+
 # ---------------------------------------------------------------------------
 # Container
 # ---------------------------------------------------------------------------
@@ -408,13 +462,19 @@ class Sff:
         self.version_string = "%d.%d.%d.%d" % (verhi, verlo1, verlo2, verlo3)
 
         if verhi == 1:
+            # SFF v1: classic WinMUGEN container (PCX sprites, chained subheaders).
             self.reserved = raw[16:36]
             self.sprite_count = self._u32(20, "sprite count")
             self.first_sprite_offset = self._u32(24, "first sprite header offset")
-            raise SffUnsupportedError(
-                "%s: SFF v1 (%s) is not supported by the P5 asset tooling; only SFF v2 is. "
-                "The engine still loads v1 files, so this is a tool limitation, not a "
-                "corrupt file." % (self.path, self.version_string))
+            if self.sprite_count == 0:
+                raise SffCorruptError("%s: header declares 0 sprites" % self.path)
+            if self.sprite_count > 100000:
+                raise SffCorruptError(
+                    "%s: header declares an implausible number of sprites (%d)"
+                    % (self.path, self.sprite_count))
+            self._parse_sprites_v1()
+            self._finalize_sprites()
+            return
         if verhi != 2:
             raise SffUnsupportedError(
                 "%s: unrecognised SFF version %s (only v2 is supported)"
@@ -444,6 +504,194 @@ class Sff:
 
         self._parse_palettes()
         self._parse_sprites()
+        self._finalize_sprites()
+
+    # -- SFF v1 -------------------------------------------------------------
+
+    def _parse_sprites_v1(self):
+        """Parse an SFF v1 container (PCX sprites, chained 32-byte subheaders).
+
+        Layout (verified against engine/ikemen-go/src/image.go ``preloadSff`` /
+        ``loadSff`` and against a real 1047-sprite file): subheader i sits at a
+        chained position; its PCX data is stored inline right after it (32-byte
+        header + PCX); the subheader's ``ofs`` field points at the *next*
+        subheader (= end of this sprite's data block).
+
+        Subheader (32 bytes): ofs u32 (next subheader), size u32 (data block
+        size), axis_x i16, axis_y i16, group u16, number u16, link u16
+        (indexOfPrevious for linked sprites), ps u8 (non-zero = share the
+        previous sprite's palette), 13 bytes padding.
+        """
+        raw = self._raw
+        pos = self.first_sprite_offset
+        seen = {}
+        for i in range(self.sprite_count):
+            if pos <= 0 or pos + 32 > len(raw):
+                raise SffCorruptError(
+                    "%s: v1 sprite header %d at offset %d runs past the end of the file "
+                    "(%d bytes); the subheader chain is broken"
+                    % (self.path, i, pos, len(raw)))
+            ofs, size, axis_x, axis_y, group, number, link = struct.unpack_from(
+                "<IIhhHHH", raw, pos)
+            ps = raw[pos + 18]
+
+            data_start = pos + 32
+            if data_start < ofs <= len(raw):
+                block_end = ofs
+            elif size and data_start + size <= len(raw):
+                block_end = data_start + size
+            elif size == 0:
+                block_end = data_start
+            else:
+                raise SffCorruptError(
+                    "%s: v1 sprite %d (group %d image %d) data block is out of range "
+                    "(chain offset %d, size %d, file %d bytes)"
+                    % (self.path, i, group, number, ofs, size, len(raw)))
+
+            if size == 0:
+                # Linked sprite (indexOfPrevious): pixels come from `link`.
+                sprite = Sprite(i, group, number, 0, 0, axis_x, axis_y, link,
+                                FMT_V1_PCX, 8, data_start, 0, 0, 0)
+                if link < len(self.sprites):
+                    sprite.linked_source_index = link
+                else:
+                    sprite.warnings.append(
+                        "empty pixel data and link index %d is out of range" % link)
+                    self.warnings.append(
+                        "sprite %d has no pixel data and an invalid link index %d"
+                        % (i, link))
+                self.sprites.append(sprite)
+                pos = ofs if ofs > pos else block_end
+                continue
+
+            # Real sprite: PCX header at data_start, RLE stream after it, palette
+            # (768 bytes) at the end of the block unless `ps` says it is shared.
+            width, height, bpl = self._read_pcx_header(data_start, i)
+            rle_offset = data_start + 128
+            is_char_first = (i == 0) or (group == 0 and number == 0)
+            marker_fallback = False
+
+            if is_char_first:
+                # Legacy path (Sprite.read, isCharFirstSprite): the palette is the
+                # last 768 bytes of the block, no 0x0C marker.
+                pal_offset = block_end - 768
+                palette_data_at = pal_offset
+                rle_size = pal_offset - rle_offset
+            elif ps != 0:
+                # Shares the previous real sprite's palette; the block is all RLE.
+                pal_offset = None
+                palette_data_at = None
+                rle_size = block_end - rle_offset
+            else:
+                # Own palette with a 0x0C marker: scan backwards from
+                # block_end-769 for the marker, like the engine does; the palette
+                # data starts right after the marker byte.
+                pal_offset = None
+                for p in range(block_end - 769, rle_offset - 1, -1):
+                    if raw[p] == 0x0C:
+                        pal_offset = p
+                        break
+                if pal_offset is None:
+                    pal_offset = block_end - 769
+                    marker_fallback = True
+                palette_data_at = pal_offset + 1
+                rle_size = pal_offset - rle_offset
+
+            if rle_size < 0:
+                raise SffCorruptError(
+                    "%s: v1 sprite %d (group %d image %d) has a negative RLE size; "
+                    "the block layout is inconsistent" % (self.path, i, group, number))
+
+            if is_char_first or ps == 0:
+                if palette_data_at < 0 or palette_data_at + 768 > len(raw):
+                    raise SffCorruptError(
+                        "%s: v1 sprite %d (group %d image %d) palette at offset %d runs "
+                        "past the end of the file (%d bytes)"
+                        % (self.path, i, group, number, palette_data_at, len(raw)))
+                pal_index = self._add_v1_palette(palette_data_at)
+            else:
+                # Shared palette: same as the previous real sprite.
+                pal_index = self.sprites[-1].pal_index if self.sprites else 0
+
+            sprite = Sprite(i, group, number, width, height, axis_x, axis_y, link,
+                            FMT_V1_PCX, 8, data_start, size, pal_index, 0)
+            sprite.v1_rle_offset = rle_offset
+            sprite.v1_rle_size = rle_size
+            if bpl:
+                sprite.flags = bpl  # reuse the flags field to carry bytes-per-line
+            if width == 0 or height == 0:
+                sprite.warnings.append("sprite is %dx%d" % (width, height))
+            if marker_fallback:
+                sprite.warnings.append(
+                    "0x0C palette marker not found; palette taken from the last "
+                    "768 bytes of the block")
+            self.sprites.append(sprite)
+            pos = ofs if ofs > pos else block_end
+
+        # Resolve linked sprites' dimensions from their source (a v1 linked
+        # subheader carries no PCX header, so no width/height of its own).
+        for sprite in self.sprites:
+            if sprite.is_linked and sprite.linked_source_index is not None:
+                src = self.sprites[sprite.linked_source_index]
+                sprite.width = src.width
+                sprite.height = src.height
+                sprite.pal_index = src.pal_index
+                sprite.v1_rle_offset = src.v1_rle_offset
+                sprite.v1_rle_size = src.v1_rle_size
+                sprite.flags = src.flags
+
+    def _read_pcx_header(self, offset, index):
+        """Port of ``Sprite.readPcxHeader``. Returns (width, height, bpl)."""
+        raw = self._raw
+        if offset + 128 > len(raw):
+            raise SffCorruptError(
+                "%s: v1 sprite %d PCX header at offset %d runs past the end of the file "
+                "(%d bytes)" % (self.path, index, offset, len(raw)))
+        encoding = raw[offset + 2]
+        bpp = raw[offset + 3]
+        if bpp != 8:
+            raise SffUnsupportedError(
+                "%s: v1 sprite %d has an invalid PCX colour depth: expected 8-bit, got %d"
+                % (self.path, index, bpp))
+        xmin, ymin, xmax, ymax = struct.unpack_from("<HHHH", raw, offset + 4)
+        bpl = struct.unpack_from("<H", raw, offset + 66)[0]
+        width = xmax - xmin + 1
+        height = ymax - ymin + 1
+        if encoding != 1:
+            bpl = 0
+        return width, height, bpl
+
+    def _add_v1_palette(self, offset):
+        """Read 768 bytes of RGB palette data and register it as a Palette.
+
+        Alpha follows the engine's v1 rule: index 0 is transparent, everything
+        else opaque (``read`` / ``readSffv1Palette``).
+        """
+        raw = self._raw[offset:offset + 768]
+        colours = []
+        for i in range(256):
+            r, g, b = raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]
+            colours.append((r, g, b, 0 if i == 0 else 255))
+        index = len(self.palettes)
+        pal = Palette(index, 1, index + 1, 256, 0, offset, 768)
+        pal.colours = colours
+        self.palettes.append(pal)
+        return index
+
+    # -- shared sprite-table finalisation -----------------------------------
+
+    def _finalize_sprites(self):
+        for sprite in self.sprites:
+            existing = self.by_key.get(sprite.key)
+            if existing is not None:
+                self.duplicate_keys.append(sprite.key)
+                self.warnings.append(
+                    "duplicate sprite key (%d,%d): header %d ignored (first one wins, matching "
+                    "the engine)" % (sprite.group, sprite.number, sprite.index))
+                sprite.warnings.append("duplicate key (%d,%d); shadowed by header %d"
+                                       % (sprite.group, sprite.number, existing.index))
+            else:
+                self.by_key[sprite.key] = sprite
 
     def _parse_palettes(self):
         base = self.first_palette_offset
@@ -552,18 +800,6 @@ class Sff:
                         "sprite %d has no pixel data and an invalid link index %d"
                         % (sprite.index, sprite.link))
 
-        for sprite in self.sprites:
-            existing = self.by_key.get(sprite.key)
-            if existing is not None:
-                self.duplicate_keys.append(sprite.key)
-                self.warnings.append(
-                    "duplicate sprite key (%d,%d): header %d ignored (first one wins, matching "
-                    "the engine)" % (sprite.group, sprite.number, sprite.index))
-                sprite.warnings.append("duplicate key (%d,%d); shadowed by header %d"
-                                       % (sprite.group, sprite.number, existing.index))
-            else:
-                self.by_key[sprite.key] = sprite
-
     # -- accessors --------------------------------------------------------
 
     def sprite(self, group, number):
@@ -606,6 +842,33 @@ class Sff:
             return result
 
         expected = sprite.width * sprite.height
+
+        if sprite.format == FMT_V1_PCX:
+            # SFF v1: PCX RLE stream; `flags` carries the PCX bytes-per-line value
+            # (0 means the engine would use the payload as-is).
+            if sprite.v1_rle_offset is None or sprite.v1_rle_size is None:
+                raise SffCorruptError(
+                    "%s: v1 sprite %d (group %d image %d) has no RLE stream information"
+                    % (self.path, sprite.index, sprite.group, sprite.number))
+            start = sprite.v1_rle_offset
+            end = start + sprite.v1_rle_size
+            if end > len(self._raw):
+                raise SffCorruptError(
+                    "%s: v1 sprite %d (group %d image %d) RLE data at offset %d size %d "
+                    "runs past the end of the file (%d bytes)"
+                    % (self.path, sprite.index, sprite.group, sprite.number, start,
+                       sprite.v1_rle_size, len(self._raw)))
+            body = self._raw[start:end]
+            decoded = pcx_decode(body, expected, sprite.width, sprite.flags)
+            if len(decoded) != expected:
+                raise SffCorruptError(
+                    "%s: v1 sprite %d (group %d image %d) decoded to %d pixels, expected "
+                    "%d for %dx%d" % (self.path, sprite.index, sprite.group, sprite.number,
+                                      len(decoded), expected, sprite.width, sprite.height))
+            result = ("indices", decoded)
+            self._pixel_cache[sprite.index] = result
+            return result
+
         start = sprite.data_offset
         end = start + sprite.data_size
         raw_payload = self._raw[start:end]

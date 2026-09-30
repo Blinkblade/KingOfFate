@@ -234,7 +234,6 @@ def check_real_containers(results, goldens, update):
 
 def check_error_handling(results):
     cases = [
-        (os.path.join(ASSETS, "unsupported_v1.sff"), sff.SffUnsupportedError, "v1 refused"),
         (os.path.join(ASSETS, "truncated.sff"), sff.SffCorruptError, "truncated refused"),
         (os.path.join(ASSETS, "bad_signature.sff"), sff.SffFormatError, "bad signature refused"),
     ]
@@ -251,6 +250,44 @@ def check_error_handling(results):
                           "%s: %s" % (type(exc).__name__, exc))
         else:
             results.check("%s" % label, False, "the file was accepted")
+
+
+def check_v1_fixture(results):
+    """SFF v1 (added in P6): the fixture holds one sprite per v1 palette path
+    (legacy first-sprite palette, 0x0C-marked palette, ps-shared palette), each
+    with a known index pattern, so the decoded RGBA is asserted byte for byte.
+    """
+    path = os.path.join(ASSETS, "v1_minimal.sff")
+    try:
+        container = sff.Sff.load(path)
+    except sff.SffError as exc:
+        results.check("v1 fixture loads", False, str(exc))
+        return
+    results.check("v1 fixture reports version 1.0.1.0",
+                  container.version_string == "1.0.1.0", container.version_string)
+    results.check("v1 fixture has 3 sprites", len(container.sprites) == 3,
+                  str(len(container.sprites)))
+
+    pal_a = fixtures.v1_palette_a()
+    pal_b = fixtures.v1_palette_b()
+    cases = [
+        # group, image, pixels, palette, note
+        (0, 0, fixtures.V1_PIXELS_0, pal_a, "legacy first-sprite palette"),
+        (1, 0, fixtures.V1_PIXELS_1, pal_b, "0x0C-marked palette"),
+        (2, 0, fixtures.V1_PIXELS_1, pal_b, "ps-shared palette"),
+    ]
+    for group, image, pixels, palette, note in cases:
+        label = "v1 sprite %d,%d (%s)" % (group, image, note)
+        sprite = container.sprite(group, image)
+        if not results.check("%s exists" % label, sprite is not None):
+            continue
+        results.check("%s size is %dx%d" % (label, fixtures.V1_WIDTH, fixtures.V1_HEIGHT),
+                      (sprite.width, sprite.height) == (fixtures.V1_WIDTH, fixtures.V1_HEIGHT),
+                      "%dx%d" % (sprite.width, sprite.height))
+        rgba, _ = container.rgba(sprite)
+        expected = fixtures.v1_expected_rgba(pixels, palette)
+        results.check("%s decodes to the expected pixels" % label, rgba == expected,
+                      "sha256 %s vs expected %s" % (digest(rgba)[:16], digest(expected)[:16]))
 
 
 def main(argv=None):
@@ -272,6 +309,7 @@ def main(argv=None):
     check_fixture_pixels(results)
     check_special_sprites(results)
     check_png_roundtrip(results)
+    check_v1_fixture(results)
     check_error_handling(results)
     check_real_containers(results, goldens, update=False)
 

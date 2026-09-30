@@ -1,0 +1,59 @@
+# Archer 素材包清点（P6，2026-09-30）
+
+## 来源
+
+- 包：`emiya.7z`（9,524,866 字节），MUGEN 社区 **kuri** 制作的 Archer/EMIYA
+  （Fate/stay night，Fate Sword Dance 精灵），2005 年 WinMUGEN 时代作品。
+- 下载：MUGEN Free For All "Fate (Series)" 合集帖（topic 48291）列出的作者直链
+  `https://www.mediafire.com/download/lmhqlvi14rry6jr/emiya.7z`（2026-09-30 经本地代理
+  127.0.0.1:7897 下载成功；页面由 r.jina.ai 文本代理提取，MFFA 本体被 Cloudflare 拦截）。
+- 许可：MUGEN 社区同人作品（TYPE-MOON 衍生），**非商用同人**用途已由项目负责人确认
+  （2026-09-30）。登记于 `assets/LICENSE_MANIFEST.csv`。
+- 存放：`assets/imports/archer/emiya_kuri.7z`（原件）+ `assets/imports/archer/emiya/`（解压）。
+
+## 包内容
+
+```text
+emiya.def / emiya.cmd / emiya.cns / -2&-3_2.cns / DUST.cns / UBW.cns / common1.cns
+emiya.air   175,862 bytes   277 个 Action
+emiya.sff   6,871,583 bytes SFF v1 (1.0.1.0)，1047 精灵（967 真实 + 80 链接），181 自有调色板
+emiya.snd   10,660,893 bytes
+emiya1p..6p.act  6 个调色板
+```
+
+注意：包内 `UBW.cns`——作者已实现无限剑制（Action 3100-3103 区间，3101 有 73 元素）。
+
+## 动作覆盖（airtool inspect，277 个 Action）
+
+| 区间 | 内容 | 覆盖判断 |
+| --- | --- | --- |
+| 0/5/8/9/10-12/20/21/40-47 | 站立/转身/蹲/走/跳起 | 齐 |
+| 100/101/105 | 跑/急停/后跳 | 齐 |
+| 120-155 | 防御/蹲防/空防 | 齐 |
+| 180/195/196/198/199 | 胜利/开场类 | 齐 |
+| 200/210/220/230/240/250 | 站立攻击 6 种 | 超出需求（需 4 种） |
+| 400/410/420/430/440 | 蹲姿攻击 5 种 | 超出需求（需 4 种） |
+| 600/610/620/630/640 | 空中攻击 5 种 | 超出需求（需 4 种） |
+| 800/810/815/850/852 | 投技 | 齐 |
+| 1000/1005 | 射箭（投射物） | ★ 正好匹配 Fighter B 的 1000/1005 编号语义 |
+| 1100/1101/1102/1110-1117/1150/1160 | 必杀（升龙/突进/连段） | 齐 |
+| 1200/1250-1254/1260-1262/1270 | 超必杀预备/演出 | 齐 |
+| 1300-1310/1350-1360 | UBW 咏唱/发动 | 齐 |
+| 3000/3010/3015/3020 | Super（Caladbolg 类） | 齐 |
+| 3100-3194 | **无限剑制全套**（剑雨/结界/背景） | ★ 齐 |
+| 3200-3500/3700-3995 | 更多演出/特殊 | 齐 |
+| 5000-5210 | 受击/倒地/起身/滚翻 | ★ 全区间齐（素材包最容易缺的部分） |
+| 9000-9208 | 头像/立绘 | 齐 |
+
+## 引擎实测
+
+- 原始角色（CNS 语法 + SFF v1）在本项目 pin 的引擎（v1.0.0-rc.5）直接对战加载：
+  `crashlogs: 0 new`，见 `logs/p3/shots/p6_emiya_loadtest_report.txt`。
+- 该角色动画编号与标准 MUGEN 约定一致，与 Fighter B 骨架的映射工作量为
+  "选帧 + 调 tick + 重画判定框"，见 `design/characters/archer/asset_map.csv`（后续填写）。
+
+## 导出物（供人眼检查）
+
+- `logs/p6/emiya_export/`：1047 个精灵 PNG（`<group>_<image>.png`）。
+- 拼图未整版生成：容器含 640x480 级特效精灵，整版拼图 15456x30976 超限；
+  按 group 分版拼图在后续 asset_map 阶段按需生成。

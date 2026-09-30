@@ -1,0 +1,28 @@
+[Info]
+name = "emiya"        ;キャラの名前
+displayname = "Emiya" ;表示されるキャラの名前
+versiondate = 11,22,2000    ;キャラの更新情報
+mugenversion = 11,22,2000   ;キャラが動くmugenのバージョン
+author = "kuri"         ;キャラの製作者名
+pal.defaults = 1      ;敵としてでるキャラのパレット
+
+; Files for the player
+[Files]
+cmd     = emiya.cmd   ;キャラのコマンド
+st     = -2&-3_2.cns
+st3     = common1.cns
+st2     = emiya.cns
+st4     = DUST.cns
+st5     = UBW.cns
+;st6     = ranbu.cns
+;st7     = JS.cns
+cns     = emiya.cns   ;キャラのプログラム
+sprite  = emiya.sff   ;キャラの絵
+anim    = emiya.air   ;キャラの動き
+sound   = emiya.snd   ;キャラの音
+pal1    = emiya1p.act  ;キャラの色（最大１２個）
+pal2    = emiya2P.act
+pal3    = emiya3P.act
+pal4    = emiya4P.act
+pal5    = emiya5P.act
+pal6    = emiya6P.act

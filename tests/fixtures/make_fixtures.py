@@ -146,17 +146,131 @@ def build_sff_v2(sprites):
     return bytes(header) + palette_header + palette_data + bytes(headers) + bytes(payloads)
 
 
+# ---------------------------------------------------------------------------
+# SFF v1 fixture
+# ---------------------------------------------------------------------------
+
+# 4x3 index patterns for the v1 fixture. Sprite 1 and 2 share a pattern so the
+# shared-palette path can be checked byte for byte.
+V1_WIDTH, V1_HEIGHT = 4, 3
+V1_PIXELS_0 = bytes([1, 1, 2, 3,
+                     4, 5, 5, 5,
+                     0, 7, 8, 9])
+V1_PIXELS_1 = bytes([1, 2, 3, 4,
+                     5, 5, 5, 5,
+                     6, 6, 7, 0])
+
+
+def v1_palette_a():
+    """Sprite 0's palette: the shared fixture colours first, then a
+    deterministic ramp so high indices are distinct."""
+    colours = []
+    for i in range(256):
+        if i < len(PALETTE):
+            r, g, b, _ = PALETTE[i]
+            colours.append((r, g, b))
+        else:
+            colours.append((i, 255 - i, i))
+    return colours
+
+
+def v1_palette_b():
+    """Sprite 1's palette: deliberately different from palette A so that a
+    mis-assigned palette cannot go unnoticed."""
+    return [(255 - i, i, (i * 7) % 256) for i in range(256)]
+
+
+def v1_expected_rgba(pixels, palette):
+    """What the reader must produce: index 0 is transparent but keeps the RGB
+    stored in the palette file, everything else is opaque (the engine's v1
+    palette rule: ``alpha = 0 if i == 0 else 255``, RGB untouched)."""
+    out = bytearray()
+    for value in pixels:
+        r, g, b = palette[value]
+        out += bytes((r, g, b, 0 if value == 0 else 255))
+    return bytes(out)
+
+
+def pcx_rle_encode(pixels, width):
+    """Minimal PCX RLE encoder, row-based: runs of 2+ or values >= 0xC0 are
+    written as ``0xC0|count, value``."""
+    out = bytearray()
+    for row_start in range(0, len(pixels), width):
+        row = pixels[row_start:row_start + width]
+        i = 0
+        while i < len(row):
+            value = row[i]
+            run = 1
+            while i + run < len(row) and row[i + run] == value and run < 0x3F:
+                run += 1
+            if run >= 2 or value >= 0xC0:
+                out += bytes((0xC0 | run, value))
+            else:
+                out.append(value)
+            i += run
+    return bytes(out)
+
+
+def _pcx_header(width, height):
+    header = bytearray(128)
+    header[0] = 0x0A                      # manufacturer
+    header[1] = 5                         # version
+    header[2] = 1                         # encoding: RLE
+    header[3] = 8                         # bits per pixel
+    struct.pack_into("<HHHH", header, 4, 0, 0, width - 1, height - 1)
+    struct.pack_into("<H", header, 66, width)   # bytes per line
+    return bytes(header)
+
+
+def pcx_sprite_block(pixels, width, height, palette, with_marker):
+    """PCX header + RLE data + [0x0C marker] + 768-byte RGB palette."""
+    rle = pcx_rle_encode(pixels, width)
+    pal = b"".join(bytes(c) for c in palette)
+    marker = b"\x0c" if with_marker else b""
+    return _pcx_header(width, height) + rle + marker + pal
+
+
 def build_sff_v1():
-    """A minimal, *valid* SFF v1 file -- used to check that v1 is refused clearly."""
+    """A minimal, *valid* SFF v1 with three sprites, one per v1 palette path:
+
+        0,0  first sprite -> legacy palette at the end of the block, no marker
+        1,0  own palette behind a 0x0C marker
+        2,0  ps=1 -> shares the previous sprite's palette
+
+    Subheaders are chained: each header's ``ofs`` field points at the next
+    header, and the PCX data is stored inline right after its header (the
+    layout the engine walks, verified against a real 1047-sprite file in P6).
+    """
+    block0 = pcx_sprite_block(V1_PIXELS_0, V1_WIDTH, V1_HEIGHT, v1_palette_a(), False)
+    block1 = pcx_sprite_block(V1_PIXELS_1, V1_WIDTH, V1_HEIGHT, v1_palette_b(), True)
+    # Sprite 2 shares palette B: its block must NOT carry a palette.
+    block2 = _pcx_header(V1_WIDTH, V1_HEIGHT) + pcx_rle_encode(V1_PIXELS_1, V1_WIDTH)
+
+    first = 512
+    sh1 = first + 32 + len(block0)
+    sh2 = sh1 + 32 + len(block1)
+    end = sh2 + 32 + len(block2)
+
     header = bytearray(SIG)
     header += bytes([0, 1, 0, 1])       # verlo3, verlo2, verlo1, verhi = 1.0.1.0
     header += struct.pack("<I", 0)      # dummy
-    header += struct.pack("<I", 1)      # sprite count
-    header += struct.pack("<I", 512)    # first sprite header offset
+    header += struct.pack("<I", 3)      # sprite count
+    header += struct.pack("<I", first)  # first sprite header offset
     header += struct.pack("<I", 0)      # dummy
-    header += b"\x00" * (512 - len(header))
-    header += struct.pack("<IIhhHHH", 520, 0, 0, 0, 0, 0, 0)
-    return bytes(header)
+    header += b"\x00" * (first - len(header))
+
+    def subheader(ofs, size, group, number, ps, link=0):
+        return (struct.pack("<IIhhHHH", ofs, size, 1, 2, group, number, link)
+                + bytes((ps,)) + b"\x00" * 13)
+
+    out = bytearray(header)
+    out += subheader(sh1, len(block0), 0, 0, 0)
+    out += block0
+    out += subheader(sh2, len(block1), 1, 0, 0)
+    out += block1
+    out += subheader(end, len(block2), 2, 0, 1)
+    out += block2
+    return bytes(out)
 
 
 def minimal_sff():
@@ -379,7 +493,7 @@ def build_all():
     files["ok.sff"] = container
     files["linked_sprite.sff"] = linked_sff()
     files["blank_sprite.sff"] = blank_sff()
-    files["unsupported_v1.sff"] = build_sff_v1()
+    files["v1_minimal.sff"] = build_sff_v1()
     files["truncated.sff"] = container[:200]           # header promises more than exists
     files["bad_signature.sff"] = b"NOT AN SFF FILE" + b"\x00" * 48
 

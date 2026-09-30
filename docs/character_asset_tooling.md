@@ -20,10 +20,17 @@
 | **airtool** | `python tools/airtool/airtool.py` | 这个 `.air` 有多少 Action、每个 Action 有几个元素、持续多少 tick、判定框在哪一帧生效？ |
 | **validate_character** | `python tools/character_validate/validate_character.py` | 这个角色目录完整吗？引用都对得上吗？能不能进 Runtime？ |
 | **asset_report** | `python tools/asset_report.py` | 上面那一整套跑一遍是什么结果？一条命令，输出一份带命令行的报告。 |
+| **sffpack**（P6 新增） | `python tools/sffpack/sffpack.py transcode` | 把一份源 SFF（v1 或 v2）转成目标角色编号体系的 SFF **v2**——写盘的唯一入口。 |
 
-三者共享一个只用标准库的小解析库 `tools/kofassets/`（见 §8）；`asset_report` 不加
+前三者共享一个只用标准库的小解析库 `tools/kofassets/`（见 §8）；`asset_report` 不加
 任何自己的逻辑，它只是按固定顺序调用上面三件 + `check_export`，把每步的命令行与
 输出写进一份报告——所以报告永远不可能和单件工具自己说的不一致。
+P6 起 `kofassets` 多了写半区：`sffwrite.py`（SFF v2 组装，供 sffpack 使用）。
+
+> **P6 变更**：SFF **v1** 从"拒绝"变为**可读**（PCX 精灵、链式子头部，与引擎逐字节
+> 对照 967 精灵 0 不一致，见 `docs/evidence/p6/sffv1_decoder_crosscheck.txt`）。
+> 原因是 Archer 素材包（kuri 的 emiya）是 SFF v1——这是合同允许的"当前素材所需的
+> 最小支持方案"。写入侧只新增了 v2 组装器，**没有**做通用编辑器。
 
 ---
 
@@ -322,9 +329,9 @@ engine/ikemen-go/src/anim.go    ReadAnimFrame / ReadAnimation / ReadAction
 
 | 项 | 支持 |
 | --- | --- |
-| **SFF** | v2（本仓库四个容器都是 `2.0.1.0`）。v2.0.0.0 的调色板 alpha 规则也已按引擎实现。 |
-| **SFF 精灵格式** | `2` RLE8、`3` RLE5、`4` LZ5、`10` PNG(索引)、`11/12` PNG(RGBA)、`0` raw + 深度 8 |
-| **调色板** | v2 调色板表、链接调色板、重复键；每色 RGBA；index 0 的 alpha 来自文件（不强制透明），若 index 0 不透明会给出警告 |
+| **SFF** | **v2**（读 + 写）；**v1**（只读，P6 新增：PCX 精灵、链式子头部、legacy/0x0C/ps 三条调色板路径）。v2.0.0.0 的调色板 alpha 规则也已按引擎实现。 |
+| **SFF 精灵格式** | 读：`1` PCX(v1)、`2` RLE8、`3` RLE5、`4` LZ5、`10` PNG(索引)、`11/12` PNG(RGBA)、`0` raw + 深度 8。写：`0` raw 深度 8、`12` PNG RGBA。 |
+| **调色板** | v2 调色板表、链接调色板、重复键；每色 RGBA；index 0 的 alpha 来自文件（不强制透明），若 index 0 不透明会给出警告；v1 调色板（768 字节 RGB，index 0 透明） |
 | **AIR** | Action、元素、时间、`-1`、flip、blend、scale、angle、`loopstart`、`copy action`、`interpolate *`、`Clsn1/2`、`Clsn1/2Default` |
 | **图像输出** | PNG（8-bit RGBA，无隔行，filter 0） |
 | **角色** | `.def` + `[Files]` 路径解析（含引擎 `data/` 回退） |
@@ -332,10 +339,8 @@ engine/ikemen-go/src/anim.go    ReadAnimFrame / ReadAnimation / ReadAction
 **明确不支持**（遇到时报 `4`，不猜、不误解析）：
 
 ```text
-SFF v1                                    ← 引擎能加载，但 P5 工具不支持（如实报错）
 raw 真彩 SFFv2 精灵（format 0 depth 24/32） ← 字节序无法从本项目数据验证，宁可不做
 隔行（interlaced）PNG
-SFF 写回 / 替换精灵 / 新增精灵 / 重建 SFF
 AIR 编辑 / 自动修复
 SND（导出或检查）
 调色板编辑 / ACT 文件
@@ -426,6 +431,24 @@ pwsh -File scripts\test.ps1 -Suite tools
 
 ---
 
+## 10.2 sffpack —— 写出 SFF v2（P6）
+
+```powershell
+# 忠实格式转换（不改编号），用于先证明链路
+python tools\sffpack\sffpack.py transcode <in.sff> --out <out.sff> [--report FILE]
+
+# 按映射表重编号（asset_map 阶段使用）
+python tools\sffpack\sffpack.py transcode <in.sff> --out <out.sff> --remap map.csv
+```
+
+`--remap` 的 CSV 每行一个输出精灵：`target_group,target_image,source_group,source_image[,axis_x,axis_y]`。
+同一源精灵出现在多行时，后面的行写成**链接精灵**（与源文件的 shareCopy 语义一致）。
+
+纪律：写盘后**立即回读**，逐精灵比对"解码索引 + 调色板映射 RGBA"（与源逐字节一致才
+返回 0）；引擎实载用 `tests/p3/run_match_watch.ps1` 做冒烟（判据 = `crashlogs: 0 new`）。
+
+---
+
 ## 11. 做过的决定（以及为什么）
 
 1. **不复用引擎的 Go 解析器。** 引擎的 SFF/AIR 解析器都在 `package main` 里，主仓无法
@@ -434,8 +457,12 @@ pwsh -File scripts\test.ps1 -Suite tools
    模块 docstring 里，用解析算法的忠实移植代替代码复用。
 2. **纯标准库，不引入 Pillow。** PNG 只需要 zlib：写用 filter 0，读覆盖到索引图和 RGBA
    图。这样工具不会因为缺依赖而让 `scripts/test.ps1` 失效。
-3. **不做 SFF 写回。** P6 是否需要写回必须等正式素材流程确定，提前做 writer 是纯负债。
-   （例外：`tests/fixtures/make_fixtures.py` 会生成极小 SFF，那是**测试夹具**，
+3. ~~**不做 SFF 写回。**~~ **（P6 修订）** P6 的素材流程确定为"SFF v1 源包 → 重映射 →
+   SFF v2"，写回因此从"提前做的负债"变成"现在就需要"：新增 `kofassets/sffwrite.py`
+   与 `tools/sffpack/sffpack.py`（transcode），只支持两种精灵编码（raw 深度 8、
+   PNG RGBA），不做通用编辑器。验证纪律与读取侧相同：写盘后立即回读并逐像素比对
+   （967/967 0 不一致），并经引擎实载（`crashlogs: 0 new`）。
+   （例外维持不变：`tests/fixtures/make_fixtures.py` 生成极小 SFF 是**测试夹具**，
    目的是让"解码结果等于已知像素"成为可断言的事实，不是产品能力。）
 4. **删掉了"角色应该有这些动画"的规则。** 第一版硬编码了一张期望动画清单，跑
    `_template` 直接报错——但模板**本来**就故意不实现蹲姿（P2 范围声明）。
@@ -452,10 +479,13 @@ pwsh -File scripts\test.ps1 -Suite tools
 
 ## 12. 已知限制
 
-- 不支持 SFF v1（仓库里的 `p1_kfm_zss_lab/intro.sff`、`ending.sff` 是 v1；角色本体
-  用的四个容器都是 v2）。
+- ~~不支持 SFF v1~~ **（P6 已支持只读）**：仓库里的 `p1_kfm_zss_lab/intro.sff`、
+  `ending.sff` 与 Archer 素材包 `emiya.sff` 都是 v1，现在都能 inspect/export。
 - 不支持 raw 真彩精灵（format 0 / depth 24、32）。本仓库没有任何素材用它。
-- 没有 SND、没有写回、没有 GUI、没有调色板编辑 —— 都是刻意不做（§9）。
+- 写入侧只有 `sffpack transcode`（raw 深度 8 / PNG RGBA 两种编码），没有 LZ5/RLE
+  编码器（转码产物比 PCX 源大约 3 倍，21.5 MB vs 6.8 MB——可接受，暂不值得为体积
+  写 LZ5 编码器）。
+- 没有 SND、没有 AIR 编辑、没有 GUI、没有调色板编辑 —— 都是刻意不做（§9）。
 - **"逐帧 `Clsn` 只作用于一个元素"这条结论的来源是**：引擎源码
   （`anim.go:311-364`、`char.go:10209-10233`）+ P4 在 Runtime 上对 `Clsn1` 的 A/B 实测。
   对 `Clsn2` 没有单独做过 Runtime 实测；它走的是同一段解析代码，所以按同一结论处理。

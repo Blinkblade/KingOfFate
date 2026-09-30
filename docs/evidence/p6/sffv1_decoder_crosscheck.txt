@@ -1,0 +1,58 @@
+# SFF v1 解码器交叉验证（P6，2026-09-30）
+
+## 结论
+
+`tools/kofassets/sff.py` 的 SFF v1 读取路径（PCX RLE 解码 + 调色板解析 + 子头部链）
+与引擎 `engine/ikemen-go/src/image.go` 的 v1 读取路径**逐字节一致**：
+
+```text
+cross-check target : assets/imports/archer/emiya/emiya.sff (kuri, SFF 1.0.1.0, 6,871,583 bytes)
+sprites            : 1047 (967 real + 80 linked via indexOfPrevious)
+pixel mismatches   : 0 / 967 real sprites (sha256 of decoded palette-index pixels)
+dimension mismatches: 0
+link mismatches    : 0 / 80 linked sprites
+palette data hash mismatches: 0 / 181 own palettes (sha256 of the 768-byte palette source)
+```
+
+## 方法（与 P5 同一纪律）
+
+1. 把引擎 v1 读取路径移植成一份临时 Go 程序（`readPcxHeader`、`RlePcxDecode`、
+   `Sprite.read` 的调色板/块布局逻辑逐字照抄，含 `if i < len(rle)-1 { i++ }` 的
+   怪癖）。程序对容器里每个精灵解码取 sha256，并记录每个自有调色板的 768 字节
+   来源哈希。**程序刻意不提交**（引擎代码副本 + 不让 Go 进依赖表）。
+2. Python 侧（`tools/kofassets/sff.py`）对同一容器解码取 sha256，逐一比对。
+3. 调色板来源偏移的比对中 Go 侧对共享调色板精灵输出占位 0，产生 786 条
+   "source offset mismatch"——那是比对脚本的表示差异，不是解码差异；
+   调色板**数据**哈希 181/181 全等。
+
+## v1 格式事实（对真实 1047 精灵文件逐字节验证过）
+
+- 头部 32 字节：签名(12) + 版本(4) + dummy(4) + spriteCount(4) + firstSubheaderOffset(4) + dummy(4)。
+- 子头部 32 字节：ofs u32（**下一个子头部的位置**，不是本精灵数据位置）、
+  size u32（数据块大小）、axis_x/axis_y i16、group/number u16、link u16
+  （size==0 时 = indexOfPrevious，引擎 shareCopy）、ps u8（非 0 = 共享前一精灵调色板）、
+  填充 13 字节。
+- PCX 数据**内联**在子头部之后（子头部 + 32 = PCX 起点）：128 字节 PCX 头
+  （bpl 在 +66），RLE 流，块尾 769 字节内可能有 `0x0C` + 768 字节 RGB 调色板。
+- 首精灵（index 0 或 group 0/number 0）：legacy 路径，调色板 = 块尾 768 字节（无标记）。
+- ps != 0：无调色板，整块都是 RLE。
+- alpha 规则：调色板 index 0 → alpha 0，**RGB 保留文件值**；其余 alpha 255。
+
+## 复现（约五分钟）
+
+1. 从 `engine/ikemen-go/src/image.go` 复制 `readPcxHeader`（897 行）、
+   `RlePcxDecode`（939 行）、`Sprite.read` 的 v1 调色板逻辑（973-1084 行）到一份
+   临时 main.go，加子头部链遍历（`preloadSff` 的 v1 分支 + 2000 行 `shofs = xofs`）。
+2. 构建（MSYS2 Go 是 trimmed 的，必须显式 GOROOT）：
+   `GOROOT=D:/msys64/mingw64/lib/go GOCACHE=<tmp> GOPATH=<tmp> GOPROXY=off CGO_ENABLED=0 go build`
+3. 对 `assets/imports/archer/emiya/emiya.sff` 运行，输出 JSON 哈希清单。
+4. Python 侧：`Sff.load(...)` → `_resolve_pixels(...)` → sha256，逐精灵比对。
+
+## 附加引擎实测
+
+- 原始 v1 角色（kuri emiya，未动任何字节）直接进引擎对战：
+  `tests/p3/run_match_watch.ps1 -P1 emiya -P2 test_fighter_b` → `crashlogs: 0 new`
+  （`logs/p3/shots/p6_emiya_loadtest_report.txt`）。
+- 经 `sffpack transcode` 转出的 SFF v2（21,529,649 字节，1047 精灵）同样加载：
+  `crashlogs: 0 new`（`logs/p3/shots/p6_emiya_v2b_loadtest_report.txt`）。
+  转码写盘后立即回读，967 个真实精灵**像素与调色板映射 RGBA 逐字节一致，0 不一致**。
