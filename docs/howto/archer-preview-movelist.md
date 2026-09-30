@@ -1,10 +1,21 @@
 # Archer 预览：出招表与试玩方式（P6）
 
-> 本文是 **P6 正式角色 `archer` 建成之前**的试玩指引。
-> 现在能在菜单里选到的是**素材来源角色** kuri 的 Archer/EMIYA（带原作者自己的 CNS 逻辑），
-> 用途是让负责人**看到并打到** P6 要用的正式美术。
-> `game/chars/archer`（Zoner 骨架，自己的 ZSS 逻辑）建好后，本文与 `select.def` 里的
-> 两条预览条目都应删除，改用 [`design/characters/archer/moves.csv`](../../design/characters/archer/moves.csv)。
+> ⚠️ **本文已过时（2026-09-30 更新）**：正式角色 `game/chars/archer` 已经建成并可玩，
+> 选人表里也**只剩 archer**（`emiya` / `emiya_v2` 两条素材预览已移除，原因见
+> `game/data/select.def` 的注释）。
+>
+> **要验证"我们的技能做好没有"，请玩 archer**，招式表见
+> [`design/characters/archer/README.md` §6b](../../design/characters/archer/README.md)
+> （当前是方向 + c/z 单键的简化指令版）。
+>
+> 保留本文只有一个用途：当你想对照**原作者 kuri 自己的招式逻辑**（他的搓招、他那
+> 13 条死指令）时，可以用命令行按名字启动那个角色：
+>
+> ```text
+> pwsh -File scripts\run_game.ps1 -ExtraArgs '-p1','emiya_v2','-s','stage0'
+> ```
+>
+> 下面的内容讲的是**那个角色**，不是我们要交付的 archer，别混。
 
 ---
 
