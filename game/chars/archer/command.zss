@@ -167,10 +167,9 @@ if roundState = 2 && !aiLevelF {
         changeState{value: 3000}
     }
 
-    # ← + z → 无限剑制（P6 简化剑雨版，耗 2000 气），lv4
-    # ★ 状态 3100 尚未实现：先接到 Super 3000 上，并把这一事实写进 README。
+    # ← + z → 无限剑制（P6 简化剑雨版，耗 2000 气 = 整槽），lv4，State 3100
     if command = "SIMPLE_UBW" && power >= 2000 && $canLv4 {
-        changeState{value: 3000}
+        changeState{value: 3100}
     }
 
     # ========================================================================

@@ -198,3 +198,6 @@ target_group,target_image,source_group,source_image,action,notes
 3100,7,3300,7,3100 (UBW),
 1005,0,1000,9,1005,arrow projectile frame 1 (P4 placeholder was a whole standing figure)
 1005,1,1000,10,1005,arrow projectile frame 2
+3105,0,3150,0,3105,"UBW sword sprite (77x233 vertical blade), projectile anim 3105"
+3105,1,3150,1,3105,"UBW sword sprite (77x233 vertical blade), projectile anim 3105"
+3105,2,3150,2,3105,"UBW sword sprite (77x233 vertical blade), projectile anim 3105"

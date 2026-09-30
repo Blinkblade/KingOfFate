@@ -1216,6 +1216,257 @@ if time = 1 {
 call EndState(0);
 
 
+
+# ============================================================================
+# ★ P6：无限剑制（Unlimited Blade Works）—— StateDef 3100
+#
+# 简化版（P6 范围，完整结界演出留给 P7）：咏唱起手 → 剑雨。
+#   费用 2000 气（= 整条气槽），lv4。
+#   伤害全部在剑的投射物上（Action 3105）；本体动作没有 Clsn1。
+#   剑以**对手**为基准生成（postype: p2），从上方落下 —— 这才是"剑雨"。
+#      6 把 × 30 = 180 伤害，与 Super（195）同量级但更慢、更难躲干净。
+# ============================================================================
+[StateDef 3100;
+type: S; movetype: A; physics: S;
+juggle: 8; velset: 0, 0; ctrl: 0;
+anim: 3100;
+poweradd: 0;                      # 出招不集气（它要花光整槽）
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -2000}        # ★ 整槽气（2000）
+    call AtkInit(4);              # lv4
+    call ProjInit();
+}
+
+# 剑 3101：animelem 4（var(10) 闩锁，避免 animElem 全程为真重复发射）
+if animElem = 4 && var(10) = 0 {
+    var(10) := 1;
+    projectile{
+        projanim: 3105;
+        projid: 3101;
+        postype: p2;
+        offset: -40, -190;
+        velocity: 0, 9;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 30, 3;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 18;
+        ground.velocity: -2;
+        airguard.velocity: -2, -1.3;
+        air.velocity: -2, -3.5;
+        air.hittime: 20;
+    }
+}
+
+# 剑 3102：animelem 6（var(10) 闩锁，避免 animElem 全程为真重复发射）
+if animElem = 6 && var(10) = 1 {
+    var(10) := 2;
+    projectile{
+        projanim: 3105;
+        projid: 3102;
+        postype: p2;
+        offset: -20, -190;
+        velocity: 0, 9;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 30, 3;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 18;
+        ground.velocity: -2;
+        airguard.velocity: -2, -1.3;
+        air.velocity: -2, -3.5;
+        air.hittime: 20;
+    }
+}
+
+# 剑 3103：animelem 8（var(10) 闩锁，避免 animElem 全程为真重复发射）
+if animElem = 8 && var(10) = 2 {
+    var(10) := 3;
+    projectile{
+        projanim: 3105;
+        projid: 3103;
+        postype: p2;
+        offset: 0, -190;
+        velocity: 0, 9;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 30, 3;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 18;
+        ground.velocity: -2;
+        airguard.velocity: -2, -1.3;
+        air.velocity: -2, -3.5;
+        air.hittime: 20;
+    }
+}
+
+# 剑 3104：animelem 10（var(10) 闩锁，避免 animElem 全程为真重复发射）
+if animElem = 10 && var(10) = 3 {
+    var(10) := 4;
+    projectile{
+        projanim: 3105;
+        projid: 3104;
+        postype: p2;
+        offset: 20, -190;
+        velocity: 0, 9;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 30, 3;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 18;
+        ground.velocity: -2;
+        airguard.velocity: -2, -1.3;
+        air.velocity: -2, -3.5;
+        air.hittime: 20;
+    }
+}
+
+# 剑 3105：animelem 12（var(10) 闩锁，避免 animElem 全程为真重复发射）
+if animElem = 12 && var(10) = 4 {
+    var(10) := 5;
+    projectile{
+        projanim: 3105;
+        projid: 3105;
+        postype: p2;
+        offset: 40, -190;
+        velocity: 0, 9;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 30, 3;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 18;
+        ground.velocity: -2;
+        airguard.velocity: -2, -1.3;
+        air.velocity: -2, -3.5;
+        air.hittime: 20;
+    }
+}
+
+# 剑 3106：animelem 14（var(10) 闩锁，避免 animElem 全程为真重复发射）
+if animElem = 14 && var(10) = 5 {
+    var(10) := 6;
+    projectile{
+        projanim: 3105;
+        projid: 3106;
+        postype: p2;
+        offset: 60, -190;
+        velocity: 0, 9;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 30, 3;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 18;
+        ground.velocity: -2;
+        airguard.velocity: -2, -1.3;
+        air.velocity: -2, -3.5;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
 # ============================================================================
 # [StateDef -3] —— 每 tick 执行，且只在角色自己的状态文件内生效
 # （与 -1 的区别见架构文档 §4.3）。与模板一样保持为空 ——
