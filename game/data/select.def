@@ -33,6 +33,11 @@ test_fighter_a, stages/stage0.def
  ; （Projectile / Anti-Air / 长手 Normal），用来验证"同一套架构能否支撑第二种战斗风格"
 test_fighter_b, stages/stage0.def
 
+ ; Archer（P6）—— 第一个正式美术角色：架构沿用 Test Fighter B 的 Zoner 骨架，
+ ; 美术来自 kuri 的 MUGEN Archer/EMIYA（assets/LICENSE_MANIFEST.csv 有登记）。
+ ; 当前是**简化指令版**（方向 + c/z 单键）以便手验；正式交付前改回 236/623/236236。
+archer, stages/stage0.def
+
  ; 基础模板 _template **不要**加进来：它是用来复制的骨架，不是可玩角色
  ; （见 game/chars/_template/README.md）。确实要试玩模板时再取消下面这行注释：
  ;_template, stages/stage0.def

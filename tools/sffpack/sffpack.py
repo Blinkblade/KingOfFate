@@ -48,14 +48,22 @@ def _load_remap(path):
         for lineno, row in enumerate(csv.reader(handle), start=1):
             if not row or not row[0].strip() or row[0].strip().startswith("#"):
                 continue
+            if lineno == 1 and not row[0].strip().isdigit():
+                continue   # header row
             if len(row) < 4:
                 raise ValueError("%s line %d: need at least 4 columns "
                                  "(target_group,target_image,source_group,source_image)"
                                  % (path, lineno))
             tg, ti, sg, si = (int(row[k].strip()) for k in range(4))
             axis = None
+            # Columns 5 and 6 are optional axis overrides. The asset_map.csv
+            # that ships with a character also carries `action` and `notes`
+            # columns there, so only take the override when both parse as ints.
             if len(row) >= 6 and row[4].strip() and row[5].strip():
-                axis = (int(row[4].strip()), int(row[5].strip()))
+                try:
+                    axis = (int(row[4].strip()), int(row[5].strip()))
+                except ValueError:
+                    axis = None
             rows.append((tg, ti, sg, si, axis, lineno))
     if not rows:
         raise ValueError("%s: no mapping rows found" % path)

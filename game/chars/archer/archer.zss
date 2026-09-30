@@ -1,0 +1,1224 @@
+# ============================================================================
+# KingOfFate — Test Fighter B（P4，Zoner）：主体状态脚本（ZSS）
+#
+# 本文件是 Test Fighter B 的状态主体：每个 [StateDef N] 是一个状态。
+# 命令名 → 状态号的映射在 command.zss，不在本文件。
+# 由 game/chars/_template/ 克隆（P4）后扩展而来，实现样板参照 Test Fighter A。
+#
+# 本角色实现的状态：
+#   180   胜利姿势        —— 回合结束时引擎要求的状态（占位，继承自模板）
+#   195   嘲讽            —— 非攻击状态样板（继承自模板）
+#   200   站立轻拳 A      —— lv1 轻普通技（贴身应急）
+#   210   站立重拳 C      —— lv2 重普通技 ★ **长手牵制（Long Range Normal）**
+#   230   站立轻脚 B      —— lv1 轻普通技（中距离）
+#   240   站立重脚 D      —— lv2 重普通技（中距离高伤）
+#   400   蹲轻拳 A        —— lv1 轻普通技（下段）
+#   410   蹲重拳 C        —— lv2 重普通技 ★ **对空 Normal（Anti-Air Normal）**
+#   430   蹲轻脚 B        —— lv1 轻普通技（下段）
+#   440   蹲重脚 D        —— lv2 重普通技，扫腿击倒（下段）
+#   600   跳轻拳 A        —— lv1 空中轻普通技
+#   610   跳重拳 C        —— lv2 空中重普通技
+#   630   跳轻脚 B        —— lv1 空中轻普通技
+#   640   跳重脚 D        —— lv2 空中重普通技
+#   800   投技起手        —— hitDef 抓人，成功后 p1stateno 810 / p2stateno 820
+#   810   投技执行        —— targetBind + targetLifeAdd + targetState 821
+#   1000  Projectile「气弹」      236 + A             不耗气
+#   1010  EX Projectile「双气弹」 236 + C             耗 500 气
+#   1100  Anti-Air「升龙上勾拳」  623 + A             不耗气
+#   3000  Super「气弹炮」         236236 + A          耗 1000 气
+#
+# 由 hits.zss（受击方，本角色自己的状态）实现的：
+#   820  被抓住（等待被甩出）   —— changeAnim2 播攻击者的 AIR
+#   821  被甩到空中 → 触地 5100，含受身（recovery → 5200 / 5210）
+#
+# 由 IKEMEN Common State 提供、本角色**不重复实现**的：
+#   0/10/11/12  站立 / 站↔蹲
+#   20/21       走前 / 走后
+#   40-52       跳跃（起跳 / 上升 / 空中 / 下落 / 落地）★ 52 = 落地
+#   100/105     前冲 / 后跳
+#   120/130-155 防御（起手 / 站防 / 蹲防 / 空防 / 防御结束 / 防御后退）
+#   5000-5210   受击 / 倒地 / 起身 / 受身
+#   出处：engine/ikemen-go/data/common1.cns.zss
+#
+# ★★★ 普攻取消链（沿用 P3 的等级系统，未新建第二套）★★★
+#   每个攻击状态在 time = 0 调用 AtkInit(lv) 登记"链等级"，并在首个判定帧
+#   把 var(4) 置 1（= 取消窗口开启）。路由侧放行条件是**严格的等级递增**：
+#
+#       lv1 轻普通技（200/230/400/430/600/630）
+#         ↓
+#       lv2 重普通技（210/240/410/440/610/640）
+#         ↓
+#       lv3 必杀技（1000/1100）
+#         ↓
+#       lv4 EX（1010）/ Super（3000）
+#
+#   等级只增不减 → 连段长度天然有上限（最长 4 段）。等级表与放行逻辑见
+#   command.zss 的 [Function CanChain] —— 与 Fighter A **同一套机制**，
+#   只是角色自己的等级表不同（本角色的 lv3 是投射物与对空技）。
+#
+# ★★★ Projectile（本阶段最重要的新机制）★★★
+#   用 IKEMEN **原生** `projectile{}` 状态控制器实现（compiler.go:98 注册，
+#   参数表见 compiler_functions.go 的 projectileSub）。没有用 Helper 方案，
+#   也没有改引擎 —— 理由见 README §Projectile。
+#
+#   ★ 为什么每处发射都带 `var(10)` 闩锁：
+#     `animElem = N` 在**第 N 个元素的整个持续时间内**都为真（不是只在第一帧）。
+#     所以 `if animElem = 4 { projectile{...} }` 会按元素时长重复生成多枚 ——
+#     这正是合同 §11.1 点名要防的"重复生成失控 / 投射物泄漏"。
+#     本文件的做法：进入状态时 `var(10) := 0`，每发射一次 `var(10) += 1`，
+#     发射条件写成 `animElem = N && var(10) = <期望值>` → 每个发射点恰好一次。
+#     实测：普通版每次恰好 1 枚、EX 恰好 2 枚、Super 恰好 3 枚（Phase Report Gate 7）。
+#
+# 语法硬规则（架构文档 §5.2）：
+#   * sctrl 的左花括号必须与控制器名同行：  hitDef{   ✅   hitDef   ❌
+#   * [StateDef N; ...] 头部用分号分隔、] 收尾
+#   * 触发器就是 if <表达式> { ... }，不用 trigger1 = 的旧写法
+#   * `call` 语句与 `var(n) := x` 都要写分号；`call` 不能内联在 if 条件里
+#
+# 实测对照：game/chars/test_fighter_a/test_fighter_a.zss
+# ============================================================================
+
+
+# ============================================================================
+# 函数
+# ============================================================================
+# EndState(type)：状态结束后回到站立（type=0）或下蹲（type=1）。
+# 每个攻击状态都必须用它收尾，否则状态无法退出（架构文档 §5.4 第 5 条）。
+[Function EndState(type)]
+if animTime = 0 {
+    changeState{value: 11 * $type; ctrl: roundState > 1}
+}
+
+# CSnd(bank, sound, channel)：播放本角色 .snd 里的音效。
+[Function CSnd(bank, sound, c)]
+playSnd{value: S $bank, $sound; channel: $c}
+
+# AtkInit(lv)：攻击状态进入时统一登记"我是谁、能不能取消"。
+#   var(3) = 链等级（1 轻 / 2 重 / 3 必杀 / 4 EX·Super）
+#   var(4) = 取消窗口是否已开启（0 关闭 / 1 开启），在首个判定帧置 1
+#   var(0) = 本次攻击是否已经取消过一次（进状态时清零）
+[Function AtkInit(lv)]
+var(3) := $lv;
+var(4) := 0;
+var(0) := 0;
+
+# ProjInit()：投射物类状态进入时调用（P4）。
+#   var(10) = 本次状态已经生成的投射物数量（见文件头"为什么带闩锁"）
+[Function ProjInit()]
+var(10) := 0;
+
+
+# ============================================================================
+# 胜利姿势（Win Pose）—— 回合结束时引擎会把胜者切到这个状态
+# 缺了它会打印 `changed to invalid state 180`（P2 审计实测）。继承自模板。
+# ============================================================================
+[StateDef 180;
+type: S; movetype: I; physics: S;
+anim: 180; ctrl: 0;
+velset: 0, 0;
+sprpriority: 1;]
+
+notHitBy{value: SCA; time: 1}
+
+
+# ============================================================================
+# 嘲讽（Taunt）—— 非攻击状态的最小样板（继承自模板）
+# ============================================================================
+[StateDef 195;
+type: S; movetype: I; physics: S;
+anim: 195; ctrl: 0;
+velset: 0, 0;
+sprpriority: 2;]
+
+if time = 40 {
+    ctrlSet{value: 1}
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 站立轻拳 A（Stand Light Punch）—— lv1
+#
+# Zoner 被贴住时的唯一应急手段：起手 3 tick（全套最快），判定只到 x=58。
+# 本角色不靠它打输出，靠它把对手推开、给自己争取发弹的距离。
+# ============================================================================
+[StateDef 200;
+type: S; movetype: A; physics: S;
+juggle: 1; velset: 0, 0; ctrl: 0;
+anim: 200;
+poweradd: 20;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 3 {
+    var(4) := 1;                  # 判定帧开始 → 打开取消窗口
+    hitDef{
+        attr: S, NA;
+        damage: 25, 0;
+        animtype: Light;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 8, 8;
+        sparkno: 0;
+        sparkxy: -10, -76;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 11;
+        ground.velocity: -5;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★★★ 站立重拳 C（Stand Heavy Punch）—— **长手牵制（Long Range Normal）** ★★★
+#
+#   本角色"控制空间"的第一件工具。
+#
+# 几何：判定框伸到 **x = 105**（Fighter A 最长的站重脚只有 84）。
+#       攻击框在 .air 的 Action 210 里画成两段（30→105 与 62→98），
+#       覆盖"从胸口高度平推出去的一条长臂"。
+#
+# ★ 长手不是白给的 —— 三样代价同时付（合同 §10.2 要求"不要用瞬移伪装长手"）：
+#     起手 14 tick（Fighter A 的 210 是 10）—— 反应慢，可以被抢先
+#     收招 15 tick（Fighter A 是 11）—— 挥空即被罚
+#     伤害 60（Fighter A 是 70）—— 长手不该同时高伤
+#   ★ 本状态**没有任何 posAdd** —— 角色本体不前进，长的是判定框。
+#     这正是"长手"与"突进技"的区别，也是 Gate 4 的验证点之一。
+#
+# 定位用途：中距离（对手 60–100 px 外）用它挡住接近路线，逼对手跳。
+# ============================================================================
+[StateDef 210;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 210;
+poweradd: 28;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 5 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 60, 4;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -70;
+        hitsound: 5, 2;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 9;
+        ground.hittime: 16;
+        ground.velocity: -7;
+        airguard.velocity: -2.6, -1.1;
+        air.type: High;
+        air.velocity: -2.4, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 1, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 站立轻脚 B（Stand Light Kick）—— lv1，中距离牵制
+# 判定到 x=76（比轻拳远、比长手近），起手 4 tick。
+# ============================================================================
+[StateDef 230;
+type: S; movetype: A; physics: S;
+juggle: 1; velset: 0, 0; ctrl: 0;
+anim: 230;
+poweradd: 20;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 3 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 30, 0;
+        animtype: Light;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 8, 8;
+        sparkno: 0;
+        sparkxy: -10, -70;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 6;
+        ground.hittime: 12;
+        ground.velocity: -5;
+        airguard.velocity: -2, -.9;
+        air.type: High;
+        air.velocity: -1.6, -3.1;
+        air.hittime: 16;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 站立重脚 D（Stand Heavy Kick）—— lv2，中距离高伤
+# 判定到 x=88，伤害 75。与长手重拳（210）分工：210 更远更轻更慢，
+# 240 稍近但更痛，且可以作为连段收尾（lv2 → lv3 取消进必杀）。
+# ============================================================================
+[StateDef 240;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 240;
+poweradd: 35;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 3 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 75, 5;
+        animtype: Heavy;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 13, 13;
+        sparkno: 0;
+        sparkxy: -10, -66;
+        hitsound: 5, 2;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 19;
+        ground.velocity: -9;
+        airguard.velocity: -2.8, -1.2;
+        air.type: High;
+        air.velocity: -2.6, -4.2;
+        air.hittime: 22;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 3, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 蹲轻拳 A（Crouching Light Punch）—— State 400   lv1，下段
+# 下段、快、轻。type: C 是必须的（否则站防能挡住）。
+# ============================================================================
+[StateDef 400;
+type: C; movetype: A; physics: C;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 400;
+poweradd: 15;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 2 {
+    var(4) := 1;
+    hitDef{
+        attr: C, NA;              # C = 蹲姿（下段攻击）
+        damage: 25, 0;
+        animtype: Light;
+        guardflag: L;             # L = 只能下防
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 8, 8;
+        sparkno: 0;
+        sparkxy: -10, -42;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 5;
+        ground.hittime: 11;
+        ground.velocity: -4;
+        airguard.velocity: -1.9, -.8;
+        air.type: Low;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# ★★★ 蹲重拳 C（Crouching Heavy Punch）—— **对空 Normal（Anti-Air Normal）** ★★★
+#
+# 几何：判定框向上抬到 **y = -112**（Fighter A 同位置是 -94），x 26→58。
+#       .air 的 Action 410 把它画成一条从腰到头顶的斜柱。
+#   含义：对手跳入时身体大致落在 y = -60 … -110 这一段，本判定框正覆盖它。
+#
+# 代价（合同 §10.2 要求"可靠但有 Recovery 风险"）：
+#   起手 8 tick、收招 14 tick —— 挥空后有一段完全不能动。
+#
+# ★ 它对地面目标**不是万能技**：判定框集中在高处，贴地/低姿目标不在范围内 ——
+#   Gate 4 实测了"地面目标打不到、空中目标打得到"这个几何事实。
+# ============================================================================
+[StateDef 410;
+type: C; movetype: A; physics: C;
+juggle: 4; velset: 0, 0; ctrl: 0;
+anim: 410;
+poweradd: 25;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 3 {
+    var(4) := 1;
+    hitDef{
+        attr: C, NA;
+        damage: 55, 4;
+        animtype: Up;             # 向上打飞
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -95;        # 火花在头顶
+        hitsound: 5, 2;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 16;
+        ground.velocity: -3, -6;  # 对空命中会把对手顶起来
+        airguard.velocity: -2.6, -1.1;
+        air.type: High;
+        air.velocity: -2.2, -5;
+        air.hittime: 22;
+        yaccel: .5;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 1, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# 蹲轻脚 B（Crouching Light Kick）—— State 430   lv1，下段
+# ============================================================================
+[StateDef 430;
+type: C; movetype: A; physics: C;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 430;
+poweradd: 18;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 3 {
+    var(4) := 1;
+    hitDef{
+        attr: C, NA;
+        damage: 30, 0;
+        animtype: Light;
+        guardflag: L;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 9, 9;
+        sparkno: 0;
+        sparkxy: -10, -14;
+        hitsound: 5, 1;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 6;
+        ground.hittime: 12;
+        ground.velocity: -5;
+        airguard.velocity: -2, -.9;
+        air.type: Low;
+        air.velocity: -2, -3;
+        air.hittime: 16;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# 蹲重脚 D（Crouching Heavy Kick / 扫腿）—— State 440   lv2
+# 本角色的下段击倒招（ground.type: Trip + fall: 1）。
+# ============================================================================
+[StateDef 440;
+type: C; movetype: A; physics: C;
+juggle: 5; velset: 0, 0; ctrl: 0;
+anim: 440;
+poweradd: 35;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: C, NA;
+        damage: 70, 5;
+        animtype: Hard;
+        guardflag: L;
+        hitflag: MAFD;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -5, -10;
+        hitsound: 5, 2;
+        guardsound: 6, 0;
+        ground.type: Trip;
+        ground.slidetime: 10;
+        ground.hittime: 17;
+        ground.velocity: -1.5, -2;
+        air.velocity: -1.2, -3;
+        guard.velocity: -5;
+        fall: 1;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 3, 1);
+}
+
+call EndState(1);
+
+
+# ============================================================================
+# 跳轻拳 A（Jumping Light Punch）—— State 600   lv1
+# ★ 空中攻击不调用 EndState：动画末帧用 -1 保持姿势，落地由引擎切公共状态 52。
+# ★ 空中普通技不可取消（command.zss 的自由分支要求 stateType != A）。
+# ============================================================================
+[StateDef 600;
+type: A; movetype: A; physics: A;
+juggle: 2; ctrl: 0;
+anim: 600;
+poweradd: 10;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 2 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;
+        damage: 25, 0;
+        animtype: Light;
+        guardflag: HA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 7, 8;
+        sparkno: 0;
+        sparkxy: -10, -58;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 10;
+        ground.velocity: -4;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.3, -3;
+        air.hittime: 14;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+
+# ============================================================================
+# 跳重拳 C（Jumping Heavy Punch）—— State 610   lv2
+# ============================================================================
+[StateDef 610;
+type: A; movetype: A; physics: A;
+juggle: 4; ctrl: 0;
+anim: 610;
+poweradd: 25;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 3 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;
+        damage: 70, 5;
+        animtype: Medium;
+        guardflag: HA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -55;
+        hitsound: 5, 3;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 14;
+        ground.velocity: -6;
+        airguard.velocity: -2.6, -1.1;
+        air.type: High;
+        air.velocity: -3, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 2 {
+    call CSnd(0, 1, 1);
+}
+
+
+# ============================================================================
+# 跳轻脚 B（Jumping Light Kick）—— State 630   lv1
+# ============================================================================
+[StateDef 630;
+type: A; movetype: A; physics: A;
+juggle: 3; ctrl: 0;
+anim: 630;
+poweradd: 12;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(1);
+}
+
+if animElem = 2 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;
+        damage: 30, 0;
+        animtype: Light;
+        guardflag: HA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 8, 8;
+        sparkno: 1;
+        sparkxy: -5, -35;
+        hitsound: 5, 0;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 6;
+        ground.hittime: 10;
+        ground.velocity: -4;
+        airguard.velocity: -2, -.9;
+        air.type: High;
+        air.velocity: -2, -3;
+        air.hittime: 14;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 0, 1);
+}
+
+
+# ============================================================================
+# 跳重脚 D（Jumping Heavy Kick）—— State 640   lv2
+# ============================================================================
+[StateDef 640;
+type: A; movetype: A; physics: A;
+juggle: 4; ctrl: 0;
+anim: 640;
+poweradd: 30;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 2 {
+    var(4) := 1;
+    hitDef{
+        attr: A, NA;
+        damage: 75, 5;
+        animtype: Medium;
+        guardflag: HA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -40;
+        hitsound: 5, 3;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 15;
+        ground.velocity: -7;
+        airguard.velocity: -2.8, -1.2;
+        air.type: High;
+        air.velocity: -3, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 2 {
+    call CSnd(0, 1, 1);
+}
+
+
+# ============================================================================
+# 基础投技 —— 起手：抓人（继承模板，未修改）
+#
+# Zoner 的投技意义与 Fighter A 不同：不是为了打伤害，而是**把贴住自己的对手
+# 推开**，重新拿到发弹的距离。所以它在 AI 里被放在"对手贴身"这一档。
+# ============================================================================
+[StateDef 800;
+type: S; movetype: A; physics: S;
+juggle: 0; velset: 0, 0; ctrl: 0;
+anim: 800;
+poweradd: 10;
+sprpriority: 2;]
+
+if time = 0 {
+    hitDef{
+        attr: S, NT;            # Standing, Normal Throw
+        hitflag: M-;
+        priority: 1, Miss;
+        sparkno: -1;
+        p1sprpriority: 1;
+        p1facing: 1;
+        p2facing: 1;
+        p1stateno: 810;
+        p2stateno: 820;
+        guard.dist: 0;
+        fall: 1;
+    }
+}
+
+if time = 1 {
+    call CSnd(800, 0, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# 基础投技 —— 执行：把对手甩出去（继承模板，未修改）
+# ============================================================================
+[StateDef 810;
+type: S; movetype: A; physics: N;
+anim: 810;
+poweradd: 0;
+sprpriority: 1;]
+
+if time = 0 {
+    var(2) := command = "holdfwd";
+}
+
+if animElemTime(1) < 0 {
+    targetBind{pos: 28, 0}
+}
+if animElemTime(2) >= 0 && animElemTime(5) < 0 {
+    targetBind{pos: 52, -10}
+}
+if animElemTime(5) >= 0 && animElemTime(6) < 0 {
+    targetBind{pos: 44, -40}
+}
+if animElemTime(6) >= 0 && animElemTime(7) < 0 {
+    targetBind{pos: 36, -70}
+}
+
+if var(2) && animElem = 6 {
+    turn{}
+    posAdd{x: -30}
+    targetFacing{value: -1}
+}
+
+if animElem = 7 {
+    targetBind{pos: -30, -50}
+    targetLifeAdd{value: -90}
+    targetState{value: 821}
+}
+
+if animElem = 7 {
+    call CSnd(800, 1, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★★★ Projectile Special「气弹」(Ki Blast) —— State 1000 / Anim 1000 ★★★
+#
+#   236 + A（命令 QCF_x），**不耗气**。
+#
+# 这是 P4 最关键的新机制。实现选择与理由：
+#
+# ★ 用 IKEMEN **原生** `projectile{}` sctrl，**不用 Helper**。
+#   理由：引擎已提供完整能力（生成 / 速度 / 生命周期 / 命中次数 / 优先级 /
+#   与角色状态解耦），compiler.go:98 与 compiler_functions.go 的 projectileSub
+#   给出了全部参数。用 Helper 相当于在角色层手搓一个投射物系统 ——
+#   违反合同 §11.1 的"优先使用 IKEMEN 已有的角色层能力"与 §29 的"禁止自造框架"。
+#
+# ★ 生命周期四道闸门（合同 §11.1 要求"防止永久残留 / 数量失控"）：
+#     ① projhits: 1         —— 命中一次即消失（防"命中后重复命中"）
+#     ② projremovetime: 130 —— 生成后 130 tick 强制消失（兜底，防止无限飞行）
+#     ③ projedgebound / projstagebound: 40 —— 飞出边界 40 px 即消失
+#     ④ var(10) 闩锁        —— 每次状态执行恰好生成 1 枚（防重复生成失控）
+#   这四条都是**显式写出**的，不依赖引擎默认值（默认 projhits 就是 1、
+#   removetime 是 -1 —— 显式写出来才算"设计"，而不是"碰巧"）。
+#
+# ★ 与角色状态解耦（合同 §11.1 明确要求验证）：
+#   projectile 一旦生成就拥有自己的 pos / velocity / anim（char.go 的 Projectile
+#   结构体），角色之后出招、收招、甚至被打都不影响它。
+#
+# 伤害 60、速度 6 px/tick。Zoner 的投射物不该一炮致命，它的价值在于
+# "逼对手做选择"（防御 / 跳 / 前冲 / 吃）。
+#
+# 帧序（.air 的 Action 1000）：到发射 9 tick / 总 42 tick（发射帧 = elem 4）
+# ============================================================================
+[StateDef 1000;
+type: S; movetype: A; physics: S;
+juggle: 4; velset: 0, 0; ctrl: 0;
+anim: 1000;
+poweradd: 40;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(3);              # lv3 = 必杀技（可被 lv1/lv2 取消进来）
+    call ProjInit();              # var(10) := 0（投射物计数）
+}
+
+# ★ 发射：animElem = 4 会持续整个元素时长，所以必须配闩锁，否则一次出招
+#   会生成多枚（元素 4 持续 3 tick → 3 枚）。这就是 var(10) 的用处。
+if animElem = 4 && var(10) = 0 {
+    var(10) := 1;
+    projectile{
+        projanim: 1005;
+        projid: 1000;
+        postype: p1;
+        offset: 34, -40;          # 从身前胸高发出（判定框见 .air 的 Action 1005）
+        velocity: 6, 0;           # 每 tick 前进 6 px（方向由朝向决定）
+        projhits: 1;              # ① 命中 1 次即消失
+        projremovetime: 130;      # ② 130 tick 后强制消失（约 2.2 s）
+        projpriority: 1;          # 与对手投射物对撞时的优先级
+        projmisstime: 0;
+        projsprpriority: 3;       # 画在角色前面
+        projedgebound: 40;        # ③ 飞出屏幕边界 40 px 即消失
+        projstagebound: 40;
+        attr: S, SP;              # SP = Special Projectile
+        damage: 60, 6;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 11, 11;
+        sparkno: 0;
+        sparkxy: -10, -60;
+        hitsound: 5, 1;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 9;
+        ground.hittime: 16;
+        ground.velocity: -6;
+        airguard.velocity: -2.6, -1.1;
+        air.velocity: -2.6, -3.8;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★★★ EX Projectile「双气弹」(EX Ki Blast) —— State 1010 / Anim 1010 ★★★
+#
+#   236 + C（命令 QCF_y），**耗 500 气**。
+#
+# 气量的"检查 → 扣除"分工（沿用 P2/P3 约定，本项目唯一写法）：
+#   检查在路由层（command.zss：`power >= 500`）
+#   扣除在本状态 time = 0 的 powerAdd{value: -500}
+#
+# 相对 State 1000 的**明确强化点**（合同 §11.3 要求至少两项，这里三项）：
+#   ① 到发射 9 → 4 tick（快一倍多）
+#   ② 一次 2 发（elem 3 与 elem 5 各一枚，高度差 18 px）
+#   ③ 合计伤害 110（普通版 60）
+# 代价：气 500 + 总时长 36 tick（收招更长，挥空更亏）。
+#
+# ★ 这是"EX 必须是真强化"的证据：不是换个 State No 而已 ——
+#   生成次数、时机、伤害、速度四项都不同，且 Power 消费可实测。
+# ============================================================================
+[StateDef 1010;
+type: S; movetype: A; physics: S;
+juggle: 5; velset: 0, 0; ctrl: 0;
+anim: 1010;
+poweradd: 0;                      # 出招本身不集气（它要花气）
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -500}         # ★ 气量扣除在这里
+    call AtkInit(4);              # lv4（EX / Super 同层，最高链级）
+    call ProjInit();
+}
+
+# 第 1 发：偏上
+if animElem = 3 && var(10) = 0 {
+    var(10) := 1;
+    projectile{
+        projanim: 1005;
+        projid: 1001;
+        postype: p1;
+        offset: 34, -52;
+        velocity: 7.5, 0;
+        projhits: 1;
+        projremovetime: 130;
+        projpriority: 2;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, SP;
+        damage: 55, 5;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -70;
+        hitsound: 5, 1;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 17;
+        ground.velocity: -7;
+        airguard.velocity: -2.8, -1.2;
+        air.velocity: -3, -4;
+        air.hittime: 22;
+    }
+}
+
+# 第 2 发：偏下 —— 两发高度差 18 px，站防挡住上面那发时下面那发仍会擦到
+if animElem = 5 && var(10) = 1 {
+    var(10) := 2;
+    projectile{
+        projanim: 1005;
+        projid: 1002;
+        postype: p1;
+        offset: 34, -28;
+        velocity: 7.5, 0;
+        projhits: 1;
+        projremovetime: 130;
+        projpriority: 2;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, SP;
+        damage: 55, 5;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 12, 12;
+        sparkno: 1;
+        sparkxy: -10, -55;
+        hitsound: 5, 1;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 10;
+        ground.hittime: 17;
+        ground.velocity: -7;
+        airguard.velocity: -2.8, -1.2;
+        air.velocity: -3, -4;
+        air.hittime: 22;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★★★ Anti-Air Special「升龙上勾拳」(Rising Upper) —— State 1100 / Anim 1100 ★★★
+#
+#   623 + A（命令 DP_x），**不耗气**。
+#
+# 定位：**对空反击技**。Zoner 的第二件核心工具 —— 当长手和投射物把对手
+#   逼得跳进来时，用它把对手打回去。
+#
+# ★ 几何（这是"真的能对空"的证据，见 .air 的 Action 1100）：
+#     判定框 Clsn1[0] = 28,-60 → 62,-152
+#   即：从胸口高度一直到 **y = -152**（角色身高 60 的 2.5 倍），
+#   横向覆盖 x 28…62。对手跳入时经过的高度与水平位置都落在里面。
+#   与 410（对空 Normal，到 -112）的分工：1100 更高更远、带击倒，但更慢。
+#
+# ★ 物理上保持 physics: S（角色不离地）—— 靠判定框向上延伸实现对空，
+#   这样落地/起身链路完全走原有公共状态，不必额外处理空中物理。
+#
+# ★ 它不是万能技（合同 §11.2 要求"对地面目标不是万能技"）：
+#   起手 12 tick、收招 24 tick —— 对手在地面时不放它就是最好的选择，
+#   AI 也只在"对手真的在空中"时才用它（AI.zss ②）。
+# ============================================================================
+[StateDef 1100;
+type: S; movetype: A; physics: S;
+juggle: 3; velset: 0, 0; ctrl: 0;
+anim: 1100;
+poweradd: 35;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(3);              # lv3 = 必杀技
+}
+
+# 起手时极小的前压（8 px）：避免贴身时判定框完全包住自己
+if animElem = 3 {
+    posAdd{x: 8}
+}
+
+if animElem = 7 {
+    var(4) := 1;
+    hitDef{
+        attr: S, SA;
+        damage: 75, 6;
+        animtype: Up;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 14, 14;
+        sparkno: 3;
+        sparkxy: 0, -130;         # 火花位置高 —— 在头顶之上
+        hitsound: 5, 4;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 22;
+        ground.hittime: 24;
+        ground.velocity: -1.5, -12;   # 地面命中 → 把对手挑起来
+        airguard.velocity: -3, -4;
+        air.velocity: -1.5, -12;      # 空中命中 → 直接打飞
+        air.hittime: 26;
+        yaccel: .55;
+        fall: 1;                  # 强制倒地（对空技的标准收尾）
+        fall.recover: 1;          # 允许受身（公平性设计）
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★★★ Super「气弹炮」(Ki Blast Cannon) —— State 3000 / Anim 3000 ★★★
+#
+#   236236 + A（命令 QCF2_x），**耗 1000 气**（气槽上限 2000）。
+#
+# 设计思路：Zoner 的 Super 不应该是"一记更大的拳"，而应该是
+# **把投射物做成弹幕** —— 一次 3 发，三发高度不同、各自独立飞行与判定。
+# 这样对手不能靠"一次防御"或"一次跳跃"躲掉全部，Super 才有"改变局面"的意义。
+#
+# 相对 EX（1010）的强化：
+#   数量 2 → 3、总伤害 110 → 195（每发 65）、速度 7.5 → 8、气耗 500 → 1000
+#
+# 刻意**不做**（属 P7 表现层，合同 §11.4 明确排除）：
+#   superPause 定格、镜头推进、闪光、暗转、正式演出。
+#
+# 帧序（.air 的 Action 3000）：到第一发 9 tick / 总 44 tick
+#                                发射帧 = elem 4（t=9）/ elem 7（t=18）/ elem 9（t=26）
+# ============================================================================
+[StateDef 3000;
+type: S; movetype: A; physics: S;
+juggle: 6; velset: 0, 0; ctrl: 0;
+anim: 3000;
+poweradd: 0;                      # 出招本身不集气（它要花气）
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -1000}        # ★ 气量扣除（Super 的代价）
+    call AtkInit(4);              # lv4
+    call ProjInit();
+}
+
+# 第 1 发：高
+if animElem = 4 && var(10) = 0 {
+    var(10) := 1;
+    projectile{
+        projanim: 1005;
+        projid: 3001;
+        postype: p1;
+        offset: 34, -55;
+        velocity: 8, 0;
+        projhits: 1;
+        projremovetime: 150;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;              # HP = Hyper Projectile
+        damage: 65, 6;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 14, 14;
+        sparkno: 2;
+        sparkxy: -10, -74;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 20;
+        ground.velocity: -8;
+        airguard.velocity: -3, -1.3;
+        air.velocity: -3.4, -4.2;
+        air.hittime: 24;
+    }
+}
+
+# 第 2 发：中
+if animElem = 7 && var(10) = 1 {
+    var(10) := 2;
+    projectile{
+        projanim: 1005;
+        projid: 3002;
+        postype: p1;
+        offset: 34, -40;
+        velocity: 8, 0;
+        projhits: 1;
+        projremovetime: 150;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 65, 6;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 14, 14;
+        sparkno: 2;
+        sparkxy: -10, -66;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 20;
+        ground.velocity: -8;
+        airguard.velocity: -3, -1.3;
+        air.velocity: -3.4, -4.2;
+        air.hittime: 24;
+    }
+}
+
+# 第 3 发：低
+if animElem = 9 && var(10) = 2 {
+    var(10) := 3;
+    projectile{
+        projanim: 1005;
+        projid: 3003;
+        postype: p1;
+        offset: 34, -25;
+        velocity: 8, 0;
+        projhits: 1;
+        projremovetime: 150;
+        projpriority: 3;
+        projmisstime: 0;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, HP;
+        damage: 65, 6;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 6, Hit;
+        pausetime: 14, 14;
+        sparkno: 2;
+        sparkxy: -10, -58;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 20;
+        ground.velocity: -8;
+        airguard.velocity: -3, -1.3;
+        air.velocity: -3.4, -4.2;
+        air.hittime: 24;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# [StateDef -3] —— 每 tick 执行，且只在角色自己的状态文件内生效
+# （与 -1 的区别见架构文档 §4.3）。与模板一样保持为空 ——
+# 不为了"看起来完整"塞无意义内容。
+# ============================================================================
+[StateDef -3]
