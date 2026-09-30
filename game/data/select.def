@@ -37,6 +37,15 @@ test_fighter_b, stages/stage0.def
  ; （见 game/chars/_template/README.md）。确实要试玩模板时再取消下面这行注释：
  ;_template, stages/stage0.def
 
+ ; --- P6 素材预览（临时条目，等 game/chars/archer 建好后替换）---
+ ; kuri 的 MUGEN Archer/EMIYA（SFF v1 原件 + 经 sffpack 转出的 v2）。
+ ; 用途：让负责人现在就**在菜单里**试玩 P6 的正式美术素材。
+ ; 注意：这两个不是 KingOfFate 角色——它们带着原作者 kuri 的 CNS 逻辑，
+ ;       `archer`（game/chars/archer，Zoner 骨架）建好后这两行应当删除。
+ ; 素材登记见 assets/LICENSE_MANIFEST.csv（emiya_kuri_pack）。
+emiya_v2, stages/stage0.def
+emiya, stages/stage0.def
+
  ; 随机选择图标（独占一行）
 randomselect
 
