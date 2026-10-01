@@ -69,7 +69,9 @@
 
 ### 3.5 工具链缺口
 
-- **没有 SND 读取器**（P5 明确写了"无 SND 工具"）→ 想用 Archer 音效必须先补这件
+- ~~没有 SND 读取器~~ **已补（2026-10-01）**：`tools/sndctl`（inspect / export）+
+  `tools/kofassets/snd.py`。顺带发现 **Archer 音效包有 155 个音效、347 秒（含语音）**，
+  而当前 `archer.snd` 是 KFM 占位（12 个、5.7 秒）。剩下的只是重映射（B2/B3）。
 
 ### 3.6 收尾
 
@@ -96,7 +98,8 @@
 
 ### 阶段 B — 音频（依赖 A，因为音效要与动作同步）
 
-- [ ] **B1. 写 SND 读取器**（纯标准库，补 `tools/kofassets/`；参考引擎 `sound.go`）
+- [x] **B1. 写 SND 读取器** ✅（`tools/sndctl` + `kofassets/snd.py`，13 条新测试，
+      移植自引擎 `sound.go`）
 - [ ] **B2. 音效清点 + 重映射表**（`archer.zss` 里 77 处音效引用 → Archer 音效编号）
 - [ ] **B3. 换掉 `archer.snd`**（Archer 的 21MB 音效，含语音；按需转码/裁剪）
 

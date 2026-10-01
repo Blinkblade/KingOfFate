@@ -474,6 +474,58 @@ if time = 0 {{
 """
 
 
+def build_wav(samples, rate=8000, bits=8, channels=1, broken=False):
+    """A valid (or deliberately damaged) RIFF/WAVE payload of raw PCM."""
+    if broken:
+        return b"RIFF" + struct.pack("<I", 8) + b"WAVEjunkjunk"
+    data = bytes(samples)
+    block_align = channels * max(bits // 8, 1)
+    byte_rate = rate * block_align
+    fmt = struct.pack("<HHIIHH", 1, channels, rate, byte_rate, block_align, bits)
+    chunks = (b"fmt " + struct.pack("<I", len(fmt)) + fmt
+              + b"data" + struct.pack("<I", len(data)) + data)
+    return b"RIFF" + struct.pack("<I", 4 + len(chunks)) + b"WAVE" + chunks
+
+
+def build_snd(entries, version=(1, 1)):
+    """Assemble an SND container: entries is [(group, number, wav_bytes)]."""
+    count = len(entries)
+    header_size = 12 + 2 + 2 + 4 + 4
+    # Lay the sub-headers out first so each one can point at the next.
+    offsets = []
+    cursor = header_size
+    for _group, _number, wav in entries:
+        offsets.append(cursor)
+        cursor += 16 + len(wav)
+
+    header = (b"ElecbyteSnd\x00" + struct.pack("<HHII", version[0], version[1],
+                                               count, offsets[0] if offsets else 0))
+    body = bytearray()
+    for index, (group, number, wav) in enumerate(entries):
+        next_offset = offsets[index + 1] if index + 1 < len(entries) else 0
+        body += struct.pack("<IIii", next_offset, len(wav), group, number)
+        body += wav
+    return header + bytes(body)
+
+
+def minimal_snd():
+    """Three sounds: two clean PCM entries and one whose WAV is unusable.
+
+    The damaged entry is on purpose -- the reader must report it as a finding
+    instead of either crashing or silently pretending the entry is fine.
+    """
+    return build_snd([
+        (0, 0, build_wav([128] * 32, rate=8000, bits=8)),
+        (0, 1, build_wav(list(range(0, 64)), rate=11025, bits=8)),
+        (5, 0, build_wav([], broken=True)),
+    ])
+
+
+def bad_snd():
+    """Starts like nothing we recognise, to exercise the format-error path."""
+    return b"NOT AN SND FILE" + b"\x00" * 48
+
+
 def write(path, data, mode="wb"):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if isinstance(data, str):
@@ -496,6 +548,9 @@ def build_all():
     files["v1_minimal.sff"] = build_sff_v1()
     files["truncated.sff"] = container[:200]           # header promises more than exists
     files["bad_signature.sff"] = b"NOT AN SFF FILE" + b"\x00" * 48
+    files["minimal.snd"] = minimal_snd()
+    files["bad_signature.snd"] = bad_snd()
+    files["truncated.snd"] = minimal_snd()[:20]
 
     for name, text in AIR_EXTRA_FILES.items():
         files[name] = text.lstrip("\n").encode("utf-8")

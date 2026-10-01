@@ -65,6 +65,7 @@ $Fixtures = Join-Path $RepoRoot 'tests\fixtures\assets'
 $WorkDir = Join-Path $RepoRoot 'logs\p5\tool-tests'
 $Sffctl = Join-Path $ToolsDir 'sffctl\sffctl.py'
 $Airtool = Join-Path $ToolsDir 'airtool\airtool.py'
+$Sndctl = Join-Path $ToolsDir 'sndctl\sndctl.py'
 $Validate = Join-Path $ToolsDir 'character_validate\validate_character.py'
 $MakeFixtures = Join-Path $RepoRoot 'tests\fixtures\make_fixtures.py'
 $VerifyDecoders = Join-Path $RepoRoot 'tests\fixtures\verify_decoders.py'
@@ -149,7 +150,7 @@ if ($null -eq $resolved) {
     exit 1
 }
 
-foreach ($f in @($Sffctl, $Airtool, $Validate, $MakeFixtures, $VerifyDecoders, $CheckExport)) {
+foreach ($f in @($Sffctl, $Airtool, $Sndctl, $Validate, $MakeFixtures, $VerifyDecoders, $CheckExport)) {
     Add-Check -Group '0' -Name "tool exists: $(Split-Path -Leaf $f)" `
         -Passed (Test-Path -LiteralPath $f)
 }
@@ -489,6 +490,49 @@ foreach ($r in $script:Results) {
     if (-not $r.Passed -and $r.Detail) { $line += "   ($($r.Detail))" }
     Write-Host $line -ForegroundColor $colour
 }
+
+# ---------------------------------------------------------------------------
+# 15. sndctl
+# ---------------------------------------------------------------------------
+Write-Host '15. sndctl' -ForegroundColor Cyan
+
+$sndOk = Join-Path $Fixtures 'minimal.snd'
+Invoke-Tool -Group '15' -Label 'sound table is summarised' `
+    -Arguments @($Sndctl, 'inspect', $sndOk) -Expect 0 `
+    -MustContain @('Sounds:    3', 'pcm x2') | Out-Null
+Invoke-Tool -Group '15' -Label 'damaged entry is reported, not hidden' `
+    -Arguments @($Sndctl, 'inspect', $sndOk) -Expect 0 `
+    -MustContain @('SND_ENTRY_PROBLEM', 'bad wav') | Out-Null
+Invoke-Tool -Group '15' -Label 'json mode lists every sound' `
+    -Arguments @($Sndctl, 'inspect', $sndOk, '--json') -Expect 0 `
+    -MustContain @('"sounds"', '"group": 5') | Out-Null
+Invoke-Tool -Group '15' -Label 'limit truncates the table' `
+    -Arguments @($Sndctl, 'inspect', $sndOk, '--limit', '1') -Expect 0 `
+    -MustContain @('2 more') | Out-Null
+
+foreach ($c in @(
+        @{ n = 'missing file is IO (3)'; p = (Join-Path $Fixtures 'nope.snd'); e = 3; m = 'no such file' },
+        @{ n = 'directory instead of file is IO (3)'; p = $Fixtures; e = 3; m = 'is a directory' },
+        @{ n = 'bad signature is CORRUPT (5)'; p = (Join-Path $Fixtures 'bad_signature.snd'); e = 5; m = 'bad SND header' },
+        @{ n = 'truncated header is CORRUPT (5)'; p = (Join-Path $Fixtures 'truncated.snd'); e = 5; m = 'too small' }
+    )) {
+    Invoke-Tool -Group '15' -Label $c.n -Arguments @($Sndctl, 'inspect', $c.p) `
+        -Expect $c.e -MustContain @($c.m) | Out-Null
+}
+
+$sndOut = Join-Path $WorkDir 'snd_export'
+Invoke-Tool -Group '15' -Label 'export writes one wav per sound' `
+    -Arguments @($Sndctl, 'export', $sndOk, '--out', $sndOut, '--overwrite') -Expect 0 `
+    -MustContain @('exported 3 of 3 sound') | Out-Null
+Add-Check -Group '15' -Name 'exported files are named group_number.wav' `
+    -Passed ((Test-Path (Join-Path $sndOut '0_0.wav')) -and
+             (Test-Path (Join-Path $sndOut '5_0.wav')))
+Invoke-Tool -Group '15' -Label 'export refuses a key that is not in the bank' `
+    -Arguments @($Sndctl, 'export', $sndOk, '--out', $sndOut, '--sound', '9', '9') `
+    -Expect 1 -MustContain @('is not in') | Out-Null
+Invoke-Tool -Group '15' -Label 'real character bank reads' `
+    -Arguments @($Sndctl, 'inspect', (Join-Path $RepoRoot 'game\chars\archer\archer.snd'), '--limit', '3') `
+    -Expect 0 -MustContain @('Sounds:') | Out-Null
 
 $failed = @($script:Results | Where-Object { -not $_.Passed })
 $total = $script:Results.Count

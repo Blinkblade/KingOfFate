@@ -342,7 +342,7 @@ engine/ikemen-go/src/anim.go    ReadAnimFrame / ReadAnimation / ReadAction
 raw 真彩 SFFv2 精灵（format 0 depth 24/32） ← 字节序无法从本项目数据验证，宁可不做
 隔行（interlaced）PNG
 AIR 编辑 / 自动修复
-SND（导出或检查）
+SND 写出（读取/导出已支持，见下）
 调色板编辑 / ACT 文件
 精灵表自动切割
 GUI / 数据库
@@ -485,7 +485,11 @@ python tools\sffpack\sffpack.py transcode <in.sff> --out <out.sff> --remap map.c
 - 写入侧只有 `sffpack transcode`（raw 深度 8 / PNG RGBA 两种编码），没有 LZ5/RLE
   编码器（转码产物比 PCX 源大约 3 倍，21.5 MB vs 6.8 MB——可接受，暂不值得为体积
   写 LZ5 编码器）。
-- 没有 SND、没有 AIR 编辑、没有 GUI、没有调色板编辑 —— 都是刻意不做（§9）。
+- ~~没有 SND~~ **（P6 已支持只读 inspect / export）**：`tools/sndctl` +
+  `tools/kofassets/snd.py`，移植自引擎 `sound.go:LoadSndFiltered/readSound`。
+  每个条目就是一段标准 WAV，所以采样率/时长可以直接从 `fmt `/`data` 块读出来，
+  不需要解码音频。**没有写出**：换音效的方案是保留源音效库、只改脚本里的编号引用。
+- 没有 AIR 编辑、没有 GUI、没有调色板编辑 —— 都是刻意不做（§9）。
 - **"逐帧 `Clsn` 只作用于一个元素"这条结论的来源是**：引擎源码
   （`anim.go:311-364`、`char.go:10209-10233`）+ P4 在 Runtime 上对 `Clsn1` 的 A/B 实测。
   对 `Clsn2` 没有单独做过 Runtime 实测；它走的是同一段解析代码，所以按同一结论处理。
