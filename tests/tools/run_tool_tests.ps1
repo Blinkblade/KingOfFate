@@ -474,8 +474,14 @@ Add-Check -Group '7' -Name 'the engine submodule was not modified' -Passed ($eng
 $strayPng = @($status | Where-Object { $_ -match '\.png$' -and $_ -notmatch 'logs/' })
 Add-Check -Group '7' -Name 'no PNG was written outside logs/' -Passed ($strayPng.Count -eq 0) `
     -Detail ($strayPng -join '; ')
-$characterTouched = @($status | Where-Object { $_ -match 'game/chars/' -and $_ -notmatch 'test_fighter_b\.air$' })
-Add-Check -Group '7' -Name 'no character file other than the AIR sprite fix changed' `
+# game/chars/archer/ is the P6 character being built, so it is expected to change
+# between runs -- a tool run must not touch it, but the build legitimately does.
+# Every other character directory stays guarded: an accidental edit to
+# test_fighter_a/b must still fail here.
+$characterTouched = @($status | Where-Object {
+    $_ -match 'game/chars/' -and $_ -notmatch 'test_fighter_b\.air$' -and $_ -notmatch 'game/chars/archer/'
+})
+Add-Check -Group '7' -Name 'no character file outside the P6 build changed' `
     -Passed ($characterTouched.Count -eq 0) -Detail ($characterTouched -join '; ')
 
 # ---------------------------------------------------------------------------
