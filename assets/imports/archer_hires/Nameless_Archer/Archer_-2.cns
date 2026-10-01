@@ -1,0 +1,1611 @@
+;===========================================================================
+; 常時監視ステート（－２）
+;===========================================================================
+;---------------------------------------------------------------------------
+; 通常の食らい状態（Statedef 5000～5199間）でも、
+; 相手に（「P2StateNo」や「TargetState」等で）制御を奪われても、
+; 常に登録したステートコントローラが有効になります。
+; サブシステム等を制御する時に重宝するでしょう。
+;---------------------------------------------------------------------------
+
+[Statedef -2]
+
+;---------------------------------------------------------------------------
+[state -2];結界時BGM設定
+type = varset
+trigger1 = 1
+var(5) = 1;1でON、0でOFF
+
+[State a]
+type = selfstate
+triggerall = var(19) != gametime
+trigger1 = PalNo = 11
+trigger2 = PalNo = 12
+value = 750
+ctrl = 0
+
+[State 1570, 3]
+type = NotHitBy
+triggerall = movetype = A
+trigger1=PalNo=3
+trigger2=PalNo=4
+trigger3=PalNo=7
+trigger4=PalNo=8
+value = SCA
+
+[State 1570, 3]
+type = NotHitBy
+trigger1=PalNo=10
+value = ,AP
+
+[state a]
+type=lifeset
+triggerall = roundstate <= 1
+trigger1=PalNo=9
+trigger2=PalNo=10
+value=1
+
+[state a]
+type=selfstate
+triggerall=PalNo=12
+triggerall=alive=0
+trigger1=1
+value=200
+
+[state a]
+type=lifeset
+trigger1=PalNo=12
+value=lifemax
+ignorehitpause=1
+
+[state a];アーマー用ヘルパー
+type = Helper
+triggerall = numhelper(30037) = 0
+trigger1 = PalNo = 12 
+id = 30037
+name = "リアリティ・マーブル"
+sprpriority = -999999
+pos = 0,0
+postype = left
+stateno = 30037
+helpertype = normal
+pausemovetime = 9999999
+bindtime = -1
+Size.XScale = 1000
+Size.YScale = 1000
+keyctrl = 0 
+ownpal = 1
+
+[State 810, 掴んだ相手の体力ゲージの増減]
+type = TargetLifeAdd
+trigger1 = PalNo = 11
+trigger2 = PalNo = 12 
+value = -9999999999999
+absolute = 1
+
+[state a]
+type = nothitby
+trigger1 = PalNo = 11
+trigger2 = PalNo = 12 
+value = sca
+
+[state a];アーマー用ヘルパー
+type = Helper
+triggerall = numhelper(37) = 0
+trigger1 = PalNo = 11
+trigger2 = PalNo = 12 
+id = 37
+name = "アーマー"
+sprpriority = -3
+pos = 0,0
+postype = p1
+stateno = 38
+helpertype = normal
+pausemovetime = 0
+bindtime = -1
+keyctrl = 0 
+ownpal = 1
+
+[state a]
+type=lifeadd
+trigger1=1
+value=-var(29)
+ignorehitpause=1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 11 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+triggerall = p2life != 0
+trigger1 = PalNo = 12 
+flag = noko
+flag2 = noko
+flag3 = noko 
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+trigger1 = PalNo = 11 
+trigger2 = PalNo = 12 
+flag=nostandguard
+flag2=nocrouchguard
+flag3=noairguard
+ignorehitpause = 1
+
+[State 2502, AssertSpecial]
+type = AssertSpecial
+trigger1 = PalNo = 11
+trigger2 = PalNo = 12
+flag=unguardable
+ignorehitpause = 1
+
+[State -2]
+type = lifeadd
+triggerall = var(16) = 1
+triggerall = gametime%15 =0
+trigger1 = PalNo = 3
+trigger2 = PalNo = 4
+trigger3 = PalNo = 7
+trigger4 = PalNo = 8
+value = 1
+
+[State -2]
+type = poweradd
+triggerall = gametime%3 =0
+triggerall = var(16) = 1
+trigger1 = PalNo = 3
+trigger2 = PalNo = 4
+trigger3 = PalNo = 7
+trigger4 = PalNo = 8
+value = 1
+
+[State -2]
+type = varset
+trigger1 = PalNo = 2
+trigger2 = PalNo = 4
+trigger3 = PalNo = 6
+trigger4 = PalNo = 8
+trigger5 = PalNo = 11
+trigger6 = PalNo = 12
+var(16) = 1
+ignorehitpause = 1
+
+[State -2]
+type = varset
+trigger1 = PalNo = 2
+trigger2 = PalNo = 4
+trigger3 = PalNo = 6
+trigger4 = PalNo = 8
+trigger5 = PalNo = 11
+trigger6 = PalNo = 12
+var(15) = 3
+ignorehitpause = 1
+
+[State -2]
+type = defencemulset
+trigger1 = var(1) = 1
+value = 0.8
+ignorehitpause = 1
+
+[State -2, BGMを鳴らさない]
+type = AssertSpecial
+triggerall = var(5) = 1
+trigger1 = var(16) = 1
+flag = nomusic
+ignorehitpause = 1
+supermovetime = 99999999
+pausemovetime = 99999999
+
+[State -2, 音を鳴らす]
+type = PlaySnd
+triggerall = var(5) = 1
+trigger1 = var(16) = 1
+value = s10000,0
+channel = 6
+lowpriority = 6
+volume = -255
+loop = 1
+ignorehitpause = 1
+
+[State 4200, 空]
+type = Explod
+trigger1 =numExplod(4220)=0
+trigger1 = var(16) = 1
+anim = 4219
+ID = 4220
+pos = -30, 0
+postype = left
+facing = 1
+sprpriority = -6
+scale = 0.5,0.5
+bindtime = -1
+removetime = -1
+ownpal=1
+
+[State ,ScreenBound]
+Type                       = ScreenBound
+Trigger1                   = var(16) = 1
+value                      = 1
+MoveCamera                 = 1, 0
+Persistent                 = 1
+IgnoreHitPause             = 1
+
+[State 4200, 地面]
+type = Explod
+trigger1 =numExplod(4238)=0
+trigger1 = var(16) = 1
+anim = 4224
+ID = 4238
+pos = -200, 300
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = -4
+scale = 0.8,0.8
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車1]
+type = Explod
+trigger1 =numExplod(4221)=0
+trigger1 = var(16) = 1
+anim = 4221
+ID = 4221
+pos = 45, 94
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+angle = 10
+
+[State 4200, 歯車2]
+type = Explod
+trigger1 =numExplod(4222)=0
+trigger1 = var(16) = 1
+anim = 4223
+ID = 4222
+pos = 119, 24
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車3]
+type = Explod
+trigger1 =numExplod(4223)=0
+trigger1 = var(16) = 1
+anim = 4223
+ID = 4223
+pos = 149, 133
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車4]
+type = Explod
+trigger1 =numExplod(4224)=0
+trigger1 = var(16) = 1
+anim = 4221
+ID = 4224
+pos = 208, 42
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車5]
+type = Explod
+trigger1 =numExplod(4225)=0
+trigger1 = var(16) = 1
+anim = 4223
+ID = 4225
+pos = 270, 149
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車6]
+type = Explod
+trigger1 =numExplod(4226)=0
+trigger1 = var(16) = 1
+anim = 4220
+ID = 4226
+pos = 41, 92
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.25,0.25
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車7]
+type = Explod
+trigger1 =numExplod(4227)=0
+trigger1 = var(16) = 1
+anim = 4220
+ID = 4227
+pos = 178, 89
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.25,0.25
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車8]
+type = Explod
+trigger1 =numExplod(4228)=0
+trigger1 = var(16) = 1
+anim = 4220
+ID = 4228
+pos = 270, 84
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.25,0.25
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車1]
+type = Explod
+trigger1 =numExplod(4229)=0
+trigger1 = var(16) = 1
+anim = 4221
+ID = 4229
+pos = 520, 94
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車2]
+type = Explod
+trigger1 =numExplod(4230)=0
+trigger1 = var(16) = 1
+anim = 4223
+ID = 4230
+pos = 479, 24
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車3]
+type = Explod
+trigger1 =numExplod(4231)=0
+trigger1 = var(16) = 1
+anim = 4223
+ID = 4231
+pos = 429, 133
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車4]
+type = Explod
+trigger1 =numExplod(4232)=0
+trigger1 = var(16) = 1
+anim = 4221
+ID = 4232
+pos = 378, 42
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車5]
+type = Explod
+trigger1 =numExplod(4233)=0
+trigger1 = var(16) = 1
+anim = 4223
+ID = 4233
+pos = 320, 149
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.5,0.5
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車6]
+type = Explod
+trigger1 =numExplod(4234)=0
+trigger1 = var(16) = 1
+anim = 4220
+ID = 4234
+pos = -41, 92
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.25,0.25
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車7]
+type = Explod
+trigger1 =numExplod(4235)=0
+trigger1 = var(16) = 1
+anim = 4220
+ID = 4235
+pos = -178, 89
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = -5
+scale = 0.25,0.25
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車7]
+type = Explod
+trigger1 =numExplod(4236)=0
+trigger1 = var(16) = 1
+anim = 4220
+ID = 4236
+pos = -220, -100
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.25,0.25
+removetime = -1
+ownpal=1
+
+[State 4200, 歯車8]
+type = Explod
+trigger1 =numExplod(4237)=0
+trigger1 = var(16) = 1
+anim = 4220
+ID = 4237
+pos = -270, 84
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = -5
+scale = 0.25,0.25
+removetime = -1
+ownpal=1
+
+[State 4200, 剣1]
+type = Explod
+triggerall =numExplod(4240)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4225
+ID = 4240
+pos = 263, 137
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣2]
+type = Explod
+triggerall =numExplod(4241)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4226
+ID = 4241
+pos = 210, 141
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣3]
+type = Explod
+triggerall =numExplod(4242)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4227
+ID = 4242
+pos = 153, 139
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣4]
+type = Explod
+triggerall =numExplod(4243)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4228
+ID = 4243
+pos = 83, 138
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣5]
+type = Explod
+triggerall =numExplod(4244)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4229
+ID = 4244
+pos = 3, 143
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣5]
+type = Explod
+triggerall =numExplod(4245)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4229
+ID = 4245
+pos = 360, 143
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣4]
+type = Explod
+triggerall =numExplod(4246)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4228
+ID = 4246
+pos = -113, 138
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣4]
+type = Explod
+triggerall =numExplod(4247)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4228
+ID = 4247
+pos = 313, 138
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣6]
+type = null;Explod
+trigger1 =numExplod(4248)=0
+trigger1 = var(16) = 1
+anim = 4230
+ID = 4248
+pos =272, 162
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣7]
+type = Explod
+triggerall =numExplod(4249)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4231
+ID = 4249
+pos =236, 181
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = 5
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣8]
+type = null;Explod
+trigger1 =numExplod(4250)=0
+trigger1 = var(16) = 1
+anim = 4232
+ID = 4250
+pos =164, 158
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = 0
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣9]
+type = Explod
+triggerall =numExplod(4251)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4233
+ID = 4251
+pos =119, 196
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = 5
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣10]
+type = Explod
+triggerall =numExplod(4252)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4234
+ID = 4252
+pos =7, 178
+postype = left
+facing = 1
+bindtime = -1
+sprpriority = 5
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣9]
+type = Explod
+triggerall =numExplod(4254)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4233
+ID = 4254
+pos =-119, 196
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = 5
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣10]
+type = Explod
+triggerall =numExplod(4255)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4234
+ID = 4255
+pos =-157, 178
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = 5
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣9]
+type = Explod
+triggerall =numExplod(4257)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4233
+ID = 4257
+pos =389, 196
+postype = left
+bindtime = -1
+facing = 1
+sprpriority = 5
+scale = 0.5,0.5
+removetime = -1
+
+[State 4200, 剣10]
+type = Explod
+triggerall =numExplod(4258)=0
+trigger1 = var(16) = 1
+trigger2 = PalNo = 9
+trigger3 = PalNo = 10
+anim = 4234
+ID = 4258
+pos =327, 178
+bindtime = -1
+postype = left
+facing = 1
+sprpriority = 5
+scale = 0.5,0.5
+removetime = -1
+
+[State -2, ダメージ弱・中]
+type = PlaySnd
+triggerall = alive && time = 1 && Random <= 500
+trigger1 = stateno = 5000
+trigger1 = anim = 5000 || anim = 5001 || anim = 5010 || anim = 5011
+trigger2 = stateno = 5010
+trigger2 = anim = 5020 || anim = 5021
+value = 300,Random%6
+channel = 0
+
+[State -2, ダメージ強]
+type = PlaySnd
+triggerall = alive && time = 1 && Random <= 500
+trigger1 = stateno = 5000
+trigger1 = anim = 5002 || anim = 5012
+trigger2 = stateno = 5010
+trigger2 = anim = 5022 || anim = 5030
+value = 300,6+Random%3
+channel = 0
+
+[State -2, ダメージ弱・中]
+type = PlaySnd
+triggerall = alive && time = 1 && Random <= 500
+trigger1 = stateno = 5000
+trigger1 = anim = 5000 || anim = 5001 || anim = 5010 || anim = 5011
+trigger2 = stateno = 5010
+trigger2 = anim = 5020 || anim = 5021
+value = 300,Random%6
+channel = 0
+
+[State -2, ダメージ強]
+type = PlaySnd
+triggerall = alive && time = 1 && Random <= 500
+trigger1 = stateno = 5000
+trigger1 = anim = 5002 || anim = 5012
+trigger2 = stateno = 5010
+trigger2 = anim = 5022 || anim = 5030
+value = 300,6+Random%3
+channel = 0
+
+
+;===========================================================================
+; 準常時監視ステート（－３）
+;===========================================================================
+;---------------------------------------------------------------------------
+; こちらは通常の食らい状態以外の「P2StateNo」や「TargetState」等で制御された、
+; 作成者が任意に指定した相手側の食らいステートに限り、
+; 登録したステートコントローラが有効にはなりません。
+; －１や－２と上手く使い分けて行きましょう。
+;---------------------------------------------------------------------------
+
+[Statedef -3]
+
+;-----------------------------------
+;ここは「ジャンプ」か「バックステップ」をした後に
+;着地する音を鳴らす設定をしています。
+
+[State a]
+type = varset
+trigger1 = 1
+var(19) = gametime
+
+[State -3, 音を鳴らす]
+type = PlaySnd
+triggerall = Time = 1
+trigger1 = stateno = 52  ;着地ステート
+trigger2 = stateno = 106 ;バックステップ後の着地ステート
+value = 100, 1
+
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+; ■最後に『コモンステート』について■
+; コモンステートとは、全キャラ共通の基本動作のステートです。
+; 通常は特に変更しない限り、M.U.G.E.N本体のdataフォルダにある
+;「common1.cns（コモンステートファイル）」を使います。
+;
+; しかし、もしもあなたのキャラのステートファイルでcommon1.cnsと同じ番号の
+; 基本動作のステートを作った場合は処理が上書きされ、
+; common1.cns側の同じ番号のステートは無効になります。
+;
+; common1.cnsのプログラム優先度は最低に属しているので、
+; ステートの作成には番号に注意しないといけません。
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;---------------------------------------------------------------------------
