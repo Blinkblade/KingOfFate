@@ -6,7 +6,7 @@
 > It is updated whenever a phase changes state. Never mark a phase `PASS` while any
 > of its gates is unmet.
 
-Last updated: 2026-09-29
+Last updated: 2026-10-01
 
 ---
 
@@ -20,7 +20,7 @@ Last updated: 2026-09-29
 | **P3** | Test Fighter A | **PASS** |
 | **P4** | Test Fighter B | **PASS** |
 | **P5** | Character Asset Tooling | **PASS** |
-| **P6** | First Final-Art Character | **NEXT** |
+| **P6** | First Final-Art Character | **IN PROGRESS** |
 | **P7** | Character Skills & Presentation | NOT_STARTED |
 | **P8** | CPU AI v1 | NOT_STARTED |
 | **P9** | Utility AI | NOT_STARTED |
@@ -367,11 +367,52 @@ Two things from P4 are now stated on the tool side rather than in prose:
 
 ## P6 — First Final-Art Character
 
-**Status: NEXT**
+**Status: IN PROGRESS** (started 2026-09-30, branch `feature/p6-first-final-art-character`)
 
-Not started. The entry point is `docs/P5-summary.md`: the asset tool chain is in place,
-so this phase starts by running the new tools against the first real art set rather than
-by writing tooling.
+Goal: the project's first character that uses **final art** instead of KFM placeholder,
+standing on the architecture P1–P5 validated. Character: **Archer / EMIYA** (Fate), ID
+`archer`, Zoner skeleton inherited from `test_fighter_b`, art from the MUGEN community
+(registered in `assets/LICENSE_MANIFEST.csv`, non-commercial fanwork).
+
+**Done**
+
+- **Art source acquired and licensed**: kuri's MUGEN Archer/EMIYA (2005, SFF v1, 1047
+  sprites, 277 actions) — <https://mugenfreeforall.com/topic/48291-fate-series/>
+- **SFF v1 reading** (`tools/kofassets/sff.py`): the P5 tools rejected v1; P6 needs it.
+  Cross-checked against the engine's own decoder on the real file: 967 sprites, **0 pixel
+  mismatches**; 181 palettes, 0 mismatches.
+- **SFF v2 writing** (`tools/kofassets/sffwrite.py` + `tools/sffpack/sffpack.py
+  transcode`): v1 → v2 with an optional remap table; re-read and pixel-compared after
+  writing (967/967 exact); loads in the engine with 0 new crash logs.
+- **`game/chars/archer/`** — first playable build: Zoner skeleton + Archer art.
+  `archer.sff` = 202 sprites built by transcode from `design/characters/archer/asset_map.csv`
+  (202 rows, 0 unresolved). `validate_character`: **PASS, 0 errors, 0 warnings**.
+- **All 12 normals + specials + supers reach their states**, verified by reading the
+  engine's debug overlay (`tests/p6/demo_moves.ps1` + `read_move_evidence.py`): arrow 1000,
+  EX 1010, anti-air 1050/1051, bow 1100/1150, heel drop 1200, UBW 3100, super 3000.
+- **Unlimited Blade Works (State 3100)** implemented: 190-tick chant, 10 swords falling
+  from above the opponent, 450 damage total (vs 195 for the regular super).
+- **Two real defects closed**: actions 210/230/820 had ticks with **no hurtbox** (they could
+  not be hit); the projectile used the P4 placeholder (a whole standing figure) instead of
+  an arrow sprite.
+- **Temporary simplified commands** so the owner can verify by hand (hold a direction +
+  one of the two unused buttons). The real command definitions are kept in place; the
+  mapping and the exact restore steps are in `design/characters/archer/README.md` §6b.
+
+**Remaining before this phase can be called PASS**
+
+- [ ] Switch to the **high-resolution** art source (`assets/imports/archer_hires/README.md`)
+      and redo `asset_map.csv` against it. *(Blocked: the owner has to download the pack —
+      the MFFA links are behind a collapsed section and `r.jina.ai` now needs an API key.)*
+- [ ] Re-check every `Clsn1` against the new sprite geometry (the current boxes are P4
+      values measured for the KFM placeholder — see `design/characters/archer/README.md` §7)
+- [ ] Re-measure damage / power accounting for all moves on the final art, and re-take the
+      cancel-chain evidence (Gate 6)
+- [ ] Restore the real commands (236 / 623 / 236236) for delivery
+- [ ] `docs/P6-summary.md` + merge to `main` via PR
+
+**Evidence**: `docs/evidence/p6/` (decoder cross-check, pack inventory, move wiring).
+**Iteration note**: `docs/iterations/20261001-p6-first-final-art-character.md`.
 
 ---
 

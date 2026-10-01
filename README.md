@@ -10,7 +10,17 @@ tooling and testing** rather than re-implementing a fighting-game engine.
 
 ## Status
 
-**Current phase: `P5 — Character Asset Tooling` — ✅ PASS · next: `P6 — First Final-Art Character`**
+**Current phase: `P6 — First Final-Art Character` — 🚧 IN PROGRESS (branch
+`feature/p6-first-final-art-character`)**
+
+P6 is the first character that stands on **final art** instead of KFM placeholder:
+`game/chars/archer/` (Archer / EMIYA), built on the Zoner skeleton P4 validated, with the
+sprite set coming from the MUGEN community and every source registered in
+[`assets/LICENSE_MANIFEST.csv`](assets/LICENSE_MANIFEST.csv). It is playable now, with
+temporarily simplified commands so the moves can be verified by hand. The art source is
+being upgraded to a high-resolution pack before the phase is called done; the state of
+that, and everything already finished, is in
+[`docs/development_status.md`](docs/development_status.md).
 
 P1 validated the character execution chain by measurement, P2 turned it into a cloneable
 4-button template (`game/chars/_template/`), and P3 cloned that template into the project's
