@@ -413,6 +413,7 @@ standing on the architecture P1–P5 validated. Character: **Archer / EMIYA** (F
 
 **Evidence**: `docs/evidence/p6/` (decoder cross-check, pack inventory, move wiring).
 **Iteration note**: `docs/iterations/20261001-p6-first-final-art-character.md`.
+**Review and remaining checklist**: `docs/P6-review-and-plan.md`.
 
 ---
 
