@@ -1,44 +1,44 @@
-<#f0f000>:Archer (Emiya) - simplified commands:</>
-<#a0a0a0>:P6 build: hold a direction + one free key.:>
-<#a0a0a0>:Real KOF motions return at delivery.:>
+<#f0f000>:KingOfFate — Archer (Emiya) — 新操作体系:</>
+<#a0a0a0>:只用 A/S/Z/X  → 不耗气的普通招式</>
+<#a0a0a0>:带 C 或 D     → 消耗气槽的技能</>
+<#a0a0a0>:没有任何搓招，全部是「方向 + 按钮」</>
 
 
-<#f0f000>:Normal Attacks:</>
-Light Slash              (A)					^X
-Front Kick               (B)					^A
-Kanshou-Bakuya Slash     (C) - long reach		^Y
-Roundhouse               (D)					^B
-Crouch Heavy Slash       (C) - anti-air			_D_+^Y
-Taunt											^S
+<#f0f000>:【普通招式 · 不耗气】:</>
+
+站立  （A / S / Z / X）					A / S / Z / X
+蹲下  （↓ + A/S/Z/X）					_D_+A / _D_+S / _D_+Z / _D_+X
+空中  （跳起后 A/S/Z/X）					A / S / Z / X
+投技  （贴身 → 或 ← + S/X）				_F_+S / _B_+X
+嘲讽  （Enter）						^S
 
 
-<#f0f000>:Throws:</>
-Forward Throw									_F_+^Y
-Forward Throw									_F_+^B
-Back Throw										_B_+^Y
-Back Throw										_B_+^B
+<#f0f000>:【中型技能 · 带 C 键】:</>
+
+射箭         （C，300 气）				^C
+斜下射箭      （↓ + C，300 气）			_D_+^C
+升斬（对空）   （→ + C，400 气）			_F_+^C
+后撤投剑      （← + C，400 气）			_B_+^C
 
 
-<#f0f000>:Special Moves (simplified):</>
-Arrow Shot               (projectile)			_D_+^C
-Twin Arrow               (EX, 500 Power)		_B_+^C
-Rising Slash             (anti-air)				_F_+^C
+<#f0f000>:【大型技能 · 带 D 键】:</>
+
+幻想崩坏      （D，800 气）				^D
+突进斩        （→ + D，600 气）			_F_+^D
+跳劈下压      （↓ + D，600 气）			_D_+^D
 
 
-<#f0f000>:Super Moves (simplified):</>
-Broken Phantasm          (1000 Power, 3 shots)	_D_+^Z
-Unlimited Blade Works    (2000 Power, swords)	_B_+^Z
+<#f0f000>:【终极技 · C + D 同按】:</>
+
+无限剑制      （C + D，2000 气）			^C+^D
 
 
-<#f0f000>:Real commands (restored at delivery):</>
-Arrow Shot										_D_, _DF_, _F_, ^X
-Twin Arrow										_D_, _DF_, _F_, ^Y
-Rising Slash									_F_, _D_, _DF_, ^X
-Broken Phantasm									_D_, _DF_, _F_, _D_, _DF_, _F_, ^X
-Unlimited Blade Works							_B_, _DB_, _D_, _B_, _DB_, _D_, ^X
+<#f0f000>:【移动】:</>
+
+前冲  （→→）						_F_, _F_
+后跳  （←←）						_B_, _B_
 
 
-<#a0a0a0>:Buttons: X=Light Punch, A=Light Kick,</>
-<#a0a0a0>:Y=Heavy Punch, B=Heavy Kick. The specials use</>
-<#a0a0a0>:the Z and C buttons, which the four-button</>
-<#a0a0a0>:normals never use, so they never clash.:>
+<#a0a0a0>:按键：A 轻拳 / S 重拳 / Z 轻脚 / X 重脚</>
+<#a0a0a0>:C、D 是气键 —— 想省气就用 A/S/Z/X，</>
+<#a0a0a0>:想要大招就带上 C 或 D。</>

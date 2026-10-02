@@ -108,152 +108,131 @@ if roundState = 2 && !aiLevelF {
     # 气量检查在这里（路由层），扣气在 test_fighter_b.zss 的 State 1010 里。
     # lv4：可以从自由态起手，也可以从 lv1/lv2 普通技或 lv3 必杀取消进来。
     # ========================================================================
-    if command = "QCF_y" && power >= 500 && $canLv4 {
-        changeState{value: 1010}
-    }
-
     # ========================================================================
-    # 【② Super】236236 + A，消耗 1000 气（气槽上限 2000）
-    # 必须排在 ③ 前面：236236+A 的输入包含 236+A，写反了 Super 永远轮不到
-    # （.cmd 里 QCF2_x 也排在 QCF_x 前面 —— 两处都要正确）。
+    # 【① 终极技】C + D 同按，消耗 2000 气（整条气槽）
+    #   ★ 必须排在最前面：它比"单独 C / 单独 D"更窄，写反了就永远轮不到
     # ========================================================================
-    if command = "QCF2_x" && power >= 1000 && $canLv4 {
-        changeState{value: 3000}
-    }
-
-    # ========================================================================
-    # 【③ Projectile：气弹】236 + A，不耗气
-    # 本角色的主力。距离上完全不吃亏 —— 放出来就在天上飞。
-    # ========================================================================
-    if command = "QCF_x" && $canLv3 {
-        changeState{value: 1000}
-    }
-
-    # ========================================================================
-    # 【④ Anti-Air：升龙上勾拳】623 + A，不耗气
-    # 与 ③ 条件互不包含（623 与 236 的序列不同），不存在互相吞掉的问题。
-    # 与 Fighter A 的 ④（QCB_x 升龙踢）位置对应 —— 都是"对空"，
-    # 但指令形状不同（623 vs 214），是本角色独有的输入。
-    # ========================================================================
-    if command = "DP_x" && $canLv3 {
-        changeState{value: 1100}
-    }
-
-    # ========================================================================
-    # 【④b P6 临时「简化指令」】按住方向 + 一个空闲键（c / z）
-    #
-    # 目的：让负责人用键盘亲手验证招式。正式交付时整段删除，改回上面的
-    # ①②③④ 搓招（对照表：design/characters/archer/README.md）。
-    # 全部排在【⑤ 投技】之前：投技是「前/后 + y/b」，与这里的 c/z 不冲突，
-    # 但先判必杀可以避免贴身时按键被普通技吞掉。
-    # ========================================================================
-    # ↓ + c → 射箭（射贯），不耗气，lv3
-    if command = "SIMPLE_ARROW" && $canLv3 {
-        changeState{value: 1000}
-    }
-
-    # ← + c → 双连矢 EX，耗 500 气，lv4
-    if command = "SIMPLE_EX" && power >= 500 && $canLv4 {
-        changeState{value: 1010}
-    }
-
-    # → + c → 升斬（对空），不耗气，lv3
-    if command = "SIMPLE_AA" && $canLv3 {
-        changeState{value: 1100}
-    }
-
-    # ↓ + z → 幻想崩坏 Super，耗 1000 气，lv4
-    if command = "SIMPLE_SUPER" && power >= 1000 && $canLv4 {
-        changeState{value: 3000}
-    }
-
-    # ← + z → 无限剑制（P6 简化剑雨版，耗 2000 气 = 整槽），lv4，State 3100
-    if command = "SIMPLE_UBW" && power >= 2000 && $canLv4 {
+    if command = "GAS_CZ" && power >= 2000 && $canLv4 {
         changeState{value: 3100}
     }
 
     # ========================================================================
-    # 【⑤ 投技】KOF 惯例：贴身 + 前/后 + C 或 D
-    # 必须排在 ⑨ 的单按 y / b 前面，否则永远轮不到。
-    # 只在"自由站立"时可用（不进取消链 —— 投技不是连段部件）。
-    # Zoner 用它把贴住自己的对手推开，重新拿回距离。
+    # 【② 大型技能】D 系（键盘 D = 按钮 z），消耗 600~800 气
+    #   →D 突进 / ↓D 压制 / D 中立终结。方向表达**意图**（总纲 §3.4）
+    # ========================================================================
+    if command = "GAS_FZ" && power >= 600 && $canLv4 {
+        changeState{value: 1300}
+    }
+
+    if command = "GAS_DZ" && power >= 600 && $canLv4 {
+        changeState{value: 1400}
+    }
+
+    if command = "GAS_Z" && power >= 800 && $canLv4 {
+        changeState{value: 3000}
+    }
+
+    # ========================================================================
+    # 【③ 中型技能】C 系（键盘 C = 按钮 c），消耗 300~400 气
+    #   C 射箭 / ↓C 斜下射 / →C 升斬 / ←C 后撤投剑
+    # ========================================================================
+    if command = "GAS_BC" && power >= 400 && $canLv3 {
+        changeState{value: 1200}
+    }
+
+    if command = "GAS_FC" && power >= 400 && $canLv3 {
+        changeState{value: 1100}
+    }
+
+    if command = "GAS_DC" && power >= 300 && $canLv3 {
+        changeState{value: 1150}
+    }
+
+    if command = "GAS_C" && power >= 300 && $canLv3 {
+        changeState{value: 1000}
+    }
+
+    # ========================================================================
+    # 【④ 投技】贴身 + 前/后 + 重拳或重脚（不耗气）
+    #   比 ⑧ 的站立单按窄，必须排在其前面
     # ========================================================================
     if (command = "y" || command = "b") && stateType = S && ctrl &&
-        (p2StateType = S || p2StateType = C) && p2MoveType != H &&
         ((command = "holdfwd" && p2BodyDist X < 3) ||
             (command = "holdback" && p2BodyDist X < 5)) {
         changeState{value: 800}
     }
 
     # ========================================================================
-    # 【⑥ 双击方向：前冲 / 后跳】均由公共状态提供（State 100 / 105）
+    # 【⑤ 前冲 / 后跳】→→ / ←←
     # ========================================================================
     if command = "FF" && stateType = S && ctrl {
         changeState{value: 100}
     }
+
     if command = "BB" && stateType = S && ctrl {
         changeState{value: 105}
     }
 
     # ========================================================================
-    # 【⑦ 蹲普通技】下 + A/B/C/D
-    #   x = 蹲 A 轻拳 → 400    a = 蹲 B 轻脚 → 430
-    #   y = 蹲 C 重拳 → 410 ★ 对空 Normal    b = 蹲 D 重脚 → 440
-    # 必须写成 command = "holddown"：不写就会被 ⑨ 的站立规则抢走。
+    # 【⑥ 蹲普通技】↓ + A / S / Z / X（不耗气）
+    #   ★ 必须写 command = "holddown"，否则会被 ⑧ 的站立规则抢走
     # ========================================================================
     if command = "x" && command = "holddown" && stateType = C && $canLv1 {
         changeState{value: 400}
     }
+
     if command = "a" && command = "holddown" && stateType = C && $canLv1 {
         changeState{value: 430}
     }
+
     if command = "y" && command = "holddown" && stateType = C && $canLv2 {
         changeState{value: 410}
     }
+
     if command = "b" && command = "holddown" && stateType = C && $canLv2 {
         changeState{value: 440}
     }
 
     # ========================================================================
-    # 【⑧ 空中普通技】A/B/C/D
-    # 不做 CanChain 判定：空中招不接取消链（原因见文件头）。
+    # 【⑦ 空中普通技】空中 + A / S / Z / X（不耗气，不参与取消链）
     # ========================================================================
     if command = "x" && stateType = A && ctrl {
         changeState{value: 600}
     }
+
     if command = "a" && stateType = A && ctrl {
         changeState{value: 630}
     }
+
     if command = "y" && stateType = A && ctrl {
         changeState{value: 610}
     }
+
     if command = "b" && stateType = A && ctrl {
         changeState{value: 640}
     }
 
     # ========================================================================
-    # 【⑨ 站立普通技】KingOfFate 四键
-    #   x = A 轻拳 → 200      a = B 轻脚 → 230
-    #   y = C 重拳 → 210 ★ 长手    b = D 重脚 → 240
-    # command != "holddown" 保证"下+键"走 ⑦ 的蹲攻，不会误触发站立技。
-    # CanChain(1) 让轻招只能从自由态起手（不能"重取消回轻"）；
-    # CanChain(2) 让重招既能自由起手，也能从 lv1 轻招取消进来。
+    # 【⑧ 站立普通技】A / S / Z / X（不耗气）
     # ========================================================================
     if command = "x" && command != "holddown" && stateType = S && $canLv1 {
         changeState{value: 200}
     }
+
     if command = "a" && command != "holddown" && stateType = S && $canLv1 {
         changeState{value: 230}
     }
+
     if command = "y" && command != "holddown" && stateType = S && $canLv2 {
         changeState{value: 210}
     }
+
     if command = "b" && command != "holddown" && stateType = S && $canLv2 {
         changeState{value: 240}
     }
 
     # ========================================================================
-    # 【⑩ 嘲讽】
+    # 【⑨ 嘲讽】
     # ========================================================================
     if command = "start" && command != "holddown" && stateType != A && ctrl {
         changeState{value: 195}

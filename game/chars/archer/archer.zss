@@ -1614,6 +1614,227 @@ if time = 1 {
 
 call EndState(0);
 
+
+# ============================================================================
+# ★ P6 新操作体系：斜下射箭 —— StateDef 1150
+#   ↓C —— 打蹲防与落地，飞行道具 / 下段
+#   消耗 300 气 | lv3 | 伤害 55
+# ============================================================================
+[StateDef 1150;
+type: S; movetype: A; physics: S;
+juggle: 3; velset: 0, 0; ctrl: 0;
+anim: 1150;
+poweradd: 0;
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -300}
+    call AtkInit(3);
+    call ProjInit();
+}
+
+if animElem = 4 && var(10) = 0 {
+    var(10) := 1;
+    projectile{
+        projanim: 1005;
+        projid: 1150;
+        postype: p1;
+        offset: 84, -95;
+        velocity: 7, 3;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 2;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, SP;
+        damage: 55, 4;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 18;
+        ground.velocity: -4;
+        airguard.velocity: -3, -1.3;
+        air.velocity: -3, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★ P6 新操作体系：后撤投剑 —— StateDef 1200
+#   ←C —— 拉开距离的同时投出剑，中距离 / 拉开
+#   消耗 400 气 | lv3 | 伤害 65
+# ============================================================================
+[StateDef 1200;
+type: S; movetype: A; physics: S;
+juggle: 3; velset: 0, 0; ctrl: 0;
+anim: 1200;
+poweradd: 0;
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -400}
+    call AtkInit(3);
+    call ProjInit();
+}
+
+if animElem = 4 && var(10) = 0 {
+    var(10) := 1;
+    projectile{
+        projanim: 1005;
+        projid: 1200;
+        postype: p1;
+        offset: 40, -90;
+        velocity: -6, 0;
+        projhits: 1;
+        projremovetime: 90;
+        projpriority: 2;
+        projsprpriority: 3;
+        projedgebound: 40;
+        projstagebound: 40;
+        attr: S, SP;
+        damage: 65, 4;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: 2;
+        sparkxy: 0, -60;
+        hitsound: 5, 5;
+        guardsound: 6, 0;
+        ground.type: High;
+        ground.slidetime: 12;
+        ground.hittime: 18;
+        ground.velocity: -4;
+        airguard.velocity: -3, -1.3;
+        air.velocity: -3, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 4, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★ P6 新操作体系：突进斩 —— StateDef 1300
+#   →D —— 突进接近，中距离 / 突进 / 破防
+#   消耗 600 气 | lv3 | 伤害 85
+# ============================================================================
+[StateDef 1300;
+type: S; movetype: A; physics: S;
+juggle: 3; velset: 0, 0; ctrl: 0;
+anim: 1300;
+poweradd: 0;
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -600}
+    call AtkInit(3);
+    velSet{x: 7.5}
+}
+
+if animElem = 6 {
+    var(4) := 1;
+    hitDef{
+        attr: S, SA;
+        damage: 85, 6;
+        animtype: Hard;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 12, 12;
+        sparkno: 3;
+        sparkxy: 0, -90;
+        hitsound: 5, 4;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 20;
+        ground.hittime: 22;
+        ground.velocity: -6;
+        airguard.velocity: -3, -3;
+        air.velocity: -3, -8;
+        air.hittime: 24;
+        fall: 1;
+        fall.recover: 1;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
+# ★ P6 新操作体系：跳劈下压 —— StateDef 1400
+#   ↓D —— 压制起手，近身 / 破防
+#   消耗 600 气 | lv3 | 伤害 90
+# ============================================================================
+[StateDef 1400;
+type: S; movetype: A; physics: S;
+juggle: 3; velset: 0, 0; ctrl: 0;
+anim: 1400;
+poweradd: 0;
+sprpriority: 2;]
+
+if time = 0 {
+    powerAdd{value: -600}
+    call AtkInit(3);
+}
+
+if animElem = 6 {
+    var(4) := 1;
+    hitDef{
+        attr: S, SA;
+        damage: 90, 6;
+        animtype: Up;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 12, 12;
+        sparkno: 3;
+        sparkxy: 0, -90;
+        hitsound: 5, 4;
+        guardsound: 6, 0;
+        ground.type: Low;
+        ground.slidetime: 20;
+        ground.hittime: 22;
+        ground.velocity: -2;
+        airguard.velocity: -3, -3;
+        air.velocity: -3, -8;
+        air.hittime: 24;
+        fall: 1;
+        fall.recover: 1;
+    }
+}
+
+if time = 1 {
+    call CSnd(0, 2, 1);
+}
+
+call EndState(0);
+
 # ============================================================================
 # [StateDef -3] —— 每 tick 执行，且只在角色自己的状态文件内生效
 # （与 -1 的区别见架构文档 §4.3）。与模板一样保持为空 ——
