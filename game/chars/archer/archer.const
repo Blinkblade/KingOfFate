@@ -67,9 +67,9 @@ draw.offset         = 0,0     ; 绘制偏移，建议 0,0
 ; 这是 P1 实验 E1 直接验证过的：walk.fwd 就是每 tick 的 x 位移
 ; ---------------------------------------------------------------------------
 [Velocity]
-walk.fwd                        = 2.1      ; 前进速度 —— ★ Zoner：推进比 Fighter A(2.4) 慢
-walk.back                       = -2.4     ; 后退速度 —— ★ Zoner：后撤比 Fighter A(-2.2) 快
-run.fwd                         = 4.6, 0   ; 前冲（x, y）
+walk.fwd                         = 2.4       ; ★ P6：采用 kuri 的移动速度（角色专属）
+walk.back                        = -2.2      ; ★ P6：采用 kuri 的移动速度（角色专属）
+run.fwd                          = 6, 0      ; ★ P6：采用 kuri 的移动速度（角色专属）
 run.back                        = -4.5,-3.8; 后跳（x, y）
 jump.neu                        = 0,-8.4   ; 原地跳（x, y）
 jump.back                       = -2.55    ; 后跳 x 速度
