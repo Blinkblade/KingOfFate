@@ -49,10 +49,10 @@ FloatPersistIndex    = 40     ; 该索引及以上的浮点变量跨回合保留
 [Size]
 xscale              = 0.48    ; 水平缩放（★ P6：高清素材 162x249 缩到与 KFM 占位同高）
 yscale              = 0.48    ; 垂直缩放（★ P6：同上）
-ground.back         = 15      ; 推挤盒：身后宽度
-ground.front        = 16      ; 推挤盒：身前宽度
-air.back            = 12      ; 空中推挤盒：身后
-air.front           = 12      ; 空中推挤盒：身前
+ground.back         = 31      ; 推挤盒：身后宽度
+ground.front        = 33      ; 推挤盒：身前宽度
+air.back            = 25      ; 空中推挤盒：身后
+air.front           = 25      ; 空中推挤盒：身前
 height              = 60      ; 身高
 attack.dist         = 160     ; 默认攻击距离（AI 会用 const(size.attack.dist) 读）
 proj.attack.dist    = 90      ; 投射物默认攻击距离
