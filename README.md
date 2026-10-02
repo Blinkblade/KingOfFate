@@ -2,9 +2,27 @@
 
 A 2D fighting game project built on top of the **[IKEMEN GO](https://github.com/ikemen-engine/Ikemen-GO)** engine.
 
-KingOfFate targets a classic 4-button KOF-style fighting experience (light punch / light kick / heavy punch /
-heavy kick, throws, specials, supers) and focuses on **game content, character design, combat rules, CPU AI,
-tooling and testing** rather than re-implementing a fighting-game engine.
+KingOfFate focuses on **game content, character design, combat rules, CPU AI, tooling and testing**
+rather than re-implementing a fighting-game engine.
+
+### 设计宗旨（2026-10-02 定版）
+
+> **让每个人都能轻松放技能的格斗游戏。**
+
+- **人人能放**：没有任何搓招。所有技能都是「方向 + 按钮」或「按钮 + 按钮」。
+- **量大管饱**：招式多、量大。每个角色 12 个普通招式起、8 个以上气键技能。
+- **反制为纲**：策略深度来自「用自己的一整套招式去反制对方可能放出的各种技能」，
+  而不是来自把指令搓成连招。
+
+**操作分层只有一条规则**：
+
+```text
+只用 A / S / Z / X   →  不耗气的普通招式（轻拳 / 重拳 / 轻脚 / 重脚）
+带 C 或 D            →  消耗气槽的技能（C = 中型，D = 大型，C+D = 终极技）
+```
+
+完整设计见 **[`docs/game-design-charter.md`](docs/game-design-charter.md)（游戏设计总纲）**。
+该文件是方向性文件，高于阶段计划与迭代记录。
 
 ---
 
