@@ -149,7 +149,18 @@ def cmd_transcode(args):
                             "supports palette-indexed sources"
                             % (sg, si, src.format_name))
             continue
-        colours = source.palettes[src.pal_index].colours
+        # --force-palette exists because a source container's per-sprite palette
+        # bank cannot be trusted blindly: some packs carry a stale debug bank on
+        # a few sprites (the high-res Archer has 69 sprites -- idle, walk, jump --
+        # pointing at a bank of pure green/magenta/blue, while the other 643 use
+        # the real palette). Forcing one bank makes the whole set consistent.
+        pal_index = (args.force_palette if args.force_palette is not None
+                     else src.pal_index)
+        if pal_index >= len(source.palettes):
+            problems.append("sprite (%d,%d) wants palette %d but the source has "
+                            "only %d" % (sg, si, pal_index, len(source.palettes)))
+            continue
+        colours = source.palettes[pal_index].colours
         pal_key = tuple(colours)
         out_index = len(out_sprites)
         out_sprites.append({
@@ -241,6 +252,9 @@ def main(argv=None):
     tr.add_argument("--out", required=True)
     tr.add_argument("--remap")
     tr.add_argument("--report")
+    tr.add_argument("--force-palette", type=int, default=None, metavar="N",
+                    help="render every sprite through palette N instead of "
+                         "each sprite's own bank (some packs ship stale banks)")
     args = parser.parse_args(argv)
     if args.command == "transcode":
         return cmd_transcode(args)

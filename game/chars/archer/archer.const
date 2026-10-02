@@ -56,7 +56,7 @@ air.front           = 12      ; 空中推挤盒：身前
 height              = 60      ; 身高
 attack.dist         = 160     ; 默认攻击距离（AI 会用 const(size.attack.dist) 读）
 proj.attack.dist    = 90      ; 投射物默认攻击距离
-proj.doscale        = 0       ; 1 = 投射物也跟随缩放
+proj.doscale        = 1       ; ★ P6：投射物跟随角色缩放（高清素材要缩到 0.48，否则箭/剑原样放大）
 head.pos            = -5,-90  ; 头部大致位置
 mid.pos             = -5,-60  ; 腰部大致位置
 shadowoffset        = 0       ; 影子垂直偏移
