@@ -15,6 +15,8 @@ Rule reference (used by the docs and by the tests):
     AIR_ATTACK_NOT_PERSISTENT   attack box on an earlier element, none on the -1 hold
     AIR_ATTACK_PERSISTENT       attack box on an -1 hold, provided by Clsn1Default
     AIR_HURTBOX_GAP             some elements have a hurtbox, others in the same action do not
+    AIR_NO_HURTBOX              an action has no hurtbox anywhere; WARNING when it attacks
+                               (invulnerable for the whole move), INFO when it does not
     AIR_NO_HURTBOX              no element of the action has a hurtbox
     AIR_DEGENERATE_BOX          a collision box with zero area
     AIR_BOX_OUT_OF_RANGE        a collision box far outside the character's size
@@ -215,10 +217,25 @@ def check_collision_semantics(air):
                          "to cover the whole action. No hurtbox means the character cannot be hit "
                          "during those ticks"))
             elif not covered:
-                findings.append(Finding(
-                    INFO, "AIR_NO_HURTBOX",
-                    "action %d has no hurtbox on any element" % action.number,
-                    file=air.path, action=action.number, line=action.line))
+                # An action that attacks but cannot be hit at all is a bug, not a
+                # style choice: the character is invulnerable for the whole move.
+                # It used to be INFO, which is how thirteen Archer actions lost
+                # their hurtboxes to a bad edit script without anyone noticing.
+                attacks = [e for e in action.elements if e.clsn1]
+                if attacks:
+                    ticks = sum(e.time for e in action.elements if e.time > 0)
+                    findings.append(Finding(
+                        WARNING, "AIR_NO_HURTBOX",
+                        "action %d attacks on %d element(s) but has no hurtbox (Clsn2) on any "
+                        "element -- the character is invulnerable for the whole %d tick(s)"
+                        % (action.number, len(attacks), ticks),
+                        file=air.path, action=action.number, line=action.line,
+                        hint="declare 'Clsn2Default:' at the top of the action"))
+                else:
+                    findings.append(Finding(
+                        INFO, "AIR_NO_HURTBOX",
+                        "action %d has no hurtbox on any element" % action.number,
+                        file=air.path, action=action.number, line=action.line))
 
         # Degenerate or implausible boxes.
         for element in action.elements:
