@@ -227,7 +227,7 @@ if animElem = 5 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -70;
-        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
+        hitsound: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 9;
@@ -322,7 +322,7 @@ if animElem = 3 {
         pausetime: 13, 13;
         sparkno: 0;
         sparkxy: -10, -66;
-        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
+        hitsound: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 10;
@@ -425,7 +425,7 @@ if animElem = 3 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -95;        # 火花在头顶
-        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
+        hitsound: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 10;
@@ -472,7 +472,7 @@ if animElem = 3 {
         pausetime: 9, 9;
         sparkno: 0;
         sparkxy: -10, -14;
-        hitsound:: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
+        hitsound: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 6;
@@ -519,7 +519,7 @@ if animElem = 4 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -5, -10;
-        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
+        hitsound: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Trip;
         ground.slidetime: 10;
@@ -610,7 +610,7 @@ if animElem = 3 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -55;
-        hitsound:: 40, 0;   # [P6] 原 5,3 在本角色音效库里不存在
+        hitsound: 40, 0;   # [P6] 原 5,3 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 12;
@@ -698,7 +698,7 @@ if animElem = 2 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -40;
-        hitsound:: 40, 0;   # [P6] 原 5,3 在本角色音效库里不存在
+        hitsound: 40, 0;   # [P6] 原 5,3 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 12;
@@ -791,7 +791,7 @@ if animElem = 7 {
 }
 
 if animElem = 7 {
-    call CSnd(800, 0   # [P6] 原 800,1 在本角色音效库里不存在, 1);
+    call CSnd(800, 0, 1);   # [P6] 原 800,1 在本角色音效库里不存在，改为 800,0
 }
 
 call EndState(0);
@@ -865,7 +865,7 @@ if animElem = 4 && var(10) = 0 {
         pausetime: 11, 11;
         sparkno: 0;
         sparkxy: -10, -60;
-        hitsound:: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
+        hitsound: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 9;
@@ -940,7 +940,7 @@ if animElem = 3 && var(10) = 0 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -70;
-        hitsound:: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
+        hitsound: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 10;
@@ -977,7 +977,7 @@ if animElem = 5 && var(10) = 1 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -55;
-        hitsound:: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
+        hitsound: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 10;
@@ -1045,7 +1045,7 @@ if animElem = 7 {
         pausetime: 14, 14;
         sparkno: 3;
         sparkxy: 0, -130;         # 火花位置高 —— 在头顶之上
-        hitsound:: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
+        hitsound: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 22;
@@ -1123,7 +1123,7 @@ if animElem = 4 && var(10) = 0 {
         pausetime: 14, 14;
         sparkno: 2;
         sparkxy: -10, -74;
-        hitsound:: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
+        hitsound: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 12;
@@ -1160,7 +1160,7 @@ if animElem = 7 && var(10) = 1 {
         pausetime: 14, 14;
         sparkno: 2;
         sparkxy: -10, -66;
-        hitsound:: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
+        hitsound: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 12;
@@ -1197,7 +1197,7 @@ if animElem = 9 && var(10) = 2 {
         pausetime: 14, 14;
         sparkno: 2;
         sparkxy: -10, -58;
-        hitsound:: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
+        hitsound: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 12;

@@ -188,7 +188,7 @@ if animElem = 5 {
         pausetime: 12, 12;            # 重技停顿更久 → 手感更"重"
         sparkno: 0;
         sparkxy: -10, -76;
-        hitsound:: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
+        hitsound: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 8;
@@ -274,7 +274,7 @@ if animElem = 3 {
         pausetime: 13, 13;
         sparkno: 0;
         sparkxy: -10, -66;
-        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
+        hitsound: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 10;
@@ -384,7 +384,7 @@ if animElem = 7 {
 }
 
 if animElem = 7 {
-    call CSnd(800, 0   # [P6] 原 800,1 不存在, 1);
+    call CSnd(800, 0, 1);   # [P6] 原 800,1 在本角色音效库里不存在，改为 800,0
 }
 
 call EndState(0);
@@ -433,7 +433,7 @@ if animElem = 6 {
             priority: 5, Hit;
             pausetime: 15, 15;
             sparkxy: -10, -60;
-            hitsound:: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
+            hitsound: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
             guardsound: 6, 0;
             ground.type: Low;
             ground.slidetime: 12;
@@ -452,7 +452,7 @@ if animElem = 6 {
             priority: 4, Hit;
             pausetime: 15, 15;
             sparkxy: -10, -60;
-            hitsound:: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
+            hitsound: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
             guardsound: 6, 0;
             ground.type: Low;
             ground.slidetime: 12;
@@ -509,7 +509,7 @@ if animElem = 6 {
         priority: 5, Hit;
         pausetime: 18, 18;
         sparkxy: -10, -60;
-        hitsound:: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
+        hitsound: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 16;

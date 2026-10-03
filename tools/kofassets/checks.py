@@ -17,6 +17,8 @@ Rule reference (used by the docs and by the tests):
     AIR_HURTBOX_GAP             some elements have a hurtbox, others in the same action do not
     AIR_NO_HURTBOX              an action has no hurtbox anywhere; WARNING when it attacks
                                (invulnerable for the whole move), INFO when it does not
+    ZSS_DOUBLE_COLON            a key written with two colons; the engine then refuses to
+                               load the character at all
     AIR_NO_HURTBOX              no element of the action has a hurtbox
     AIR_DEGENERATE_BOX          a collision box with zero area
     AIR_BOX_OUT_OF_RANGE        a collision box far outside the character's size
@@ -111,6 +113,63 @@ def check_air_structure(air):
     for problem in air.problems:
         if problem.code.startswith("AIR_DUPLICATE") or problem.code == "AIR_ACTION_PROBLEM":
             findings.append(problem)
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# ZSS syntax sanity
+
+
+def _strip_zss_noise(text):
+    """Remove comments and quoted strings so bracket counting means something.
+
+    Without this, a comment like "# (P3)" or a default value in a string makes
+    every balance check a false positive.
+    """
+    out = []
+    for line in text.splitlines():
+        cut = len(line)
+        hash_at = line.find("#")
+        if hash_at >= 0:
+            cut = min(cut, hash_at)
+        code = line[:cut]
+        if '"' in code:
+            code = code.split('"')[0]
+        out.append(code)
+    return "\n".join(out)
+
+
+def check_zss_syntax_sanity(script_paths):
+    """Cheap lint that catches edits which make the script unloadable.
+
+    validate_character resolves animation and sound references, but it does not
+    parse the state language. A stray double colon passes every other check and
+    then the engine refuses to load the character, which presents as "the game
+    broke" rather than "one line is malformed". Such an edit shipped here once
+    and broke three characters at the same time.
+    """
+    findings = []
+    for path in script_paths:
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+        except OSError:
+            continue
+        name = os.path.basename(path)
+        code = _strip_zss_noise(text)
+        for number, line in enumerate(code.splitlines(), 1):
+            hit = re.search(r"([A-Za-z_][A-Za-z0-9_]*)::", line)
+            if hit:
+                findings.append(Finding(
+                    ERROR, "ZSS_DOUBLE_COLON",
+                    "%s has '%s::' -- the state language uses a single colon, so "
+                    "the engine will refuse to load this character" % (name, hit.group(1)),
+                    file=path, line=number,
+                    hint="looks like a scripted edit that appended a colon to a key "
+                         "that already had one"))
+        # Bracket balance is deliberately not checked: comments and default
+        # values in this language make any cheap count unreliable, and a lint
+        # that cries wolf gets ignored. The engine reports real imbalance.
     return findings
 
 
