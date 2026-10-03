@@ -847,7 +847,8 @@ if animElem = 4 && var(10) = 0 {
         projanim: 1005;
         projid: 1000;
         postype: p1;
-        offset: 84, -60;          # ★ 修：原 -95 是弓的高度，但站立受击框只到 -93 → 箭从头顶飞过打不到人。
+        offset: 84, -85;          # ★ 修：贴近弓的高度-95（原 -60 太低，视觉上像从大腿射出）
+                                 #   判定框已向下延伸到 +20，飞行高度 -95~-65 覆盖躯干，但站立受击框只到 -93 → 箭从头顶飞过打不到人。
                                  #   降到胸口 -60：能打到站立对手，且跳起来可躲（正确的投射物交互）
         velocity: 6, 0;           # 每 tick 前进 6 px（方向由朝向决定）
         projhits: 1;              # ① 命中 1 次即消失
@@ -929,7 +930,7 @@ if animElem = 3 && var(10) = 0 {
         projanim: 1005;
         projid: 1001;
         postype: p1;
-        offset: 84, -60;          # ★ 同射箭修正（旧 EX）
+        offset: 84, -85;          # ★ 同上
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -966,7 +967,7 @@ if animElem = 5 && var(10) = 1 {
         projanim: 1005;
         projid: 1002;
         postype: p1;
-        offset: 84, -60;          # ★ 同上修正
+        offset: 84, -85;          # ★ 同上
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -1112,7 +1113,7 @@ if animElem = 4 && var(10) = 0 {
         projanim: 1005;
         projid: 3001;
         postype: p1;
-        offset: 84, -60;          # ★ Super 第一发（胸口高度）
+        offset: 84, -95;          # ★ Super 第一发
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1149,7 +1150,7 @@ if animElem = 7 && var(10) = 1 {
         projanim: 1005;
         projid: 3002;
         postype: p1;
-        offset: 84, -75;          # ★ Super 第二发（略高，仍是躯干范围内）
+        offset: 84, -85;          # ★ Super 第二发
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1186,7 +1187,7 @@ if animElem = 9 && var(10) = 2 {
         projanim: 1005;
         projid: 3003;
         postype: p1;
-        offset: 84, -45;          # ★ Super 第三发（略低）
+        offset: 84, -75;          # ★ Super 第三发
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1850,21 +1851,24 @@ call EndState(0);
 #   前 2 帧无受击框（无敌），其后恢复受击框 → 甩空会被惩罚
 # ============================================================================
 [StateDef 110;
-type: S; movetype: I; physics: S;
+type: S; physics: S;
 anim: 110;
-ctrl: 0; velset: 0, 0;
+ctrl: 0;
 sprpriority: 2;]
 
+velSet{x: 11}          # ★ 状态级：每 tick 生效（照抄 common1.cns.zss 的前冲写法）
+                       #   原来写在 `if time = 0` 里 = 只生效一帧，所以人物不动
 if time = 0 {
-    velSet{x: 10}
     call CSnd(9000, 3, 1);
 }
 
-if time = 4 {
-    velSet{x: 0}
+if time = 12 {
+    velSet{x: 0}       # 第 12 tick 停住 → 其后 8 tick 是可被惩罚的收招
 }
 
-call EndState(0);
+if time = 19 {
+    changeState{value: 0; ctrl: 1}
+}
 
 
 # ============================================================================
@@ -1874,21 +1878,24 @@ call EndState(0);
 #   前 2 帧无受击框（无敌），其后恢复受击框 → 甩空会被惩罚
 # ============================================================================
 [StateDef 115;
-type: S; movetype: I; physics: S;
+type: S; physics: S;
 anim: 115;
-ctrl: 0; velset: 0, 0;
+ctrl: 0;
 sprpriority: 2;]
 
+velSet{x: -10}          # ★ 状态级：每 tick 生效（照抄 common1.cns.zss 的前冲写法）
+                       #   原来写在 `if time = 0` 里 = 只生效一帧，所以人物不动
 if time = 0 {
-    velSet{x: -9}
     call CSnd(9000, 3, 1);
 }
 
-if time = 4 {
-    velSet{x: 0}
+if time = 12 {
+    velSet{x: 0}       # 第 12 tick 停住 → 其后 8 tick 是可被惩罚的收招
 }
 
-call EndState(0);
+if time = 19 {
+    changeState{value: 0; ctrl: 1}
+}
 
 
 # ============================================================================
@@ -1898,21 +1905,24 @@ call EndState(0);
 #   前 2 帧无受击框（无敌），其后恢复受击框 → 甩空会被惩罚
 # ============================================================================
 [StateDef 117;
-type: S; movetype: I; physics: S;
+type: S; physics: S;
 anim: 117;
-ctrl: 0; velset: 0, 0;
+ctrl: 0;
 sprpriority: 2;]
 
+velSet{x: 0}          # ★ 状态级：每 tick 生效（照抄 common1.cns.zss 的前冲写法）
+                       #   原来写在 `if time = 0` 里 = 只生效一帧，所以人物不动
 if time = 0 {
-    velSet{x: 0}
     call CSnd(9000, 3, 1);
 }
 
-if time = 4 {
-    velSet{x: 0}
+if time = 12 {
+    velSet{x: 0}       # 第 12 tick 停住 → 其后 8 tick 是可被惩罚的收招
 }
 
-call EndState(0);
+if time = 19 {
+    changeState{value: 0; ctrl: 1}
+}
 
 # ============================================================================
 # [StateDef -3] —— 每 tick 执行，且只在角色自己的状态文件内生效
