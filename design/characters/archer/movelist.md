@@ -3,6 +3,7 @@
 > **表里所有数值都是从 `archer.air` 实测出来的**（判定框、三段时序），不是设计意图。
 > 改了 `.air` 就重跑下面的算法，别手改这张表。
 > 方向依据：[`game-design-charter.md`](../../docs/game-design-charter.md)（总纲）
+> 用词说明：[`docs/GLOSSARY.md`](../../docs/GLOSSARY.md)（术语表）
 
 ---
 
