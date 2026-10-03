@@ -642,7 +642,7 @@ if time = 0 {
     call AtkInit(1);
 }
 
-if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 2）
+if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 2）   # [对齐] 判定帧
     var(4) := 1;
     hitDef{
         attr: A, NA;
@@ -686,7 +686,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 3 帧（原写 2）
+if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 3 帧（原写 2）   # [对齐] 判定帧
     var(4) := 1;
     hitDef{
         attr: A, NA;
@@ -1037,7 +1037,7 @@ if time = 0 {
 }
 
 # 起手时极小的前压（8 px）：避免贴身时判定框完全包住自己
-if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 3）
+if animElem = 2 {          # ★ 起手段的极小前压（8px）——**不是**判定帧，勿被对齐脚本改走
     posAdd{x: 8}
 }
 
