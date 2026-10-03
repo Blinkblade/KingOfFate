@@ -240,7 +240,7 @@ if animElem = 5 {
         pausetime: 12, 12;            # 重技停顿更久 → 手感更"重"
         sparkno: 0;
         sparkxy: -10, -76;
-        hitsound: 5, 1;
+        hitsound:: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 8;
@@ -341,7 +341,7 @@ if animElem = 3 {
         pausetime: 13, 13;
         sparkno: 0;
         sparkxy: -10, -66;
-        hitsound: 5, 2;
+        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 10;
@@ -447,7 +447,7 @@ if animElem = 3 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -55;
-        hitsound: 5, 2;
+        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 12;
@@ -495,7 +495,7 @@ if animElem = 3 {
         pausetime: 9, 9;
         sparkno: 0;
         sparkxy: -10, -14;
-        hitsound: 5, 1;
+        hitsound:: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 6;
@@ -548,7 +548,7 @@ if animElem = 4 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -5, -10;
-        hitsound: 5, 2;
+        hitsound:: 11, 0;   # [P6] 原 5,2 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Trip;        # ★ 绊倒：对手走"被扫倒"动画
         ground.slidetime: 10;
@@ -653,7 +653,7 @@ if animElem = 3 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -55;
-        hitsound: 5, 3;
+        hitsound:: 40, 0;   # [P6] 原 5,3 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 12;
@@ -744,7 +744,7 @@ if animElem = 2 {
         pausetime: 12, 12;
         sparkno: 1;
         sparkxy: -10, -40;
-        hitsound: 5, 3;
+        hitsound:: 40, 0;   # [P6] 原 5,3 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 12;
@@ -852,7 +852,7 @@ if animElem = 7 {
 }
 
 if animElem = 7 {
-    call CSnd(800, 1, 1);
+    call CSnd(800, 0   # [P6] 原 800,1 不存在, 1);
 }
 
 call EndState(0);
@@ -906,7 +906,7 @@ if animElem = 6 {
         pausetime: 15, 15;
         sparkno: 1;
         sparkxy: -10, -60;
-        hitsound: 5, 4;
+        hitsound:: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 12;
@@ -972,7 +972,7 @@ if animElem = 7 {
         pausetime: 14, 14;
         sparkno: 3;
         sparkxy: 0, -110;         # 火花位置高 —— 在头顶
-        hitsound: 5, 4;
+        hitsound:: 100, 0;   # [P6] 原 5,4 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 22;
@@ -1041,7 +1041,7 @@ if animElem = 6 {
         pausetime: 18, 18;
         sparkno: 2;
         sparkxy: -10, -60;
-        hitsound: 5, 5;
+        hitsound:: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 16;
@@ -1115,7 +1115,7 @@ if animElem = 7 {
         pausetime: 22, 22;
         sparkno: 2;
         sparkxy: -10, -66;
-        hitsound: 5, 5;
+        hitsound:: 5, 0;   # [P6] 原 5,5 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: Low;
         ground.slidetime: 26;

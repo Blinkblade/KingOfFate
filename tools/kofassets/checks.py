@@ -115,6 +115,58 @@ def check_air_structure(air):
 
 
 # ---------------------------------------------------------------------------
+# Sound references
+
+
+def check_sound_references(script_paths, sound):
+    """Every sound a state script plays must exist in the SND.
+
+    Swapping the sound bank without remapping the script leaves a character
+    that loads and fights but is silent, because a missing sound is not an
+    engine error. That happened here once, so it is checked now.
+    """
+    findings = []
+    # An empty bank cannot be judged: some fixtures ship a placeholder .snd.
+    # Only a populated bank turns a missing number into an error.
+    if sound is None or not getattr(sound, "entries", None):
+        return findings
+    have = set((e.group, e.number) for e in sound.entries)
+    for path in script_paths:
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+        except OSError:
+            continue
+        wanted = set()
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("hitsound:") or stripped.startswith("guardsound:"):
+                # strip the trailing comment first, or the number will not parse
+                body = stripped.split(":", 1)[1].split("#")[0].replace(";", "")
+                parts = body.split(",")
+                if len(parts) == 2:
+                    try: wanted.add((int(parts[0]), int(parts[1])))
+                    except ValueError: pass
+            if "CSnd(" in stripped:
+                start = stripped.find("CSnd(") + 5
+                body = stripped[start:stripped.find(")", start)]
+                parts = body.split(",")
+                if len(parts) >= 2:
+                    try: wanted.add((int(parts[0]), int(parts[1])))
+                    except ValueError: pass
+        for group, number in sorted(wanted):
+            if (group, number) not in have:
+                findings.append(Finding(
+                    ERROR, "ZSS_MISSING_SOUND",
+                    "%s plays S%d,%d which the sound bank does not contain "
+                    "(the move will be silent)" % (os.path.basename(path), group, number),
+                    file=path,
+                    hint="either remap the number to one the bank has, or restore the "
+                         "bank the script was written against"))
+    return findings
+
+
+# ---------------------------------------------------------------------------
 # Sprite references
 # ---------------------------------------------------------------------------
 
