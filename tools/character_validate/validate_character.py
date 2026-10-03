@@ -207,6 +207,16 @@ def run(args):
     else:
         status.append(("AIR -> SFF sprites", STATUS_SKIP, "needs both SFF and AIR"))
 
+    # -- script syntax sanity ---------------------------------------------
+    if script_paths:
+        before = len(rep.errors)
+        rep.extend(checks.check_zss_syntax_sanity([str(x) for x in script_paths]))
+        new_errors = len(rep.errors) - before
+        status.append(("state scripts parse",
+                       STATUS_FAIL if new_errors else STATUS_OK,
+                       "%d malformed line(s)" % new_errors if new_errors
+                       else "no double colons, blocks balanced"))
+
     # -- sound references --------------------------------------------------
     sound_entry = resolved.get("sound")
     sound_path = sound_entry.path if sound_entry is not None else None
