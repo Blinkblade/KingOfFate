@@ -207,6 +207,24 @@ def run(args):
     else:
         status.append(("AIR -> SFF sprites", STATUS_SKIP, "needs both SFF and AIR"))
 
+    # -- sound references --------------------------------------------------
+    sound_entry = resolved.get("sound")
+    sound_path = sound_entry.path if sound_entry is not None else None
+    if sound_entry is not None and sound_entry.exists and script_paths:
+        try:
+            from kofassets import snd as sndmod
+            before = len(rep.errors)
+            rep.extend(checks.check_sound_references(
+                [str(x) for x in script_paths], sndmod.load(sound_path)))
+            new_errors = len(rep.errors) - before
+            status.append(("scripts -> SND sounds",
+                           STATUS_FAIL if new_errors else STATUS_OK,
+                           "%d missing sound(s)" % new_errors if new_errors
+                           else "every referenced sound exists"))
+        except Exception as exc:            # a broken bank must not hide the rest
+            status.append(("scripts -> SND sounds", STATUS_SKIP,
+                           "sound bank unreadable: %s" % exc))
+
     counts = rep.summary()
     facts["summary"] = counts
 
