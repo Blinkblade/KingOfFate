@@ -847,7 +847,8 @@ if animElem = 4 && var(10) = 0 {
         projanim: 1005;
         projid: 1000;
         postype: p1;
-        offset: 84, -95;          # ★ P6 实测：放箭帧弓的位置（前方 84、高度 -95）
+        offset: 84, -60;          # ★ 修：原 -95 是弓的高度，但站立受击框只到 -93 → 箭从头顶飞过打不到人。
+                                 #   降到胸口 -60：能打到站立对手，且跳起来可躲（正确的投射物交互）
         velocity: 6, 0;           # 每 tick 前进 6 px（方向由朝向决定）
         projhits: 1;              # ① 命中 1 次即消失
         projremovetime: 130;      # ② 130 tick 后强制消失（约 2.2 s）
@@ -928,7 +929,7 @@ if animElem = 3 && var(10) = 0 {
         projanim: 1005;
         projid: 1001;
         postype: p1;
-        offset: 84, -95;          # ★ P6 实测：同射箭（EX 双连矢本体与普通射箭同姿势）
+        offset: 84, -60;          # ★ 同射箭修正（旧 EX）
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -965,7 +966,7 @@ if animElem = 5 && var(10) = 1 {
         projanim: 1005;
         projid: 1002;
         postype: p1;
-        offset: 84, -95;          # ★ P6 实测：同上（原 -28 是 KFM 占位值，低了一倍）
+        offset: 84, -60;          # ★ 同上修正
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -1111,7 +1112,7 @@ if animElem = 4 && var(10) = 0 {
         projanim: 1005;
         projid: 3001;
         postype: p1;
-        offset: 84, -95;          # ★ P6 实测：Super 三连发的第一发
+        offset: 84, -60;          # ★ Super 第一发（胸口高度）
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1148,7 +1149,7 @@ if animElem = 7 && var(10) = 1 {
         projanim: 1005;
         projid: 3002;
         postype: p1;
-        offset: 84, -105;         # ★ P6 实测：第二发（略高）
+        offset: 84, -75;          # ★ Super 第二发（略高，仍是躯干范围内）
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1185,7 +1186,7 @@ if animElem = 9 && var(10) = 2 {
         projanim: 1005;
         projid: 3003;
         postype: p1;
-        offset: 84, -85;          # ★ P6 实测：第三发（略低）
+        offset: 84, -45;          # ★ Super 第三发（略低）
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
