@@ -154,7 +154,7 @@ if time = 0 {
     call AtkInit(1);
 }
 
-if animElem = 3 {
+if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 6 帧（原写 3）
     var(4) := 1;                  # 判定帧开始 → 打开取消窗口
     hitDef{
         attr: S, NA;
@@ -215,7 +215,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 5 {
+if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 7 帧（原写 5）
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -262,7 +262,7 @@ if time = 0 {
     call AtkInit(1);
 }
 
-if animElem = 3 {
+if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 5 帧（原写 3）
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -310,7 +310,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 3 {
+if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 5 帧（原写 3）
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -357,7 +357,7 @@ if time = 0 {
     call AtkInit(1);
 }
 
-if animElem = 2 {
+if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 3 帧（原写 2）
     var(4) := 1;
     hitDef{
         attr: C, NA;              # C = 蹲姿（下段攻击）
@@ -413,7 +413,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 3 {
+if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 3）
     var(4) := 1;
     hitDef{
         attr: C, NA;
@@ -460,7 +460,7 @@ if time = 0 {
     call AtkInit(1);
 }
 
-if animElem = 3 {
+if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 5 帧（原写 3）
     var(4) := 1;
     hitDef{
         attr: C, NA;
@@ -507,7 +507,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 4 {
+if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 2 帧（原写 4）
     var(4) := 1;
     hitDef{
         attr: C, NA;
@@ -554,7 +554,7 @@ if time = 0 {
     call AtkInit(1);
 }
 
-if animElem = 2 {
+if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 3 帧（原写 2）
     var(4) := 1;
     hitDef{
         attr: A, NA;
@@ -598,7 +598,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 3 {
+if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 3）
     var(4) := 1;
     hitDef{
         attr: A, NA;
@@ -642,7 +642,7 @@ if time = 0 {
     call AtkInit(1);
 }
 
-if animElem = 2 {
+if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 2）
     var(4) := 1;
     hitDef{
         attr: A, NA;
@@ -686,7 +686,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 2 {
+if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 3 帧（原写 2）
     var(4) := 1;
     hitDef{
         attr: A, NA;
@@ -1035,11 +1035,11 @@ if time = 0 {
 }
 
 # 起手时极小的前压（8 px）：避免贴身时判定框完全包住自己
-if animElem = 3 {
+if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 3）
     posAdd{x: 8}
 }
 
-if animElem = 7 {
+if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 4 帧（原写 7）
     var(4) := 1;
     hitDef{
         attr: S, SA;
@@ -1639,7 +1639,7 @@ if time = 0 {
     call ProjInit();
 }
 
-if animElem = 4 && var(10) = 0 {
+if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 6 帧（原写 4）
     var(10) := 1;
     projectile{
         projanim: 1005;
@@ -1699,7 +1699,7 @@ if time = 0 {
     call ProjInit();
 }
 
-if animElem = 4 && var(10) = 0 {
+if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 7 帧（原写 4）
     var(10) := 1;
     projectile{
         projanim: 1005;
@@ -1759,7 +1759,7 @@ if time = 0 {
     velSet{x: 7.5}
 }
 
-if animElem = 6 {
+if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 7 帧（原写 6）
     var(4) := 1;
     hitDef{
         attr: S, SA;
@@ -1809,7 +1809,7 @@ if time = 0 {
     call AtkInit(3);
 }
 
-if animElem = 6 {
+if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 7 帧（原写 6）
     var(4) := 1;
     hitDef{
         attr: S, SA;
