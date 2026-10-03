@@ -146,3 +146,20 @@ time = 10
 name = "start"
 command = s
 time = 1
+
+; --- 闪身（A+Z 同时按，KOF97 的 A+B）：不耗气 ---
+[Command]
+name = "FLASH_F"          ; → + A+Z
+command = /$F, x+a
+time = 3
+
+[Command]
+name = "FLASH_B"          ; ← + A+Z
+command = /$B, x+a
+time = 3
+
+[Command]
+name = "FLASH_D"          ; ↓ + A+Z
+command = /$D, x+a
+time = 3
+
