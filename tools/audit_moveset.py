@@ -104,6 +104,12 @@ for st, d in sorted(states.items()):
         fill = tot/(sp.width*sp.height)
         if not (0.15 <= fill <= 0.65):
             bad("疑似特效帧", "状态 %d（anim %d）某帧填充%.0f%% %dx%d" % (st, d['anim'], fill*100, sp.width, sp.height))
+# --- 投技必须有伤害：grab 型 hitDef 少了 damage 就是抓住但不掉血 ---
+for m in re.finditer(r"\[StateDef ([0-9]+);([\s\S]*?)(?=\n\[StateDef |\Z)", ZS):
+    st = int(m.group(1)); seg = m.group(2)
+    if "hitflag: M-" in seg and "damage:" not in seg:
+        bad("投技无伤害", "状态 %d 是抓投（hitflag: M-）但没有 damage 行 → 抓住却不掉血" % st)
+
 print("=== 体检: %s ===" % TARGET)
 for w,d in issues: print("  [%s] %s" % (w,d))
 print("共 %d 项" % len(issues))

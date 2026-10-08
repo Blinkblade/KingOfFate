@@ -23,7 +23,6 @@
 #   800   投技起手        —— hitDef 抓人，成功后 p1stateno 810 / p2stateno 820
 #   810   投技执行        —— targetBind + targetLifeAdd + targetState 821
 #   1000  Projectile「气弹」      236 + A             不耗气
-#   1010  EX Projectile「双气弹」 236 + C             耗 500 气
 #   1100  Anti-Air「升龙上勾拳」  623 + A             不耗气
 #   3000  Super「气弹炮」         236236 + A          耗 1000 气
 #
@@ -50,7 +49,7 @@
 #         ↓
 #       lv3 必杀技（1000/1100）
 #         ↓
-#       lv4 EX（1010）/ Super（3000）
+#       Super（3000）/ 终极（3100）
 #
 #   等级只增不减 → 连段长度天然有上限（最长 4 段）。等级表与放行逻辑见
 #   command.zss 的 [Function CanChain] —— 与 Fighter A **同一套机制**，
@@ -158,7 +157,7 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;                  # 判定帧开始 → 打开取消窗口
     hitDef{
         attr: S, NA;
-        damage: 25, 0;
+        damage: 24, 0;
         animtype: Light;
         guardflag: MA;
         hitflag: MAF;
@@ -219,7 +218,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 60, 4;
+        damage: 62, 4;
         animtype: Medium;
         guardflag: MA;
         hitflag: MAF;
@@ -314,7 +313,7 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 75, 5;
+        damage: 64, 5;
         animtype: Heavy;
         guardflag: MA;
         hitflag: MAF;
@@ -361,7 +360,7 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: C, NA;              # C = 蹲姿（下段攻击）
-        damage: 25, 0;
+        damage: 24, 0;
         animtype: Light;
         guardflag: L;             # L = 只能下防
         hitflag: MAF;
@@ -417,7 +416,7 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: C, NA;
-        damage: 55, 4;
+        damage: 50, 4;
         animtype: Up;             # 向上打飞
         guardflag: MA;
         hitflag: MAF;
@@ -511,7 +510,7 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: C, NA;
-        damage: 70, 5;
+        damage: 46, 5;
         animtype: Hard;
         guardflag: L;
         hitflag: MAFD;
@@ -558,7 +557,7 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: A, NA;
-        damage: 25, 0;
+        damage: 24, 0;
         animtype: Light;
         guardflag: HA;
         hitflag: MAF;
@@ -602,7 +601,7 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: A, NA;
-        damage: 70, 5;
+        damage: 54, 5;
         animtype: Medium;
         guardflag: HA;
         hitflag: MAF;
@@ -690,7 +689,7 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: A, NA;
-        damage: 75, 5;
+        damage: 48, 5;
         animtype: Medium;
         guardflag: HA;
         hitflag: MAF;
@@ -733,6 +732,7 @@ if time = 0 {
     hitDef{
         attr: S, NT;            # Standing, Normal Throw
         hitflag: M-;
+        damage: 60, 0;          # ★ 投技原本**没有伤害行** → 造成 0 伤害（被 git checkout 回退过一次）
         priority: 1, Miss;
         sparkno: -1;
         p1sprpriority: 1;
@@ -859,7 +859,7 @@ if animElem = 4 && var(10) = 0 {
         projedgebound: 40;        # ③ 飞出屏幕边界 40 px 即消失
         projstagebound: 40;
         attr: S, SP;              # SP = Special Projectile
-        damage: 60, 6;
+        damage: 56, 6;
         animtype: Medium;
         guardflag: MA;
         hitflag: MAF;
@@ -886,122 +886,9 @@ if time = 1 {
 call EndState(0);
 
 
-# ============================================================================
-# ★★★ EX Projectile「双气弹」(EX Ki Blast) —— State 1010 / Anim 1010 ★★★
-#
-#   236 + C（命令 QCF_y），**耗 500 气**。
-#
-# 气量的"检查 → 扣除"分工（沿用 P2/P3 约定，本项目唯一写法）：
-#   检查在路由层（command.zss：`power >= 500`）
-#   扣除在本状态 time = 0 的 powerAdd{value: -500}
-#
-# 相对 State 1000 的**明确强化点**（合同 §11.3 要求至少两项，这里三项）：
-#   ① 到发射 9 → 4 tick（快一倍多）
-#   ② 一次 2 发（elem 3 与 elem 5 各一枚，高度差 18 px）
-#   ③ 合计伤害 110（普通版 60）
-# 代价：气 500 + 总时长 36 tick（收招更长，挥空更亏）。
-#
-# ★ 这是"EX 必须是真强化"的证据：不是换个 State No 而已 ——
-#   生成次数、时机、伤害、速度四项都不同，且 Power 消费可实测。
-# ============================================================================
-# ============================================================================
-# ⚠️ 退役标记（2026-10-02 新操作体系）：
-#   StateDef 1010（旧 EX 双连气弹）**已没有任何输入可以进入** —— archer.cmd
-#   里不再定义 QCF_y，command.zss 里也不再路由到它。保留代码仅便于回退，
-#   正式交付前删除。新体系下它的位置由 1150（↓C 斜下射箭）接替。
-# ============================================================================
-[StateDef 1010;
-type: S; movetype: A; physics: S;
-juggle: 5; velset: 0, 0; ctrl: 0;
-anim: 1010;
-poweradd: 0;                      # 出招本身不集气（它要花气）
-sprpriority: 2;]
 
-if time = 0 {
-    powerAdd{value: -500}         # ★ 气量扣除在这里
-    call AtkInit(4);              # lv4（EX / Super 同层，最高链级）
-    call ProjInit();
-}
 
-# 第 1 发：偏上
-if animElem = 3 && var(10) = 0 {
-    var(10) := 1;
-    projectile{
-        projanim: 1005;
-        projid: 1001;
-        postype: p1;
-        offset: 84, -85;          # ★ 同上
-        velocity: 7.5, 0;
-        projhits: 1;
-        projremovetime: 130;
-        projpriority: 2;
-        projmisstime: 0;
-        projsprpriority: 3;
-        projedgebound: 40;
-        projstagebound: 40;
-        attr: S, SP;
-        damage: 55, 5;
-        animtype: Medium;
-        guardflag: MA;
-        hitflag: MAF;
-        priority: 5, Hit;
-        pausetime: 12, 12;
-        sparkno: 1;
-        sparkxy: -10, -70;
-        hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
-        guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
-        ground.type: High;
-        ground.slidetime: 10;
-        ground.hittime: 17;
-        ground.velocity: -7;
-        airguard.velocity: -2.8, -1.2;
-        air.velocity: -3, -4;
-        air.hittime: 22;
-    }
-}
 
-# 第 2 发：偏下 —— 两发高度差 18 px，站防挡住上面那发时下面那发仍会擦到
-if animElem = 5 && var(10) = 1 {
-    var(10) := 2;
-    projectile{
-        projanim: 1005;
-        projid: 1002;
-        postype: p1;
-        offset: 84, -85;          # ★ 同上
-        velocity: 7.5, 0;
-        projhits: 1;
-        projremovetime: 130;
-        projpriority: 2;
-        projmisstime: 0;
-        projsprpriority: 3;
-        projedgebound: 40;
-        projstagebound: 40;
-        attr: S, SP;
-        damage: 55, 5;
-        animtype: Medium;
-        guardflag: MA;
-        hitflag: MAF;
-        priority: 5, Hit;
-        pausetime: 12, 12;
-        sparkno: 1;
-        sparkxy: -10, -55;
-        hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
-        guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
-        ground.type: High;
-        ground.slidetime: 10;
-        ground.hittime: 17;
-        ground.velocity: -7;
-        airguard.velocity: -2.8, -1.2;
-        air.velocity: -3, -4;
-        air.hittime: 22;
-    }
-}
-
-if time = 1 {
-    call CSnd(9000, 0, 1);
-}
-
-call EndState(0);
 
 
 # ============================================================================
@@ -1045,7 +932,7 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, SA;
-        damage: 75, 6;
+        damage: 66, 6;
         animtype: Up;
         guardflag: MA;
         hitflag: MAF;
@@ -1084,7 +971,7 @@ call EndState(0);
 # **把投射物做成弹幕** —— 一次 3 发，三发高度不同、各自独立飞行与判定。
 # 这样对手不能靠"一次防御"或"一次跳跃"躲掉全部，Super 才有"改变局面"的意义。
 #
-# 相对 EX（1010）的强化：
+# 相对普通射箭（1000）的强化：
 #   数量 2 → 3、总伤害 110 → 195（每发 65）、速度 7.5 → 8、气耗 500 → 1000
 #
 # 刻意**不做**（属 P7 表现层，合同 §11.4 明确排除）：
@@ -1123,7 +1010,7 @@ if animElem = 4 && var(10) = 0 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;              # HP = Hyper Projectile
-        damage: 65, 6;
+        damage: 42, 6;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1160,7 +1047,7 @@ if animElem = 7 && var(10) = 1 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 65, 6;
+        damage: 42, 6;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1197,7 +1084,7 @@ if animElem = 9 && var(10) = 2 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 65, 6;
+        damage: 42, 6;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1263,7 +1150,7 @@ if animElem = 4 && var(10) = 0 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1300,7 +1187,7 @@ if animElem = 6 && var(10) = 1 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1337,7 +1224,7 @@ if animElem = 8 && var(10) = 2 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1374,7 +1261,7 @@ if animElem = 10 && var(10) = 3 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1411,7 +1298,7 @@ if animElem = 11 && var(10) = 4 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1448,7 +1335,7 @@ if animElem = 12 && var(10) = 5 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1485,7 +1372,7 @@ if animElem = 13 && var(10) = 6 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1522,7 +1409,7 @@ if animElem = 14 && var(10) = 7 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1559,7 +1446,7 @@ if animElem = 15 && var(10) = 8 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1596,7 +1483,7 @@ if animElem = 16 && var(10) = 9 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 45, 4;
+        damage: 16, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1656,7 +1543,7 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         projedgebound: 40;
         projstagebound: 40;
         attr: S, SP;
-        damage: 55, 4;
+        damage: 50, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1716,7 +1603,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         projedgebound: 40;
         projstagebound: 40;
         attr: S, SP;
-        damage: 65, 4;
+        damage: 56, 4;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1765,7 +1652,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, SA;
-        damage: 85, 6;
+        damage: 78, 6;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1815,7 +1702,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, SA;
-        damage: 90, 6;
+        damage: 84, 6;
         animtype: Up;
         guardflag: MA;
         hitflag: MAF;

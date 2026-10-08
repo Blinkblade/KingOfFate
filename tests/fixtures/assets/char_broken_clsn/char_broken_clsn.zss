@@ -1,0 +1,20 @@
+# P5 fixture state script
+[StateDef 200; anim: 200;]
+if time = 0 {
+	changeAnim{value: 200}
+}
+
+[StateDef 1000; anim: 1000;]
+if time = 0 {
+    projectile{
+        projanim: 1005;
+        projid: 1000;
+        postype: p1;
+        offset: 40, -40;
+        velocity: 6, 0;
+        damage: 60, 6;
+        attr: S, SP;
+        hitflag: MAF;
+        priority: 4, Hit;
+    }
+}

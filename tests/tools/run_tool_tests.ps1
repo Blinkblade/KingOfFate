@@ -541,6 +541,23 @@ Invoke-Tool -Group '15' -Label 'real character bank reads' `
     -Expect 0 -MustContain @('Sounds:') | Out-Null
 
 $failed = @($script:Results | Where-Object { -not $_.Passed })
+# --- Group 9: moveset audit (the checks that catch silent failures) -------
+#   These are the mistakes that produce no engine error: a projectile without
+#   a hitbox, a hitbox that opens on frame zero, a hitDef guarded by an
+#   animElem with no box, a frame that quietly makes the character invulnerable.
+#   They can only be found by looking, so they run with everything else.
+$Audit = Join-Path $RepoRoot 'tools\audit_moveset.py'
+if (Test-Path $Audit) {
+    foreach ($char in @('archer')) {
+        $dir = Join-Path $RepoRoot "game\chars\$char"
+        if (-not (Test-Path $dir)) { continue }
+        Invoke-Tool -Group '9' -Label "the $char moveset audits clean" `
+            -Arguments @($Python, $Audit, $dir) -Expect 0
+    }
+    Invoke-Tool -Group '9' -Label 'the audit rejects a deliberately broken character' `
+        -Arguments @($Python, $Audit, (Join-Path $RepoRoot 'tests\fixtures\assets\char_broken_clsn')) -Expect 1
+}
+
 $total = $script:Results.Count
 
 Write-Host ('-' * 72) -ForegroundColor DarkGray
