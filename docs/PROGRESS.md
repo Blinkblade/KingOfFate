@@ -2,6 +2,7 @@
 
 > 本文是**入口**：回答「项目现在到哪了、接下来做什么」。
 > 详细内容分三个文件：
+> **新窗口接手先读 [`HANDOFF.md`](HANDOFF.md)**（背景 + 现状 + 坑）
 > [`game-design-charter.md`](game-design-charter.md)（方向）· [`GLOSSARY.md`](GLOSSARY.md)（**术语表，讨论前先对齐用词**）· [`TODO-backlog.md`](TODO-backlog.md)（施工清单）· [`P6-acceptance-checklist.md`](P6-acceptance-checklist.md)（验收记录）
 
 **最后更新：2026-10-08。分支 `feature/p6-first-final-art-character`（领先 main 42 个提交），**尚未合并 `main`**。**

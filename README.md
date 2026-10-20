@@ -53,13 +53,20 @@ read and validate an animation table, and check whether a character directory is
 enough to reach Runtime. Everything is read-only and dependency-free, and the tools found a
 real defect in existing content on their first run.
 
-See [`docs/development_status.md`](docs/development_status.md) for the authoritative, always-up-to-date phase
-status, [`docs/P5-summary.md`](docs/P5-summary.md) for the current handoff notes
-([`docs/P4-summary.md`](docs/P4-summary.md), [`docs/P3-summary.md`](docs/P3-summary.md), [`docs/P2-summary.md`](docs/P2-summary.md), [`docs/P1-summary.md`](docs/P1-summary.md) and
-[`docs/P0-summary.md`](docs/P0-summary.md) for the earlier ones), [`docs/character_asset_tooling.md`](docs/character_asset_tooling.md)
-for the asset tools, [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md)
-for how a character is built, [`docs/phase_reports/`](docs/phase_reports/) for per-phase summaries, and
-[`docs/iterations/`](docs/iterations/) for the engineering log of how the project got here.
+**Starting fresh?** Read [`docs/HANDOFF.md`](docs/HANDOFF.md) first — it carries the background, the
+current state, the tracker of what is still broken, and the list of mistakes this project has already
+made (most of which produce no engine error at all).
+
+Then [`docs/PROGRESS.md`](docs/PROGRESS.md) for the overview and the single task list,
+[`docs/game-design-charter.md`](docs/game-design-charter.md) for the design (highest authority on
+direction), and [`docs/GLOSSARY.md`](docs/GLOSSARY.md) to align vocabulary before discussing anything.
+
+Phase history lives in [`docs/development_status.md`](docs/development_status.md) and
+[`docs/P6-summary.md`](docs/P6-summary.md) (`P5`, `P4`, `P3`, `P2`, `P1` and `P0` summaries for the
+earlier ones), the asset tools in [`docs/character_asset_tooling.md`](docs/character_asset_tooling.md),
+how a character is built in [`docs/ikemen_character_architecture.md`](docs/ikemen_character_architecture.md),
+per-phase reports in [`docs/phase_reports/`](docs/phase_reports/), and the engineering log of how the
+project got here in [`docs/iterations/`](docs/iterations/).
 
 ---
 
