@@ -14,6 +14,9 @@ remapping happens. With ``--remap`` the CSV decides the mapping:
 
     target_group,target_image,source_group,source_image[,axis_x,axis_y]
 
+A named ``palette_index`` column may contain a source palette number or
+``source`` to keep that sprite's own palette, overriding --force-palette.
+
     * one row per sprite in the output, in file order
     * axis columns optional: source axis is kept when they are blank
     * a source key may appear in several rows (the pixels are written once and
@@ -44,17 +47,26 @@ def _fail(message, code):
 
 def _load_remap(path):
     rows = []
+    palette_column = None
+    targets = set()
     with open(path, "r", encoding="utf-8-sig", newline="") as handle:
         for lineno, row in enumerate(csv.reader(handle), start=1):
             if not row or not row[0].strip() or row[0].strip().startswith("#"):
                 continue
             if lineno == 1 and not row[0].strip().isdigit():
+                header = [value.strip().lower() for value in row]
+                if "palette_index" in header:
+                    palette_column = header.index("palette_index")
                 continue   # header row
             if len(row) < 4:
                 raise ValueError("%s line %d: need at least 4 columns "
                                  "(target_group,target_image,source_group,source_image)"
                                  % (path, lineno))
             tg, ti, sg, si = (int(row[k].strip()) for k in range(4))
+            if (tg, ti) in targets:
+                raise ValueError("%s line %d: duplicate target sprite (%d,%d)"
+                                 % (path, lineno, tg, ti))
+            targets.add((tg, ti))
             axis = None
             # Columns 5 and 6 are optional axis overrides. The asset_map.csv
             # that ships with a character also carries `action` and `notes`
@@ -64,7 +76,18 @@ def _load_remap(path):
                     axis = (int(row[4].strip()), int(row[5].strip()))
                 except ValueError:
                     axis = None
-            rows.append((tg, ti, sg, si, axis, lineno))
+            palette = None
+            if palette_column is not None and len(row) > palette_column:
+                value = row[palette_column].strip()
+                if value:
+                    if value.lower() == "source":
+                        palette = "source"
+                    else:
+                        palette = int(value)
+                        if palette < 0:
+                            raise ValueError("%s line %d: palette_index must be non-negative or source"
+                                             % (path, lineno))
+            rows.append((tg, ti, sg, si, axis, palette, lineno))
     if not rows:
         raise ValueError("%s: no mapping rows found" % path)
     return rows
@@ -87,12 +110,32 @@ def cmd_transcode(args):
         except (ValueError, OSError) as exc:
             return _fail(str(exc), 2)
     else:
-        mapping = [(spr.group, spr.number, spr.group, spr.number, None, None)
+        mapping = [(spr.group, spr.number, spr.group, spr.number, None, None, None)
                    for spr in source.sprites]
 
     # Deduplicate palettes by content; every sprite references one.
     palette_ids = []
     palette_index_of = {}
+    # Reserve the selectable character banks before any effect palettes.
+    # Otherwise mirror matches can select an imported effect/debug bank.
+    if args.selection_palette:
+        base = args.force_palette if args.force_palette is not None else 0
+        if not 0 <= base < len(source.palettes):
+            return _fail("invalid base palette %d" % base, 2)
+        palette_ids.append(source.palettes[base].colours)
+        for path in args.selection_palette:
+            try:
+                with open(path, "rb") as handle:
+                    act = handle.read()
+            except OSError as exc:
+                return _fail(str(exc), 3)
+            if len(act) != 768:
+                return _fail("%s: an ACT palette must have 768 bytes" % path, 2)
+            # MUGEN ACT stores index 255 first; image.go:readActPalette.
+            palette_ids.append([tuple(act[765-i*3:768-i*3]) + (0 if i == 0 else 255,)
+                                for i in range(256)])
+        for index, colours in enumerate(palette_ids):
+            palette_index_of.setdefault(tuple(colours), index)
     for pal in source.palettes:
         key = tuple(pal.colours)
         if key not in palette_index_of:
@@ -106,7 +149,7 @@ def cmd_transcode(args):
     written_key = {}          # (target group, image) -> output index
     pixel_bytes = {}          # output index -> (indices bytes, palette colours)
     problems = []
-    for tg, ti, sg, si, axis, lineno in mapping:
+    for tg, ti, sg, si, axis, palette_override, lineno in mapping:
         src = source.sprite(sg, si)
         if src is None:
             problems.append("source sprite (%d,%d) does not exist%s"
@@ -124,7 +167,7 @@ def cmd_transcode(args):
                 "payload": b"",
             })
             continue
-        if src.is_linked:
+        if src.is_linked and palette_override is None and not args.selection_palette:
             # Resolve through the source's own link chain: the new container
             # links to the output row that carries the source's pixels, if the
             # source's chain root was already emitted; otherwise emit the
@@ -154,8 +197,13 @@ def cmd_transcode(args):
         # a few sprites (the high-res Archer has 69 sprites -- idle, walk, jump --
         # pointing at a bank of pure green/magenta/blue, while the other 643 use
         # the real palette). Forcing one bank makes the whole set consistent.
-        pal_index = (args.force_palette if args.force_palette is not None
-                     else src.pal_index)
+        if palette_override == "source":
+            pal_index = src.pal_index
+        elif palette_override is not None:
+            pal_index = palette_override
+        else:
+            pal_index = (args.force_palette if args.force_palette is not None
+                         else src.pal_index)
         if pal_index >= len(source.palettes):
             problems.append("sprite (%d,%d) wants palette %d but the source has "
                             "only %d" % (sg, si, pal_index, len(source.palettes)))
@@ -255,6 +303,8 @@ def main(argv=None):
     tr.add_argument("--force-palette", type=int, default=None, metavar="N",
                     help="render every sprite through palette N instead of "
                          "each sprite's own bank (some packs ship stale banks)")
+    tr.add_argument("--selection-palette", action="append", default=[], metavar="ACT",
+                    help="reserve a selectable ACT bank after the base palette; repeat for further banks")
     args = parser.parse_args(argv)
     if args.command == "transcode":
         return cmd_transcode(args)

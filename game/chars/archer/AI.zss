@@ -227,7 +227,10 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # Fighter A 在这个距离会"走向对手"，Fighter B 会"隔空开火"。
     # 冷却 90 tick（约 1.5 s）→ 一场对局里能稳定观测到多轮发弹。
     # ========================================================================
-    if ctrl && stateType = S && $grounded && var(1) = 0 && $farR {
+    # ★ 必须自带气量门槛：AI 是直接 changeState，**绕过 command.zss 的路由层**，
+    #   路由里那条 `power >= 300` 对 AI 完全不生效。没有这一行，
+    #   AI 在 0 气时照样能出箭（扣气被引擎夹在 0），等于白嫖。
+    if ctrl && stateType = S && $grounded && var(1) = 0 && $farR && power >= 300 {
         changeState{value: 1000}
         var(1) := 90;
     }

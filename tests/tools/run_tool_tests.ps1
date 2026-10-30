@@ -485,19 +485,6 @@ Add-Check -Group '7' -Name 'no character file outside the P6 build changed' `
     -Passed ($characterTouched.Count -eq 0) -Detail ($characterTouched -join '; ')
 
 # ---------------------------------------------------------------------------
-# Report
-# ---------------------------------------------------------------------------
-Write-Host ('-' * 72) -ForegroundColor DarkGray
-foreach ($r in $script:Results) {
-    $mark = 'PASS'
-    $colour = 'Green'
-    if (-not $r.Passed) { $mark = 'FAIL'; $colour = 'Red' }
-    $line = "  [$mark] {0,-4} {1}" -f $r.Group, $r.Name
-    if (-not $r.Passed -and $r.Detail) { $line += "   ($($r.Detail))" }
-    Write-Host $line -ForegroundColor $colour
-}
-
-# ---------------------------------------------------------------------------
 # 15. sndctl
 # ---------------------------------------------------------------------------
 Write-Host '15. sndctl' -ForegroundColor Cyan
@@ -540,24 +527,38 @@ Invoke-Tool -Group '15' -Label 'real character bank reads' `
     -Arguments @($Sndctl, 'inspect', (Join-Path $RepoRoot 'game\chars\archer\archer.snd'), '--limit', '3') `
     -Expect 0 -MustContain @('Sounds:') | Out-Null
 
-$failed = @($script:Results | Where-Object { -not $_.Passed })
 # --- Group 9: moveset audit (the checks that catch silent failures) -------
 #   These are the mistakes that produce no engine error: a projectile without
 #   a hitbox, a hitbox that opens on frame zero, a hitDef guarded by an
 #   animElem with no box, a frame that quietly makes the character invulnerable.
 #   They can only be found by looking, so they run with everything else.
 $Audit = Join-Path $RepoRoot 'tools\audit_moveset.py'
-if (Test-Path $Audit) {
-    foreach ($char in @('archer')) {
-        $dir = Join-Path $RepoRoot "game\chars\$char"
-        if (-not (Test-Path $dir)) { continue }
-        Invoke-Tool -Group '9' -Label "the $char moveset audits clean" `
-            -Arguments @($Python, $Audit, $dir) -Expect 0
-    }
-    Invoke-Tool -Group '9' -Label 'the audit rejects a deliberately broken character' `
-        -Arguments @($Python, $Audit, (Join-Path $RepoRoot 'tests\fixtures\assets\char_broken_clsn')) -Expect 1
+Write-Host '9. moveset audit' -ForegroundColor Cyan
+Invoke-Tool -Group '9' -Label 'the archer moveset audits clean' `
+    -Arguments @($Audit, (Join-Path $RepoRoot 'game\chars\archer')) -Expect 0 `
+    -MustContain @('===') | Out-Null
+Invoke-Tool -Group '9' -Label 'the audit rejects a deliberately broken character' `
+    -Arguments @($Audit, (Join-Path $Fixtures 'char_broken_clsn')) -Expect 1 `
+    -MustContain @('===') | Out-Null
+
+# ---------------------------------------------------------------------------
+# Report: include every group before collecting failures and printing results.
+# ---------------------------------------------------------------------------
+Invoke-Tool -Group '16' -Label 'body and effect palettes remain distinct, invalid mappings fail' `
+    -Arguments @((Join-Path $ScriptDir 'check_palette_remap.py'), (Join-Path $WorkDir 'palette_remap')) `
+    -Expect 0 -MustContain @('palette remap:', 'PASS') | Out-Null
+
+Write-Host ('-' * 72) -ForegroundColor DarkGray
+foreach ($r in $script:Results) {
+    $mark = 'PASS'
+    $colour = 'Green'
+    if (-not $r.Passed) { $mark = 'FAIL'; $colour = 'Red' }
+    $line = "  [$mark] {0,-4} {1}" -f $r.Group, $r.Name
+    if (-not $r.Passed -and $r.Detail) { $line += "   ($($r.Detail))" }
+    Write-Host $line -ForegroundColor $colour
 }
 
+$failed = @($script:Results | Where-Object { -not $_.Passed })
 $total = $script:Results.Count
 
 Write-Host ('-' * 72) -ForegroundColor DarkGray

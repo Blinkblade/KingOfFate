@@ -22,8 +22,8 @@
 #   640   跳重脚 D        —— lv2 空中重普通技
 #   800   投技起手        —— hitDef 抓人，成功后 p1stateno 810 / p2stateno 820
 #   810   投技执行        —— targetBind + targetLifeAdd + targetState 821
-#   1000  Projectile「气弹」      236 + A             不耗气
-#   1100  Anti-Air「升龙上勾拳」  623 + A             不耗气
+#   1000  Projectile「气弹」        C（原 236+A）       耗 300 气
+#   1100  Anti-Air「升龙上勾拳」    →C（原 623+A）      耗 400 气
 #   3000  Super「气弹炮」         236236 + A          耗 1000 气
 #
 # 由 hits.zss（受击方，本角色自己的状态）实现的：
@@ -149,6 +149,18 @@ anim: 200;
 poweradd: 20;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 5 {
+    explod{
+        anim: 7200; ID: 7200;
+        postype: p1; pos: 0, 0;
+        scale: 0.48, 0.48;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     call AtkInit(1);
 }
@@ -163,7 +175,8 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 3, Hit;
         pausetime: 8, 8;
-        sparkno: 0;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -76;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -210,6 +223,18 @@ anim: 210;
 poweradd: 28;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 12 {
+    explod{
+        anim: 7210; ID: 7210;
+        postype: p1; pos: 0, 0;
+        scale: 0.48, 0.48;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     call AtkInit(2);
 }
@@ -224,7 +249,8 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 12, 12;
-        sparkno: 1;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -70;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -271,7 +297,8 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 3, Hit;
         pausetime: 8, 8;
-        sparkno: 0;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -70;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -319,7 +346,8 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 13, 13;
-        sparkno: 0;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -66;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -366,7 +394,8 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 3, Hit;
         pausetime: 8, 8;
-        sparkno: 0;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -42;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -408,6 +437,18 @@ anim: 410;
 poweradd: 25;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 9 {
+    explod{
+        anim: 7220; ID: 7220;
+        postype: p1; pos: 0, 0;
+        scale: 0.42, 0.42;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     call AtkInit(2);
 }
@@ -422,7 +463,8 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 12, 12;
-        sparkno: 1;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -95;        # 火花在头顶
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -469,7 +511,8 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 3, Hit;
         pausetime: 9, 9;
-        sparkno: 0;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -14;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -502,6 +545,18 @@ anim: 440;
 poweradd: 35;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 2 {
+    explod{
+        anim: 7220; ID: 7220;
+        postype: p1; pos: 0, 0;
+        scale: 0.42, 0.42;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     call AtkInit(2);
 }
@@ -516,7 +571,8 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAFD;
         priority: 4, Hit;
         pausetime: 12, 12;
-        sparkno: 1;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -5, -10;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -563,7 +619,8 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 3, Hit;
         pausetime: 7, 8;
-        sparkno: 0;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -58;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -593,6 +650,18 @@ anim: 610;
 poweradd: 25;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 9 {
+    explod{
+        anim: 7230; ID: 7230;
+        postype: p1; pos: 0, 0;
+        scale: 0.42, 0.42;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     call AtkInit(2);
 }
@@ -607,7 +676,8 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 12, 12;
-        sparkno: 1;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -55;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -651,7 +721,8 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 3, Hit;
         pausetime: 8, 8;
-        sparkno: 1;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -5, -35;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -681,6 +752,18 @@ anim: 640;
 poweradd: 30;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 2 {
+    explod{
+        anim: 7230; ID: 7230;
+        postype: p1; pos: 0, 0;
+        scale: 0.42, 0.42;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     call AtkInit(2);
 }
@@ -695,7 +778,8 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 12, 12;
-        sparkno: 1;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: -10, -40;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -800,7 +884,7 @@ call EndState(0);
 # ============================================================================
 # ★★★ Projectile Special「气弹」(Ki Blast) —— State 1000 / Anim 1000 ★★★
 #
-#   236 + A（命令 QCF_x），**不耗气**。
+#   C（气键；旧输入 236+A 已退役），**耗 300 气**（扣气在下方 time = 0）。
 #
 # 这是 P4 最关键的新机制。实现选择与理由：
 #
@@ -834,7 +918,30 @@ anim: 1000;
 poweradd: 40;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
 if time = 0 {
+    explod{
+        anim: 7240; ID: 7240;
+        postype: p1; pos: 15, -65;
+        scale: 0.23, 0.23;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+if time = 6 {
+    explod{
+        anim: 7250; ID: 7250;
+        postype: p1; pos: 84, -85;
+        scale: 0.18, 0.18;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
+if time = 0 {
+    powerAdd{value: -300}         # ★ 气耗 300：路由层的 `power >= 300` 门槛必须配这一行
+                                  #   只挡不扣 = 300 气可以无限射箭（出招表写的 300 气就是空话）
     call AtkInit(3);              # lv3 = 必杀技（可被 lv1/lv2 取消进来）
     call ProjInit();              # var(10) := 0（投射物计数）
 }
@@ -865,8 +972,9 @@ if animElem = 4 && var(10) = 0 {
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 11, 11;
-        sparkno: 0;
-        sparkxy: -10, -60;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, 0;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
@@ -894,7 +1002,7 @@ call EndState(0);
 # ============================================================================
 # ★★★ Anti-Air Special「升龙上勾拳」(Rising Upper) —— State 1100 / Anim 1100 ★★★
 #
-#   623 + A（命令 DP_x），**不耗气**。
+#   →C（气键；旧输入 623+A 已退役），**耗 400 气**（扣气在下方 time = 0）。
 #
 # 定位：**对空反击技**。Zoner 的第二件核心工具 —— 当长手和投射物把对手
 #   逼得跳进来时，用它把对手打回去。
@@ -919,7 +1027,20 @@ anim: 1100;
 poweradd: 35;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 9 {
+    explod{
+        anim: 7260; ID: 7260;
+        postype: p1; pos: 0, 0;
+        scale: 0.48, 0.48;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
+    powerAdd{value: -400}         # ★ 气耗 400：与路由层 `power >= 400` 配对
     call AtkInit(3);              # lv3 = 必杀技
 }
 
@@ -938,7 +1059,8 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 5, Hit;
         pausetime: 14, 14;
-        sparkno: 3;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -130;         # 火花位置高 —— 在头顶之上
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -987,8 +1109,31 @@ anim: 3000;
 poweradd: 0;                      # 出招本身不集气（它要花气）
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
 if time = 0 {
-    powerAdd{value: -1000}        # ★ 气量扣除（Super 的代价）
+    explod{
+        anim: 7240; ID: 7240;
+        postype: p1; pos: 15, -65;
+        scale: 0.32, 0.32;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+if time = 9 {
+    explod{
+        anim: 7250; ID: 7250;
+        postype: p1; pos: 84, -85;
+        scale: 0.25, 0.25;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
+if time = 0 {
+    powerAdd{value: -800}         # ★ 气耗 800（出招表 / movelist.dat 都写 800）
+                                  #   原写 -1000：路由层只要求 800 气，扣走 1000 会扣穿到 0，
+                                  #   等于把「800 气可放」这条承诺兑现成了「必须攒满 1000」
     call AtkInit(4);              # lv4
     call ProjInit();
 }
@@ -1016,8 +1161,9 @@ if animElem = 4 && var(10) = 0 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 14, 14;
-        sparkno: 2;
-        sparkxy: -10, -74;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, 0;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
@@ -1053,8 +1199,9 @@ if animElem = 7 && var(10) = 1 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 14, 14;
-        sparkno: 2;
-        sparkxy: -10, -66;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, 0;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
@@ -1090,8 +1237,9 @@ if animElem = 9 && var(10) = 2 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 14, 14;
-        sparkno: 2;
-        sparkxy: -10, -58;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, 0;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
@@ -1127,6 +1275,36 @@ anim: 3100;
 poweradd: 0;                      # 出招不集气（它要花光整槽）
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 0 {
+    explod{
+        anim: 7240; ID: 7240;
+        postype: p1; pos: 0, -70;
+        scale: 0.4, 0.4;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+if time = 18 {
+    explod{
+        anim: 7240; ID: 7240;
+        postype: p1; pos: 0, -70;
+        scale: 0.4, 0.4;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+if time = 0 {
+    explod{
+        anim: 7280; ID: 7280;
+        postype: p1; pos: 0, 0;
+        scale: 0.6, 0.18;
+        bindtime: -1; removetime: 36;
+        ownpal: 1; sprpriority: -1; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     powerAdd{value: -2000}        # ★ 整槽气（2000）
     call AtkInit(4);              # lv4
@@ -1156,7 +1334,8 @@ if animElem = 4 && var(10) = 0 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1193,7 +1372,8 @@ if animElem = 6 && var(10) = 1 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1230,7 +1410,8 @@ if animElem = 8 && var(10) = 2 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1267,7 +1448,8 @@ if animElem = 10 && var(10) = 3 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1304,7 +1486,8 @@ if animElem = 11 && var(10) = 4 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1341,7 +1524,8 @@ if animElem = 12 && var(10) = 5 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1378,7 +1562,8 @@ if animElem = 13 && var(10) = 6 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1415,7 +1600,8 @@ if animElem = 14 && var(10) = 7 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1452,7 +1638,8 @@ if animElem = 15 && var(10) = 8 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1489,7 +1676,8 @@ if animElem = 16 && var(10) = 9 {
         hitflag: MAF;
         priority: 6, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -60;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1522,6 +1710,27 @@ anim: 1150;
 poweradd: 0;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 0 {
+    explod{
+        anim: 7240; ID: 7240;
+        postype: p1; pos: 15, -65;
+        scale: 0.23, 0.23;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+if time = 10 {
+    explod{
+        anim: 7250; ID: 7250;
+        postype: p1; pos: 62, -62;
+        scale: 0.18, 0.18;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     powerAdd{value: -300}
     call AtkInit(3);
@@ -1549,8 +1758,9 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
-        sparkxy: 0, -60;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: 0, 0;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
@@ -1582,6 +1792,27 @@ anim: 1200;
 poweradd: 0;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 0 {
+    explod{
+        anim: 7240; ID: 7240;
+        postype: p1; pos: 0, -70;
+        scale: 0.3, 0.3;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+if time = 12 {
+    explod{
+        anim: 7240; ID: 7240;
+        postype: p1; pos: 40, -75;
+        scale: 0.21, 0.21;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     powerAdd{value: -400}
     call AtkInit(3);
@@ -1591,7 +1822,7 @@ if time = 0 {
 if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 7 帧（原写 4）
     var(10) := 1;
     projectile{
-        projanim: 1005;
+        projanim: 1205;
         projid: 1200;
         postype: p1;
         offset: 40, -90;
@@ -1609,8 +1840,9 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 4, Hit;
         pausetime: 10, 10;
-        sparkno: 2;
-        sparkxy: 0, -60;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: 0, 0;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
@@ -1642,6 +1874,27 @@ anim: 1300;
 poweradd: 0;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 0 {
+    explod{
+        anim: 7270; ID: 7270;
+        postype: p1; pos: -15, 0;
+        scale: 0.4, 0.4;
+        bindtime: 0; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+if time = 12 {
+    explod{
+        anim: 7260; ID: 7260;
+        postype: p1; pos: 0, 0;
+        scale: 0.48, 0.48;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     powerAdd{value: -600}
     call AtkInit(3);
@@ -1658,7 +1911,8 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitflag: MAF;
         priority: 5, Hit;
         pausetime: 12, 12;
-        sparkno: 3;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -90;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1693,6 +1947,18 @@ anim: 1400;
 poweradd: 0;
 sprpriority: 2;]
 
+# Art pass: non-interactive visual accents.
+if time = 12 {
+    explod{
+        anim: 7230; ID: 7230;
+        postype: p1; pos: 0, 0;
+        scale: 0.48, 0.48;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+
 if time = 0 {
     powerAdd{value: -600}
     call AtkInit(3);
@@ -1704,11 +1970,14 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         attr: S, SA;
         damage: 84, 6;
         animtype: Up;
-        guardflag: MA;
+        guardflag: H;             # ★ Overhead：只能站防（蹲防防不住）
+                                  #   原来写 MA = 上下都能防，与出招表「破防（overhead）」、
+                                  #   AI 规则 ⑤c 的「制造必须站防的局面」全都对不上 → 那两处承诺是空的。
         hitflag: MAF;
         priority: 5, Hit;
         pausetime: 12, 12;
-        sparkno: 3;
+        sparkno: S7190;
+        guard.sparkno: S7191;
         sparkxy: 0, -90;
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
@@ -1743,14 +2012,33 @@ anim: 110;
 ctrl: 0;
 sprpriority: 2;]
 
-velSet{x: 11}          # ★ 状态级：每 tick 生效（照抄 common1.cns.zss 的前冲写法）
-                       #   原来写在 `if time = 0` 里 = 只生效一帧，所以人物不动
+# Art pass: non-interactive visual accents.
 if time = 0 {
-    call CSnd(9000, 3, 1);
+    explod{
+        anim: 7270; ID: 7270;
+        postype: p1; pos: -15, 0;
+        scale: 0.4, 0.4;
+        bindtime: 0; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
 }
 
-if time = 12 {
-    velSet{x: 0}       # 第 12 tick 停住 → 其后 8 tick 是可被惩罚的收招
+
+# ★ 位移必须写在状态级（每 tick 执行），但**只写状态级还不够**：
+#   状态级每 tick 都会把速度重新写成 11，`if time = 12` 里置的 0 在下一 tick 就被覆盖，
+#   结果收招 8 tick 仍在往前滑 —— 等于「可被惩罚的窗口」不存在。
+#   所以按 time 分段，让「停住」也是每 tick 都成立的状态。
+#   （历史：最初写在 `if time = 0` 里 = 只生效一帧，人物根本不动。）
+if time < 12 {
+    velSet{x: 11}
+}
+
+if time >= 12 {
+    velSet{x: 0}       # 第 12 tick 起停住 → 其后 8 tick 是可被惩罚的收招
+}
+
+if time = 0 {
+    call CSnd(9000, 3, 1);
 }
 
 if time = 19 {
@@ -1770,14 +2058,29 @@ anim: 115;
 ctrl: 0;
 sprpriority: 2;]
 
-velSet{x: -10}          # ★ 状态级：每 tick 生效（照抄 common1.cns.zss 的前冲写法）
-                       #   原来写在 `if time = 0` 里 = 只生效一帧，所以人物不动
+# Art pass: non-interactive visual accents.
 if time = 0 {
-    call CSnd(9000, 3, 1);
+    explod{
+        anim: 7270; ID: 7270;
+        postype: p1; pos: 15, 0;
+        scale: 0.4, 0.4;
+        bindtime: 0; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
 }
 
-if time = 12 {
-    velSet{x: 0}       # 第 12 tick 停住 → 其后 8 tick 是可被惩罚的收招
+
+# ★ 同 110：状态级 velSet 每 tick 生效，必须按 time 分段才能真的停住
+if time < 12 {
+    velSet{x: -10}
+}
+
+if time >= 12 {
+    velSet{x: 0}       # 第 12 tick 起停住 → 其后 8 tick 是可被惩罚的收招
+}
+
+if time = 0 {
+    call CSnd(9000, 3, 1);
 }
 
 if time = 19 {
@@ -1797,8 +2100,8 @@ anim: 117;
 ctrl: 0;
 sprpriority: 2;]
 
-velSet{x: 0}          # ★ 状态级：每 tick 生效（照抄 common1.cns.zss 的前冲写法）
-                       #   原来写在 `if time = 0` 里 = 只生效一帧，所以人物不动
+# 下闪是原地低身，**不位移**：状态级持续把速度钉在 0，防止继承上一状态的残余速度
+velSet{x: 0}
 if time = 0 {
     call CSnd(9000, 3, 1);
 }

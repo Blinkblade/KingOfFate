@@ -16,9 +16,9 @@
 [Info]
 name         = "archer"        ; 内部名，命令行 -p1 archer 用它
 displayname  = "Archer (Emiya)"   ; 画面上显示的名字
-versiondate  = 09,18,2026         ; MM,DD,YYYY
+versiondate  = 10,21,2026         ; MM,DD,YYYY
 mugenversion = 1.0                ; IKEMEN 下保持 1.0
-author       = "KingOfFate (art: kuri, see assets/LICENSE_MANIFEST.csv)"
+author       = "KingOfFate (art: aka65535 / Sho, see assets/LICENSE_MANIFEST.csv)"
 pal.defaults = 1,2,3,4            ; 默认调色板优先级
 
 ; ---------------------------------------------------------------------------
@@ -35,20 +35,20 @@ st2      = hits.zss            ; 额外状态：投技受击方
 st3      = command.zss         ; 命令路由：命令名 → 状态号
 st4      = AI.zss              ; CPU AI 脚本
 stcommon = common1.cns.zss     ; 公共状态（画面包 data/）——所有角色共用
-sprite   = archer.sff       ; 精灵图容器（★ PLACEHOLDER，见 README）
+sprite   = archer.sff       ; 高清人物、正式配色与独立特效调色板
 anim     = archer.air       ; 动画 + 判定框
-sound    = archer.snd       ; 音效容器（★ PLACEHOLDER，见 README）
+sound    = archer.snd       ; 源包音效容器（引用已校验，音效选择待试听）
 movelist = movelist.dat        ; 出招表（IKEMEN 特有，纯展示）
 
 ; ---------------------------------------------------------------------------
 ; 选人画面的按键 → 调色板映射
-; KingOfFate 四键：x = A 轻拳, a = B 轻脚, y = C 重拳, b = D 重脚
+; 设计键 / 引擎键：A=x, Z=a, S=y, X=b；配色 1 红衣 / 2 炭灰 / 3 蓝衣 / 4 鲜红。
 ; ---------------------------------------------------------------------------
 [Palette Keymap]
 x = 1                          ; A 轻拳 → 调色板 1
-a = 2                          ; B 轻脚 → 调色板 2
-y = 3                          ; C 重拳 → 调色板 3
-b = 4                          ; D 重脚 → 调色板 4
+a = 2                          ; Z 轻脚 → 调色板 2
+y = 3                          ; S 重拳 → 调色板 3
+b = 4                          ; X 重脚 → 调色板 4
 
 ; ---------------------------------------------------------------------------
 ; Arcade 模式的剧情板（可选）。模板没有对应素材，整段保持注释。

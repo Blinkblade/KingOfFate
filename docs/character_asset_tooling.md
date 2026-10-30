@@ -343,7 +343,7 @@ raw 真彩 SFFv2 精灵（format 0 depth 24/32） ← 字节序无法从本项�
 隔行（interlaced）PNG
 AIR 编辑 / 自动修复
 SND 写出（读取/导出已支持，见下）
-调色板编辑 / ACT 文件
+调色板编辑（ACT 只读导入已支持，见 §10.2）
 精灵表自动切割
 GUI / 数据库
 AI 生成精灵
@@ -442,7 +442,11 @@ python tools\sffpack\sffpack.py transcode <in.sff> --out <out.sff> --remap map.c
 ```
 
 `--remap` 的 CSV 每行一个输出精灵：`target_group,target_image,source_group,source_image[,axis_x,axis_y]`。
-同一源精灵出现在多行时，后面的行写成**链接精灵**（与源文件的 shareCopy 语义一致）。
+同一源精灵可映射到多个不同目标编号；输出会按实际像素与所选色板回读验证。保留独立色板的导入可独立编码精灵。
+
+2026-10-21：映射表允许增加命名列 `palette_index`。留空沿用 `--force-palette` / 默认策略；填 `source` 保留该精灵自己的源色板，填非负整数则指定源色板。用于同一角色中「人物强制正确配色、特效保留原色」。重复的目标精灵键会报错，避免引擎静默忽略后面的精灵。
+
+`--selection-palette FILE.act` 可重复使用：在基础人物色板之后预留选人配色，特效色板排在这些槽位之后。仅接受 768 字节的 MUGEN ACT 导入（按引擎的逆序规则读取）；不提供色板编辑。Archer 的完整构建入口为 `scripts/build_archer_art.ps1`，映射及配色说明见 [`art-pass.md`](../design/characters/archer/art-pass.md)。
 
 纪律：写盘后**立即回读**，逐精灵比对"解码索引 + 调色板映射 RGBA"（与源逐字节一致才
 返回 0）；引擎实载用 `tests/p3/run_match_watch.ps1` 做冒烟（判据 = `crashlogs: 0 new`）。
