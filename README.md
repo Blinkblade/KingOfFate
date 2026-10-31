@@ -229,6 +229,24 @@ pwsh -File scripts/test.ps1 -RuntimeTest     # smoke + a real engine launch chec
 The asset tools need Python 3.8+ and **no third-party packages**; see
 [`docs/character_asset_tooling.md`](docs/character_asset_tooling.md).
 
+### Move acceptance (runtime, per move)
+
+Unit tests cannot tell whether a move actually connects, costs what the move list says, or leaves you
+able to act afterwards. `tests/p6/verify_moves.ps1` answers that by running the real engine with a
+telemetry probe wired into the character: one line per tick with state, position, velocity, power,
+both lifebars, distance, control flag and effect counts, and 30 recipes that assert it.
+
+```powershell
+pwsh -File tests/p6/verify_moves.ps1 -Pass all           # 30 recipes + the perfect-guard pass
+pwsh -File tests/p6/verify_moves.ps1 -List               # list recipes without running anything
+pwsh -File tests/p6/verify_moves.ps1 -Pass moves -Only 25,26,28   # isolate specific recipes
+```
+
+Every expected value is derived from the `.zss` source (`hitDef.damage`, the `StateDef` header
+`poweradd`, the body's `powerAdd`), so a changed move cannot silently keep an old expectation.
+Current state: **30/30 recipes and the perfect-guard pass**. Output lands in `logs/p6/verify/`
+(`report.md` for humans, `run.csv` for per-tick data).
+
 ---
 
 ## Repository layout
