@@ -78,7 +78,44 @@ if stateType != A && ctrl {
     let ret = 1;
 }
 # b) 取消：等级严格递增 + 判定帧已开始 + 本次攻击尚未取消
-if var(3) > 0 && var(3) < $lv && var(4) = 1 && var(0) = 0 {
+#    ★ 2026-10-31 补：必须确认"我**正在出招**"（moveType = A）且不处于空中。
+#      原来没有这条 —— var(3)/var(4) 在离开攻击状态后**不会清零**（EndState 不清），
+#      于是被击中（受击硬直）时 var(3) 还是上一招的等级、var(4) 还是 1，
+#      玩家连打气键就能从受击硬直里 changeState 出来 = 无代价脱身。
+if moveType = A && stateType != A && var(3) > 0 && var(3) < $lv && var(4) = 1 && var(0) = 0 {
+    let ret = 1;
+}
+
+
+# ============================================================================
+# T1「同键二次」放行判定
+#   两种进入方式：
+#     a) 自由状态（地面 + ctrl）—— 从站立直接连按两次
+#     b) 取消：**普通技**（lv1/lv2）的判定帧已经开始，且本次攻击还没取消过
+#   ★ 刻意不允许从必杀技（lv3）接回二段：那会破坏等级语义，
+#     也让"读招失败"没有代价。二段自己登记的是 lv4，接进来就再也取消不出去。
+# ============================================================================
+[Function CanTap() ret]
+let ret = 0;
+# ★ 只对**站立**普通技成立：蹲着连按两次仍然是蹲招，不会跳成站招
+if stateType = S && ctrl {
+    let ret = 1;
+}
+if stateType = S && moveType = A && var(3) >= 1 && var(3) <= 2 && var(4) = 1 && var(0) = 0 {
+    let ret = 1;
+}
+
+
+# ============================================================================
+# T3「前摇取消」放行判定
+#   只在**普通技的起手段**成立：判定帧还没开始（var(4) = 0），
+#   且已经演了至少 2 tick（time >= 2）—— 不允许"按了 A 立刻变 C"，
+#   那样普通技就等于一个免费缓冲，等于没有前摇。
+#   费用的扣除在路由里做（powerAdd -100），和技能本身的耗气分开记。
+# ============================================================================
+[Function CanCancelStartup() ret]
+let ret = 0;
+if moveType = A && stateType != A && var(3) >= 1 && var(3) <= 2 && var(4) = 0 && var(0) = 0 && time >= 2 {
     let ret = 1;
 }
 
@@ -101,7 +138,56 @@ if roundState = 2 && !aiLevelF {
     let canLv3 = call CanChain(3);
     let canLv2 = call CanChain(2);
     let canLv1 = call CanChain(1);
+    let canTap = call CanTap();
+    let canStartup = call CanCancelStartup();
     ignoreHitPause{mapSet{map:"canCombo"; value: $canCombo}}
+
+    # ========================================================================
+    # 【T2 完美防】格挡成立的那一 tick，若"后"是在 3 tick 内按下去的 → 精防
+    #   奖励：+80 气 + 格挡环特效。
+    #
+    # ★ 为什么奖励只有气，没有改硬直/推退：
+    #   格挡硬直与推退由公共状态 150/152/154 接管（它们状态级 `velset: 0,0`），
+    #   在角色脚本里硬改就等于"重新实现公共状态"，违背 P1 的约定。
+    #   气是这游戏唯一的资源，+80 气已经等价于"多打半发箭"。
+    #
+    # ★ 为什么不用 `moveguarded`：引擎里它是**攻击方**的触发器
+    #   （char.go: moveGuarded() 返回 MC_Guarded 的剩余时长），防守方恒为 0。
+    #   防守方唯一可靠的判据是「进入了格挡震动状态 150 / 152 / 154」。
+    #
+    # ★ var(20) 的语义：精防窗口倒计时（3 → 0）。
+    #   var(21)：后方向"已经按着"的边沿标记（防止按住后每 tick 重新装填）。
+    #   var(22)：本次格挡已经结算过（防止一次格挡反复加分）。
+    # ========================================================================
+    if var(20) > 0 {
+        var(20) := var(20) - 1;
+    }
+    if command = "holdback" && var(21) = 0 {
+        var(21) := 1;
+        var(20) := 3;
+    }
+    if command != "holdback" && var(21) = 1 {
+        var(21) := 0;
+    }
+
+    if stateNo = 150 || stateNo = 152 || stateNo = 154 {
+        if var(22) = 0 {
+            var(22) := 1;
+            if var(20) > 0 {
+                var(20) := 0;
+                powerAdd{value: 80}
+                explod{
+                    anim: 7191; ID: 7191;
+                    postype: p1; pos: 0, -70;
+                    scale: 0.48, 0.48;
+                    bindtime: -1; removetime: -2;
+                    ownpal: 1; sprpriority: 3; removeongethit: 1;
+                }
+            }
+        }
+    } else {
+        var(22) := 0;
+    }
 
     # ========================================================================
     # 【① EX Projectile】236 + C，消耗 500 气
@@ -111,6 +197,7 @@ if roundState = 2 && !aiLevelF {
     # ========================================================================
     # 【① 终极技】C + D 同按，消耗 2000 气（整条气槽）
     #   ★ 必须排在最前面：它比"单独 C / 单独 D"更窄，写反了就永远轮不到
+    #   ★ 不支持前摇取消：2000 + 100 手续费 = 2100 > 气槽上限 2000
     # ========================================================================
     if command = "GAS_CZ" && power >= 2000 && $canLv4 {
         changeState{value: 3100}
@@ -119,36 +206,63 @@ if roundState = 2 && !aiLevelF {
     # ========================================================================
     # 【② 大型技能】D 系（键盘 D = 按钮 z），消耗 600~800 气
     #   →D 突进 / ↓D 压制 / D 中立终结。方向表达**意图**（总纲 §3.4）
+    #
+    #   ★ T3「前摇取消」：普通技**还没出判定**时可以取消进气键技能，
+    #     代价是额外 100 气（手续费）。它给"出招被读到"的一方一个出口 ——
+    #     总纲要求"被反制不能是纯挫败"，这是攻击侧的版本。
+    #     判断见 CanCancelStartup()：只有 lv1/lv2、var(4) = 0、time >= 2。
     # ========================================================================
-    if command = "GAS_FZ" && power >= 600 && $canLv4 {
+    if command = "GAS_FZ" && (($canLv4 && power >= 600) || ($canStartup && power >= 700)) {
+        if $canStartup {
+            powerAdd{value: -100}     # T3 手续费（技能本身的 600 在状态里扣）
+        }
         changeState{value: 1300}
     }
 
-    if command = "GAS_DZ" && power >= 600 && $canLv4 {
+    if command = "GAS_DZ" && (($canLv4 && power >= 600) || ($canStartup && power >= 700)) {
+        if $canStartup {
+            powerAdd{value: -100}
+        }
         changeState{value: 1400}
     }
 
-    if command = "GAS_Z" && power >= 800 && $canLv4 {
+    if command = "GAS_Z" && (($canLv4 && power >= 800) || ($canStartup && power >= 900)) {
+        if $canStartup {
+            powerAdd{value: -100}
+        }
         changeState{value: 3000}
     }
 
     # ========================================================================
     # 【③ 中型技能】C 系（键盘 C = 按钮 c），消耗 300~400 气
     #   C 射箭 / ↓C 斜下射 / →C 升斬 / ←C 后撤投剑
+    #   ★ T3 同②：也能从普通技的前摇取消进来（+100 手续费）
     # ========================================================================
-    if command = "GAS_BC" && power >= 400 && $canLv3 {
+    if command = "GAS_BC" && (($canLv3 && power >= 400) || ($canStartup && power >= 500)) {
+        if $canStartup {
+            powerAdd{value: -100}
+        }
         changeState{value: 1200}
     }
 
-    if command = "GAS_FC" && power >= 400 && $canLv3 {
+    if command = "GAS_FC" && (($canLv3 && power >= 400) || ($canStartup && power >= 500)) {
+        if $canStartup {
+            powerAdd{value: -100}
+        }
         changeState{value: 1100}
     }
 
-    if command = "GAS_DC" && power >= 300 && $canLv3 {
+    if command = "GAS_DC" && (($canLv3 && power >= 300) || ($canStartup && power >= 400)) {
+        if $canStartup {
+            powerAdd{value: -100}
+        }
         changeState{value: 1150}
     }
 
-    if command = "GAS_C" && power >= 300 && $canLv3 {
+    if command = "GAS_C" && (($canLv3 && power >= 300) || ($canStartup && power >= 400)) {
+        if $canStartup {
+            powerAdd{value: -100}
+        }
         changeState{value: 1000}
     }
 
@@ -229,6 +343,28 @@ if roundState = 2 && !aiLevelF {
 
     if command = "b" && stateType = A && ctrl {
         changeState{value: 640}
+    }
+
+    # ========================================================================
+    # 【⑦b T1 同键二次】同一个普通键按两次（.cmd 窗口 36 tick）→ 二段（State 250~253）
+    #   ★ 必须排在 ⑧ 的单键规则**之前**：第二次按键时 `TAP_x` 与 `x` 同时成立，
+    #     路由是"先命中者生效"，写反了就永远只会出单键那一招，二段不可能出现。
+    #   ★ 二段登记为 lv4（连段收尾），接进来之后不可再取消；放行条件见 CanTap()。
+    # ========================================================================
+    if command = "TAP_A" && $canTap {
+        changeState{value: 250}
+    }
+
+    if command = "TAP_S" && $canTap {
+        changeState{value: 251}
+    }
+
+    if command = "TAP_Z" && $canTap {
+        changeState{value: 252}
+    }
+
+    if command = "TAP_X" && $canTap {
+        changeState{value: 253}
     }
 
     # ========================================================================

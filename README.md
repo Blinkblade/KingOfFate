@@ -70,6 +70,26 @@ project got here in [`docs/iterations/`](docs/iterations/).
 
 ---
 
+## Archer — the first final-art character
+
+`game/chars/archer/` (Archer / EMIYA, *Fate/stay night*) is the character that leaves placeholder art
+behind: a high-resolution sprite set, four selectable palettes, twin blades, arrow projectiles, and a
+Reality Marble ultimate.
+
+| Standing off | Mid-slash | Reversal combo |
+| --- | --- | --- |
+| ![Two Archers facing off, red coat against black coat, both holding twin blades](docs/images/p6/archer_01.png) | ![Archer swinging a blade with a white slash arc trailing the swing](docs/images/p6/archer_04.png) | ![A REVERSAL counter shown on screen as the two fighters exchange blows](docs/images/p6/archer_08.png) |
+
+Both sides are AI-controlled (level 8) in a mirror match on `stage0`. The frames are captured from the
+real engine, not composed:
+
+```powershell
+pwsh -File tests/p1/capture_match.ps1 -P1 archer -P2 archer -Stage stage0 -Ai1 8 -Ai2 8 `
+     -WarmupSec 6 -Shots 8 -ShotIntervalSec 2 -Prefix archer -OutDir docs\images\p6
+```
+
+---
+
 ## Engine & repository model
 
 KingOfFate does **not** fork or copy the fighting engine into this repository. The engine is pinned as a

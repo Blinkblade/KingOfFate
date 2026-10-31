@@ -89,6 +89,41 @@ name = "b"
 command = b
 time = 1
 
+; --- 可选技术层 T1：同键二次（同一个普通键按两次 = 该招的二段）---
+;   语法：`x, x` 是"按一次 x，之后再按一次 x"。time 是整条序列的窗口。
+;
+;   ★★ 当前值 36，为什么（2026-10-31 两次修）★★
+;   CanTap() 要求 `var(4) = 1`，即**判定帧已经开始**，而四招的判定帧起点不同：
+;     轻拳 A = 第 6 tick / 轻脚 Z = 第 5 tick / 重脚 X = 第 9 tick / **重拳 S = 第 13 tick**
+;   先试 12 tick：重拳的第二次按键必须赶在判定帧出现之前 → 物理上不可能，
+;   所以 State 251 永远进不去（Runtime 实测「T1 连 S」恒为 STATE-MISS）。
+;   再试 26 tick（= 覆盖最慢的 S(13) + 13 tick 输入余量）：A / Z / X 全通过，S 仍然 MISS。
+;   逐帧数据给出的原因：命令缓冲按 gameTime 计时，而**命中停顿期间 gameTime 照走、
+;   状态却不执行**。实测重拳命中停顿吞掉 13 个 gameTime tick：首按在 g418，
+;   最早能路由的一 tick 已经在 g442，26 tick 的窗口正好被吃光。
+;   → 36 留出余量后 251 = 112/112 PASS。
+;   ★ 二段是 lv4（连段收尾），接进来之后不可再取消。
+;   ★ 必须排在单键 `x` 之前被判定 —— 依赖的是 command.zss 的路由顺序，不是这里的顺序。
+[Command]
+name = "TAP_A"
+command = x, x
+time = 36
+
+[Command]
+name = "TAP_S"
+command = y, y
+time = 36
+
+[Command]
+name = "TAP_Z"
+command = a, a
+time = 36
+
+[Command]
+name = "TAP_X"
+command = b, b
+time = 36
+
 ; --- 气键（中型，键盘 C = 按钮 c）---
 [Command]
 name = "GAS_C"

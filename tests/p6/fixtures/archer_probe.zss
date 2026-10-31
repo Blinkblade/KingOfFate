@@ -1,0 +1,102 @@
+# ============================================================================
+# Archer 运行时遥测探针（telemetry probe）—— 测试专用，不进 game/ 真值
+#
+# 为什么需要它：
+#   引擎是 GUI 子系统程序，但 **stdout 重定向其实可用**（P6 实测：`-h` 抓回 44 行，
+#   连 Panic + Go stack traceback 都会进同一份 stdout）。之前 P3 记的
+#   "stdout 不可写、控制台捕获不可能" 是错误结论 —— 那次只是 25 秒里没有任何
+#   代码调用 fmt.Printf，所以文件是空的。
+#   ZSS 的 printToConsole 走 sys.printToConsole -> fmt.Printf，因此
+#   「角色状态 -> stdout -> 文本文件」是一条程序可读、可复核的数字通道，
+#   比截图 OCR 可靠得多（OCR 多位数字会误读，见 docs/HANDOFF.md §7.2）。
+#
+# 怎么用：
+#   1) 复制到 **runtime 角色目录** engine/ikemen-go/chars/archer/probe.zss
+#      （该目录在子模块里被 .gitignore 忽略，不会污染 git）
+#   2) 在 runtime 的 archer.def 的 [Files] 段加一行 st5 = probe.zss
+#   3) 启动时把 stdout 重定向到文件，见 tests/p6/verify_moves.ps1
+#   st5 是合法的（compiler.go:8163 `^st[0-9]*$`），且 -2 号全局状态在本角色
+#   与 common1.cns.zss 里都没人用，所以不会覆盖任何现有内容。
+#
+# 输出格式（一行一 tick，逗号分隔，便于脚本解析）：
+#   KOF,gameTime,playerNo,stateNo,time,posX,posY,velX,power,life,p2StateNo,p2Life,
+#      p2BodyDistX,anim,ctrl,jg,proj,p2DistX,projTotal,facing,jgWin,jgDone
+#
+#   facing    = facing（+1 朝右 / -1 朝左）
+#               ★ 为什么必须报它（2026-10-31，四条配方假失败的唯一根因）：
+#                 引擎 `char.go:6510` 的 `fbFlip = facing < 0`，`input.go:2802`
+#                 据此把**物理 L/R** 换成角色的 B/F。由此得到一条硬事实：
+#                   **物理 LEFT / RIGHT 在引擎里永远是「世界 −x / +x」，
+#                     而不是「角色的后 / 前」。**
+#                 验收脚本以前把设计方向 `fwd` 直接映射成物理右键，于是
+#                 p1 一旦转身朝左（后投把 p2 扔到身后就会），
+#                 →+C 实际发出的就是 ←+C：进了 1200、没进 1100，
+#                 而 1400（↓D，方向键不受影响）能进招却因为两人被顶在
+#                 左右两条 stage bound 上（p2BodyDist 恒 224）必然空振。
+#                 要按角色的「前 / 后」发键，就必须知道 facing。
+#
+#   jg        = numExplod(7191)  —— T2 完美防的特效环数量。这是"精防分支真的走到了"
+#               的直接证据（命令路由在 -1 里生成它，-2 在下一 tick 就能看到）。
+#   proj      = numProjID(1000)  —— 场上属于 1000 号（平射箭）的投射物数量。
+#   projTotal = numProj()        —— **全部**投射物数量。
+#               ★ 为什么两个都要：不同招的 projid 不同（1000 / 1150 / 1200 / 3xxx），
+#                 只数 1000 号会把斜下射箭（1150）误判成"没放出来"
+#                 （2026-10-31 实测：1150 报 PROJ=0，实际是数错了编号）。
+#   p2DistX   = p2Dist x         —— p1 与 p2 的**轴心**水平距离（带方向符号）。
+#               ★ 为什么需要：p1 的位移会被"推挤盒分离"改写（两人重叠时引擎每 tick
+#                 把双方推开），只看 p1 的 x 会把推挤误当成招式位移。
+#                 用 `pos x + p2Dist x` 可以反算 p2 的横坐标，从而区分
+#                 「p1 自己走了」和「两人互相推开」。
+#                 （不用 `enemy, pos x`：它在 params 列表里带逗号，会拆坏参数解析。）
+#   jgWin     = var(20)  —— T2 精防窗口的剩余 tick（按下 ← 的边沿置 3，每 tick 减 1）
+#   jgDone    = var(22)  —— 本次格挡是否已结算过（防止一次格挡反复加分）
+#               ★ 为什么要把内部变量也报出来：只看 numExplod(7191) 无法区分
+#                 「窗口根本没打开（测试方式问题）」和「窗口开了但这拳没落在窗口里」
+#                 和「拳头落进窗口却没有特效（真缺陷）」。2026-10-31 的 T2 判定
+#                 就卡在这个三义性上：一直按住 ← 只在第一个 tick 建立边沿，
+#                 窗口 3 tick 后归零，此后每次格挡都必然 var(20)=0。
+#
+# ★ 采样点约定（读数据时必须记住）：
+#   全局状态 -2 在**当前状态的动作之前**执行（char.go:11932-11944），
+#   所以第 g 行的 stateNo/pos 是第 g-1 tick 结束时的画面状态。
+#   相邻两行做差分不受这个偏移影响。
+#   命中停顿（hitpause）期间全局状态不执行（char.go:11910 的 pauseBool），
+#   于是 gameTime 会出现跳号 —— 跳号长度 = 命中停顿长度，属正常现象。
+# ============================================================================
+
+[StateDef -2]
+
+# roundState = 2 才是"对战中"，避免选人/回合演出阶段刷屏。
+if roundState = 2 {
+
+    # ========================================================================
+    # ★ 测试专用补气（等价于测试台的"无限气开关"）
+    #
+    # 为什么不用 -maxpowermode：它每 tick 把气拉满，**扣气看不见**；
+    # 为什么不是 powerAdd：气满 2000 时 powerAdd 会被 Clamp 掉（char.go:8807
+    #   powerAdd -> setPower -> Clamp(0, powerMax)），
+    #   于是"普通技 +20 气"这类增益全部观测为 0 —— 2026-10-31 因此产生
+    #   一整片假的 POWER-MISMATCH。
+    #
+    # 现在：只在气**跌破 900**、且处于站立待机（stateNo = 0 && ctrl）时补到 1600。
+    #   ★ 不要每 tick 归一。2026-10-31 试过"idle 时把气归一到 1600"，结果把
+    #     「最低点」测量毁了：招式结束回到 idle 的那几行又被拉回 1600，
+    #     trough 恒等于 baseline，扣气/增益全读成 0
+    #     （那一轮跑出 −400/0、0/20 这种鬼数字）。
+    #   ★ 为什么限定 idle：如果在招式中途补，扣气后的那一 tick 会立刻被拉回 1600，
+    #     真实扣气就看不见了（−600 会变成 0）。idle 正是每条配方的起手点。
+    #
+    # ★ gameTime > 300 的门：终极技 3100 的门槛是 `power >= 2000`（整条槽，
+    #   见 command.zss 的路由），必须靠启动参数 -p1.power 2000 提供的满槽来测。
+    #   3100 是第一条配方、窗口在 g = 11..237，所以前 300 tick 不补气。
+    #   （这个门只在测试里成立，game/ 里没有任何补气逻辑。）
+    # ========================================================================
+    if playerNo = 1 && gameTime > 300 && stateNo = 0 && ctrl && power < 900 {
+        powerSet{value: 1600}
+    }
+
+    printToConsole{
+        text: "KOF,%d,%d,%d,%d,%.2f,%.2f,%.2f,%d,%d,%d,%d,%.1f,%d,%d,%d,%d,%.1f,%d,%d,%d,%d";
+        params: gameTime, playerNo, stateNo, time, pos x, pos y, vel x, power, life, p2StateNo, p2Life, p2BodyDist x, anim, cond(ctrl, 1, 0), numExplod(7191), numProjID(1000), p2Dist x, numProj, facing, var(20), var(22)
+    }
+}

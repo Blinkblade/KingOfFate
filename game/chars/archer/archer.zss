@@ -370,6 +370,226 @@ call EndState(0);
 
 
 # ============================================================================
+# ★ 可选技术层 T1「同键二次」—— State 250 / 251 / 252 / 253
+#
+#   输入：同一个普通键按两次（.cmd 的 TAP_* 窗口 36 tick；见 archer.cmd 里的说明）。
+#   输出：该招的**二段**——同一套动画，伤害与硬直都更轻，但它是 **lv4**。
+#
+# ★ 为什么二段是 lv4（而不是 lv2）：
+#   取消链的规则是"等级严格递增"。把二段放在最高级，等于说
+#   **「二段是连段的句号」**——它可以从任何普通技接进来（4 > 1/2/3），
+#   接进来之后再也不能取消成别的招。这既给了连段一条明确的收尾，
+#   也从结构上杜绝了「A A A A…」这种无限连（lv 只增不减）。
+#
+# ★ 为什么二段只能用普通技接（var(3) <= 2）：
+#   允许从必杀技（lv3）接回一个普通技会破坏等级语义（大招后接普攻），
+#   也会让"读招失败"没有代价。条件写在 command.zss 的 CanTap() 里。
+#
+# ★ 复用动画、不新增美术：二段与一段共用同一段动作，判定落在同一个
+#   animElem 上；变的只有伤害、硬直与"能不能再取消"。
+# ============================================================================
+
+# --- T1 二段：轻斩 ---
+[StateDef 250;
+type: S; movetype: A; physics: S;
+juggle: 0; velset: 0, 0; ctrl: 0;
+anim: 200;
+poweradd: 10;
+sprpriority: 2;]
+
+if time = 5 {
+    explod{
+        anim: 7200; ID: 7200;
+        postype: p1; pos: 0, 0;
+        scale: 0.48, 0.48;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+if time = 0 {
+    call AtkInit(4);          # lv4 = 连段收尾，不可再取消
+}
+
+if animElem = 6 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 20, 0;
+        animtype: Light;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 6, 6;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 4;
+        ground.hittime: 10;
+        ground.velocity: -4;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+if time = 1 {
+    call CSnd(9000, 4, 1);
+}
+
+call EndState(0);
+
+
+# --- T1 二段：重斩 ---
+[StateDef 251;
+type: S; movetype: A; physics: S;
+juggle: 0; velset: 0, 0; ctrl: 0;
+anim: 210;
+poweradd: 14;
+sprpriority: 2;]
+
+if time = 12 {
+    explod{
+        anim: 7210; ID: 7210;
+        postype: p1; pos: 0, 0;
+        scale: 0.48, 0.48;
+        bindtime: -1; removetime: -2;
+        ownpal: 1; sprpriority: 3; removeongethit: 1;
+    }
+}
+
+if time = 0 {
+    call AtkInit(4);
+}
+
+if animElem = 7 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 50, 3;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 8, 8;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -70;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 7;
+        ground.hittime: 14;
+        ground.velocity: -6;
+        airguard.velocity: -2.6, -1.1;
+        air.type: High;
+        air.velocity: -2.4, -4;
+        air.hittime: 20;
+    }
+}
+
+if time = 1 {
+    call CSnd(9000, 3, 1);
+}
+
+call EndState(0);
+
+
+# --- T1 二段：前蹴 ---
+[StateDef 252;
+type: S; movetype: A; physics: S;
+juggle: 0; velset: 0, 0; ctrl: 0;
+anim: 230;
+poweradd: 10;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(4);
+}
+
+if animElem = 5 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 24, 0;
+        animtype: Light;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 3, Hit;
+        pausetime: 6, 6;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -70;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 11;
+        ground.velocity: -5;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+if time = 1 {
+    call CSnd(9000, 4, 1);
+}
+
+call EndState(0);
+
+
+# --- T1 二段：回旋蹴 ---
+[StateDef 253;
+type: S; movetype: A; physics: S;
+juggle: 0; velset: 0, 0; ctrl: 0;
+anim: 240;
+poweradd: 18;
+sprpriority: 2;]
+
+if time = 0 {
+    call AtkInit(4);
+}
+
+if animElem = 5 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 52, 4;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 8, 8;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -66;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 8;
+        ground.hittime: 16;
+        ground.velocity: -7;
+        airguard.velocity: -2.8, -1.2;
+        air.type: High;
+        air.velocity: -2.6, -4.2;
+        air.hittime: 22;
+    }
+}
+
+if time = 1 {
+    call CSnd(9000, 2, 1);
+}
+
+call EndState(0);
+
+
+# ============================================================================
 # 蹲轻拳 A（Crouching Light Punch）—— State 400   lv1，下段
 # 下段、快、轻。type: C 是必须的（否则站防能挡住）。
 # ============================================================================
@@ -812,10 +1032,13 @@ anim: 800;
 poweradd: 10;
 sprpriority: 2;]
 
+# ★ 2026-10-31 修：hitflag 原来写 `M-`。引擎 compiler.go:flagSub 把 `-` 解析成
+#   HF_MNS，char.go 的判定是 `HF_MNS != 0 && hittmp > 0 → 打不中`，等于
+#   「只抓从没被打过的目标」。投技要抓的就是站着的人，改为 `M`（= H|L）。
 if time = 0 {
     hitDef{
         attr: S, NT;            # Standing, Normal Throw
-        hitflag: M-;
+        hitflag: M;
         damage: 60, 0;          # ★ 投技原本**没有伤害行** → 造成 0 伤害（被 git checkout 回退过一次）
         priority: 1, Miss;
         sparkno: -1;
@@ -1813,6 +2036,17 @@ if time = 12 {
 }
 
 
+# ★ 后撤：起手 12 tick 向后跳开，判定帧起停住。
+#   这一招原本**完全没有位移**（换完美术之后只剩一个原地扔剑的动作），
+#   与"后撤投剑"这个名字和用法（被逼近时拉开 + 反制）对不上。
+#   位移量 6.5 × 12 ≈ 78 px，约一个身位。
+if time < 12 {
+    velSet{x: -6.5}
+}
+if time >= 12 {
+    velSet{x: 0}
+}
+
 if time = 0 {
     powerAdd{value: -400}
     call AtkInit(3);
@@ -1826,7 +2060,12 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         projid: 1200;
         postype: p1;
         offset: 40, -90;
-        velocity: -6, 0;
+        # ★ 2026-10-31 修：原来写 `velocity: -6, 0`，剑出来后是**朝身后**飞的，
+        #   人往前压也永远吃不到这一剑 —— 端到端验收里 1200 的伤害恒为 0
+        #   （runtime 实测：state 1200 全程 p2 生命不动，而 56 点伤害声明在案）。
+        #   投掷物的 velocity 是**绝对坐标**（不像 offset / pos 那样跟随朝向），
+        #   所以朝对手飞必须是正数。同族的 1000/1150/3000 都是正 velocity。
+        velocity: 6, 0;
         projhits: 1;
         projremovetime: 90;
         projpriority: 2;
@@ -1895,10 +2134,20 @@ if time = 12 {
 }
 
 
+# ★ 突进：只在**起手段**（前 12 tick）推进，判定帧一开始就停住。
+#   原来是写在 `if time = 0` 里的 `velSet{x: 7.5}` —— 只生效一帧，
+#   靠站立摩擦 0.85 自然衰减，实测只滑出约 38 px，等于"突进不突进"。
+#   分段的理由同闪身：状态级写法必须配 `time >=` 才能真的停住。
+if time < 12 {
+    velSet{x: 7.5}
+}
+if time >= 12 {
+    velSet{x: 0}      # 判定帧起停住：位移不再变，收招 14 tick 可被确反
+}
+
 if time = 0 {
     powerAdd{value: -600}
     call AtkInit(3);
-    velSet{x: 7.5}
 }
 
 if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是第 7 帧（原写 6）
