@@ -197,6 +197,7 @@ design/characters/archer/
 | 按键窗口按墙钟毫秒估够用 | ❌ 命令缓冲按 **gameTime** 计时，而**命中停顿期间 gameTime 走、状态不走** → 一次重拳命中能吞掉 13 tick，窗口凭空少一半 |
 | 设计方向 `fwd` 直接映射成键盘右键 | ❌ 引擎里**物理 LEFT/RIGHT 恒等于世界 −x/+x**（`char.go:6510` 的 `fbFlip` + `input.go:2802`），不是角色的前/后。p1 一转身，所有"方向 + 键"就镜像了 |
 | `powerAdd{value: 80}` 一定观测得到 | ❌ 满槽时 `setPower` 会 `Clamp(0, powerMax)`（`char.go:8807`）把增益吃掉。**扣气不受影响**，增益要留余量才测得到 |
+| 调试脚本留在 `external/mods/*.lua` | ❌ `external/script/main.lua:3986` 会 `require` 该目录里**每一个** lua，在 "NOW LOADING" 界面抛 Engine error 直接退出（2026-11-03 被一行 `error()` 探针卡死）。目录被 gitignore，`git status` 永远干净 —— 靠 `run_game.ps1` 预检（exit 4）发现 |
 
 ### 7.2 工作流纪律
 
@@ -250,6 +251,8 @@ pwsh -File scripts/build_engine.ps1 -BuildFfmpeg no
 
 # 运行
 pwsh -File scripts/run_game.ps1            # 加 -CheckOnly 只做预检
+                                           # 若 external/mods/ 里有 .lua 会拒绝启动（exit 4）
+                                           # 确实要加载则 -AllowMods
 
 # 全量回归（smoke + 工具测试，含招式体检）
 pwsh -File scripts/test.ps1

@@ -30,6 +30,11 @@
 .PARAMETER CheckOnly
     Run every preflight check but do not launch the game.
 
+.PARAMETER AllowMods
+    Launch even when external/mods/ contains .lua files. The engine requires every
+    one of them at startup, so a leftover debug probe there stops the game from
+    loading; by default this script refuses to start and shows what it found.
+
 .EXAMPLE
     pwsh -File scripts/run_game.ps1
     pwsh -File scripts/run_game.ps1 -Wait
@@ -42,7 +47,8 @@ param(
     [string]$Msys2Root,
     [switch]$Wait,
     [string[]]$ExtraArgs,
-    [switch]$CheckOnly
+    [switch]$CheckOnly,
+    [switch]$AllowMods
 )
 
 Set-StrictMode -Version Latest
@@ -127,6 +133,43 @@ Write-Ok 'runtime assets: data/ font/ external/ chars/ stages/ all present'
 Write-Host '         motif   : data/ikemen1/system.def'
 Write-Host '         char    : chars/kfm/kfm.def'
 Write-Host '         stage   : stages/stage0.def'
+Write-Host ''
+
+# ---------------------------------------------------------------------------
+# Debug-module leftovers
+# ---------------------------------------------------------------------------
+# external/script/main.lua requires EVERY lua file it finds in external/mods/,
+# during the "NOW LOADING" screen. A debug probe left behind there therefore
+# breaks startup with an "Engine error" popup that looks nothing like a mod
+# problem (we hit this with a one-line error() probe).
+# The directory is gitignored, so `git status` stays clean and the leftover is
+# invisible until the game refuses to start. Check it here instead.
+$modsDir = Join-Path $RuntimeRoot 'external\mods'
+if (Test-Path -LiteralPath $modsDir) {
+    $mods = @(Get-ChildItem -LiteralPath $modsDir -File -Filter '*.lua' -ErrorAction SilentlyContinue)
+    if ($mods.Count -gt 0 -and -not $AllowMods) {
+        Write-Err "external/mods/ holds $($mods.Count) lua file(s) that the engine requires at startup:"
+        $mods | ForEach-Object { Write-Host "         - $($_.Name)  ($($_.LastWriteTime.ToString('yyyy-MM-dd HH:mm')))" -ForegroundColor Yellow }
+        Write-Host ''
+        Write-Host '       Each of them is loaded while the "NOW LOADING" screen is up.' -ForegroundColor Yellow
+        Write-Host '       A leftover debug probe there makes the engine quit with an' -ForegroundColor Yellow
+        Write-Host '       "Engine error" popup before the game window appears.' -ForegroundColor Yellow
+        Write-Host ''
+        Write-Host '       Move them out of the runtime (they are gitignored, so nothing' -ForegroundColor Yellow
+        Write-Host '       else will notice them), then start again:' -ForegroundColor Yellow
+        Write-Host ("           Move-Item '{0}\*.lua' <somewhere-outside-the-build>" -f $modsDir) -ForegroundColor Yellow
+        Write-Host '       Or pass -AllowMods if these are modules you really want loaded.' -ForegroundColor Yellow
+        Write-Host ''
+        exit 4
+    }
+    if ($mods.Count -gt 0) {
+        Write-Host ("[warn ] external/mods: {0} lua module(s) will be loaded (-AllowMods)" -f $mods.Count) -ForegroundColor Yellow
+        $mods | ForEach-Object { Write-Host "         - $($_.Name)" -ForegroundColor Yellow }
+    }
+    else {
+        Write-Ok 'external/mods : no stray lua modules'
+    }
+}
 Write-Host ''
 
 # ---------------------------------------------------------------------------

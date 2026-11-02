@@ -265,11 +265,15 @@ function Release-Keys([string[]]$vks) {
 # 键位映射：设计键 -> 配置里的按钮名 -> 实际键名 -> 虚拟键码
 #   设计键 A/S/Z/X = 轻拳/重拳/轻脚/重脚（引擎按钮 x/y/a/b）
 #   设计键 C/D     = 气键（引擎按钮 c/z）
-#   方向 fwd/back/down/up（P1 从左边出场、面朝右）
+#   方向 fwd/back = **角色相对**（按 facing 换算，见 Resolve-VKInvariant 上方长注释）
+#        down/up   = 物理键，与朝向无关（蹲/跳两个方向不随转身镜像）
 #   ★ 不硬编码键盘字母：从 save/config.ini 的 [Keys_P1] 读，用户改键位也不会测错。
 # ---------------------------------------------------------------------------
 $DesignToButton = @{ A = 'x'; S = 'y'; Z = 'a'; X = 'b'; C = 'c'; D = 'z' }
-$DirToButton = @{ fwd = 'right'; back = 'left'; down = 'down'; up = 'up' }
+# ★ 这里**故意不写** fwd/back：它们必须先按 facing 换成物理左右（见 Resolve-VKInvariant）。
+#   以前写成 `fwd = 'right'` 是死代码（被上面的 elseif 抢先），但读起来像真值 ——
+#   一旦有人以为改这里能改方向语义，就会重新踩 2026-10-31 的镜像坑。
+$DirToButton = @{ down = 'down'; up = 'up' }
 
 # ★ 可注入键白名单（P6 实测，见 docs/HANDOFF.md §7.5）
 #   本机能注进引擎的只有这 6 个：SPACE / RETURN / TAB / BACKSPACE / LSHIFT / LCTRL。
