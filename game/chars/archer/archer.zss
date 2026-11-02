@@ -181,8 +181,8 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 5;
-        ground.hittime: 11;
+        ground.slidetime: 12;
+        ground.hittime: 16;
         ground.velocity: -5;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -255,8 +255,8 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 9;
-        ground.hittime: 16;
+        ground.slidetime: 16;
+        ground.hittime: 20;
         ground.velocity: -7;
         airguard.velocity: -2.6, -1.1;
         air.type: High;
@@ -303,8 +303,8 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 6;
-        ground.hittime: 12;
+        ground.slidetime: 12;
+        ground.hittime: 15;
         ground.velocity: -5;
         airguard.velocity: -2, -.9;
         air.type: High;
@@ -352,8 +352,8 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 10;
-        ground.hittime: 19;
+        ground.slidetime: 16;
+        ground.hittime: 20;
         ground.velocity: -9;
         airguard.velocity: -2.8, -1.2;
         air.type: High;
@@ -428,7 +428,7 @@ if animElem = 6 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 4;
-        ground.hittime: 10;
+        ground.hittime: 13;
         ground.velocity: -4;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -483,7 +483,7 @@ if animElem = 7 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 7;
-        ground.hittime: 14;
+        ground.hittime: 19;
         ground.velocity: -6;
         airguard.velocity: -2.6, -1.1;
         air.type: High;
@@ -573,7 +573,7 @@ if animElem = 5 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 8;
-        ground.hittime: 16;
+        ground.hittime: 19;
         ground.velocity: -7;
         airguard.velocity: -2.8, -1.2;
         air.type: High;
@@ -620,8 +620,8 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: Low;
-        ground.slidetime: 5;
-        ground.hittime: 11;
+        ground.slidetime: 10;
+        ground.hittime: 17;
         ground.velocity: -4;
         airguard.velocity: -1.9, -.8;
         air.type: Low;
@@ -689,8 +689,8 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 10;
-        ground.hittime: 16;
+        ground.slidetime: 16;
+        ground.hittime: 20;
         ground.velocity: -3, -6;  # 对空命中会把对手顶起来
         airguard.velocity: -2.6, -1.1;
         air.type: High;
@@ -737,8 +737,8 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: Low;
-        ground.slidetime: 6;
-        ground.hittime: 12;
+        ground.slidetime: 10;
+        ground.hittime: 16;
         ground.velocity: -5;
         airguard.velocity: -2, -.9;
         air.type: Low;
@@ -797,7 +797,7 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: Trip;
-        ground.slidetime: 10;
+        ground.slidetime: 14;
         ground.hittime: 17;
         ground.velocity: -1.5, -2;
         air.velocity: -1.2, -3;
@@ -1497,6 +1497,17 @@ juggle: 10; velset: 0, 0; ctrl: 0;
 anim: 3100;
 poweradd: 0;                      # 出招不集气（它要花光整槽）
 sprpriority: 2;]
+
+# ★ 2026-11-03：剑雨**不可防御**。
+#   依据（引擎源码，不是猜）：char.go:10844 的
+#       canguard := !c.asf(ASF_unguardable) && getter.scf(SCF_guard) && ...
+#   这里的 `c` 是**攻方**，所以攻方身上带 unguardable 时，对手的防御一律不成立；
+#   紧邻的注释原文写着 "Unguardable flag also affects projectiles"（issue #2367），
+#   所以这一条对 3100 发出的投射物同样有效 —— 不需要改 guardflag。
+#   必须是**状态级**：只在某一 tick 写一次的话，下一 tick 就失效了。
+#   状态总长 198 tick ≥ 最后一把剑的 110 tick 存活期，覆盖整场剑雨。
+#   代价：2000 气 + 长咏唱，换一发不可防的 300 伤害；可被走位/跳跃躲开，不是必胜。
+assertSpecial{ flag: unguardable }
 
 # Art pass: non-interactive visual accents.
 if time = 0 {

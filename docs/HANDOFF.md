@@ -198,6 +198,10 @@ design/characters/archer/
 | 设计方向 `fwd` 直接映射成键盘右键 | ❌ 引擎里**物理 LEFT/RIGHT 恒等于世界 −x/+x**（`char.go:6510` 的 `fbFlip` + `input.go:2802`），不是角色的前/后。p1 一转身，所有"方向 + 键"就镜像了 |
 | `powerAdd{value: 80}` 一定观测得到 | ❌ 满槽时 `setPower` 会 `Clamp(0, powerMax)`（`char.go:8807`）把增益吃掉。**扣气不受影响**，增益要留余量才测得到 |
 | 调试脚本留在 `external/mods/*.lua` | ❌ `external/script/main.lua:3986` 会 `require` 该目录里**每一个** lua，在 "NOW LOADING" 界面抛 Engine error 直接退出（2026-11-03 被一行 `error()` 探针卡死）。目录被 gitignore，`git status` 永远干净 —— 靠 `run_game.ps1` 预检（exit 4）发现 |
+| `hittime` 抄参考角色就够了 | ❌ 僵直和**动画长度**共同决定帧优势：`adv = hittime − (total − startup − 1)`。hittime 抄了 KFM 的 11，但动画比 KFM 长 40~60% → 轻斩帧优势 **−6**，打中反而被反打。换素材后必须重算 `python tools/frame_data.py` |
+| 判定框"差不多长"就行 | ❌ 判定框和刀**不在同一帧**等于没有：210 重斩伸得最远的一帧（77.3）原本是空帧，230 的框比刀短 18.7。必须逐帧把框对齐到该帧的刀尖，`frame_data.py --check` 会报 |
+| 终极技伤害写够就行 | ❌ 默认 `guardflag` 就是可防，站着举手能挡掉从天上落下来的剑。不可防要攻方带 `assertSpecial{flag: unguardable}`（见 §7.3） |
+| `assertSpecial` 在某一 tick 写一次就生效 | ❌ 它每 tick 都要重新声明，写在 `if time = 0` 里等于只有 1 tick 有效 |
 
 ### 7.2 工作流纪律
 
@@ -240,6 +244,16 @@ design/characters/archer/
   gameTime 照走、状态不执行 → 一次重击能吃掉十几个 tick 的窗口
 - **遥测探针能读 `facing` 与 `var(n)`**（`tests/p6/fixtures/archer_probe.zss`），
   不必为观测再加引擎侧能力
+- **帧优势的算法（改任何攻击数值前先算一遍）**：`adv = hittime − (total − startup − 1)`。
+  受击方等 `hittime`（`char.go:5509` `hitOver()`），攻方等动画播完（`EndState` 判 `animTime = 0`）；
+  命中停顿对双方等长，相互抵消。`hitshaketime = hd.pausetime[1]`（`char.go:11050`），
+  它只决定"5000 → 5001"的切换，不改变总僵直。**负帧优势 = 打中之后对手先动**
+- **"不可防御"只认攻方的 `ASF_unguardable`**：`char.go:10844` 的
+  `canguard := !c.asf(ASF_unguardable) && ...`，`c` 是**攻方**。紧邻注释明确写着
+  "Unguardable flag also affects projectiles"（issue #2367）→ 对投射物同样有效，
+  不需要改 `guardflag`。写法：状态级 `assertSpecial{ flag: unguardable }`（每 tick 都要声明）
+- **`Clsn3`（推挤盒 / `size` 里的 ground.front）用 `localscl` 不乘 `size.xscale`**，
+  而 Clsn1/Clsn2 乘 —— 所以推挤盒和受击框不是同一套缩放，对距离时别混用
 
 ---
 
@@ -265,6 +279,10 @@ python tools/character_validate/validate_character.py game/chars/archer
 
 # 招式体检（查那些引擎不报错的问题）
 python tools/audit_moveset.py               # 干净=0，有问题=1
+
+# 帧数据 / 帧优势（改攻击数值前先跑；--check 会因负帧优势或框短于画面而失败）
+python tools/frame_data.py game/chars/archer
+python tools/frame_data.py game/chars/archer --check
 
 # 实测装置
 pwsh -File tests/p6/verify_moves.ps1 -Pass all      # ★ 端到端全招式验收（30 条配方 + T2）

@@ -132,6 +132,22 @@ hitDef 挂在没有框的帧、收招过短、受击框缺口、投技没有伤�
 
 细节与实测数据见 [`iterations/20261103-runtime-launch-guard.md`](iterations/20261103-runtime-launch-guard.md)。
 
+### 2.3g 手感三项：距离 / 硬直 / 不可防（2026-11-03）
+
+负责人实测反馈「打不到、没硬直、连不上」。三条都先量化再修，工具是新增的
+`tools/frame_data.py`（帧数据 + 帧优势，纯标准库，`--check` 可直接进回归）。
+
+| 问题 | 真因 | 结果 |
+| --- | --- | --- |
+| 刀打到人不掉血 / 重击贴脸 | **判定窗口和刀锋错帧**：210 伸得最远的一帧（77.3）原来没有判定框；230 的框比刀短 18.7；400 短 16.8 | 判定框逐帧跟刀走，重斩起手 12 → 10 |
+| 打中反被反打、无法连招 | **帧优势为负**：`adv = hittime − (total − startup − 1)`，轻斩 −6。hittime 抄的是 KFM（11），但动画比 KFM 长 40~60% | 收尾巴 + 提 hittime：轻斩 −6 → **+4**，重斩 0 → **+2**，蹲系 −3 → +3 |
+| 无限剑制被防住 | 投射物 `guardflag: MA`，站着就能防 | 状态级 `assertSpecial{flag: unguardable}`，必防假人下仍打 **96** 伤害 |
+
+验证：`verify_moves.ps1 -Pass moves` **30/30 PASS**；终极技做了**正反两组对照**
+（带 flag 96 / 去掉只剩 20 削减），并新增 `-DmgRule atleast` 把这个差别变成会 FAIL 的断言。
+
+细节见 [`iterations/20261103-feel-distance-stun-unguardable.md`](iterations/20261103-feel-distance-stun-unguardable.md)。
+
 ### 2.4 方法论（本阶段最重要的产出）
 
 **「画面知识」搬，「战斗框架」不搬**：

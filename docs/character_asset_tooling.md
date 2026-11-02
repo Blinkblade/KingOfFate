@@ -21,6 +21,7 @@
 | **validate_character** | `python tools/character_validate/validate_character.py` | 这个角色目录完整吗？引用都对得上吗？能不能进 Runtime？ |
 | **asset_report** | `python tools/asset_report.py` | 上面那一整套跑一遍是什么结果？一条命令，输出一份带命令行的报告。 |
 | **sffpack**（P6 新增） | `python tools/sffpack/sffpack.py transcode` | 把一份源 SFF（v1 或 v2）转成目标角色编号体系的 SFF **v2**——写盘的唯一入口。 |
+| **frame_data**（2026-11-03 新增） | `python tools/frame_data.py <角色目录> [--check]` | 每招的起手/判定/收招多少 tick？**打中之后谁先能动**（帧优势）？判定框比画面短吗？`--check` 会把负帧优势或"框短于刀锋"判成失败。 |
 
 前三者共享一个只用标准库的小解析库 `tools/kofassets/`（见 §8）；`asset_report` 不加
 任何自己的逻辑，它只是按固定顺序调用上面三件 + `check_export`，把每步的命令行与

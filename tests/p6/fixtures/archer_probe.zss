@@ -95,6 +95,26 @@ if roundState = 2 {
         powerSet{value: 1600}
     }
 
+    # ========================================================================
+    # ★ 测试专用"必防假人"：**只在对手放无限剑制（3100）时**强制防御
+    #
+    # 为什么需要它：3100 的剑雨必须**不可防御**（assertSpecial unguardable，
+    #   见 archer.zss StateDef 3100 的注释）。不构造一个"一定会防"的对手，
+    #   "打不穿防御"这件事在 Runtime 里根本没有证据 —— 对手站着不动本来就掉血。
+    #
+    # 为什么这样写：
+    #   · playerNo = 2  ← 只改对手，不改被测的 P1
+    #   · p2StateNo = 3100 ← **只在剑雨期间**开，其余 29 条配方完全不受影响。
+    #     ZSS 里 p2StateNo 是"对手的状态号"（相对本角色），所以 playerNo=2 时
+    #     它读到的是 P1 的状态。
+    #   · autoGuard 与训练模式 Guard Mode = all 是同一个 flag（training.zss 第 82 行），
+    #     char.go 里 autoGuard 会按攻击的 guardflag 自动选站防/蹲防。
+    #   结论：若 3100 变成可防，配方 1 的伤害会从 126 掉到 0 → 直接 FAIL。
+    # ========================================================================
+    if playerNo = 2 && p2StateNo = 3100 {
+        assertSpecial{ flag: autoGuard }
+    }
+
     printToConsole{
         text: "KOF,%d,%d,%d,%d,%.2f,%.2f,%.2f,%d,%d,%d,%d,%.1f,%d,%d,%d,%d,%.1f,%d,%d,%d,%d";
         params: gameTime, playerNo, stateNo, time, pos x, pos y, vel x, power, life, p2StateNo, p2Life, p2BodyDist x, anim, cond(ctrl, 1, 0), numExplod(7191), numProjID(1000), p2Dist x, numProj, facing, var(20), var(22)
