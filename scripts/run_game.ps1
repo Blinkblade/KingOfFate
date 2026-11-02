@@ -234,7 +234,11 @@ $startArgs = @{
     WorkingDirectory = $RuntimeRoot
 }
 if ($argList.Count -gt 0) { $startArgs.ArgumentList = $argList }
-if ($Wait) { $startArgs.Wait = $true; $startArgs.PassThru = $true }
+# PassThru is not optional: without it Start-Process emits nothing, and reading
+# $proc.Id below dies under Set-StrictMode -Version Latest - AFTER the game has
+# already been launched, so the script reports failure for a launch that worked.
+$startArgs.PassThru = $true
+if ($Wait) { $startArgs.Wait = $true }
 
 $proc = Start-Process @startArgs
 

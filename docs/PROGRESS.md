@@ -117,6 +117,21 @@ hitDef 挂在没有框的帧、收招过短、受击框缺口、投技没有伤�
 特效环 10 行）；T3 前摇取消 **66/66 伤害、−465/−465 耗气**（365 + 手续费 100）。
 位移按面向折算：前冲闪 +121.00 / 后撤闪 −110.00 / 下闪 0.00 / 后撤投剑 −91.25 / 突进斩 +82.50。
 
+### 2.3f 启动守卫（2026-11-03，新增）
+
+`pwsh -File scripts/run_game.ps1` 现在会先扫 `external/mods/*.lua`，有残留就**拒绝启动**（exit 4）
+并列出文件名；确实要加载才加 `-AllowMods`。
+
+起因：负责人报「进不去」—— 引擎停在 `NOW LOADING`，弹 `Error: .\external\mods\kofprobe.lua:1`。
+那是 10-31 调查 Lua 能力时留的一行 `error()` 探针，而 `external/script/main.lua:3986` 会
+`require` 该目录里**每一个** lua。该目录被 gitignore，`git status` 永远干净，只有启动会撞上。
+
+同一轮还修掉一个位置最坏的旧 bug：`Start-Process` 没加 `-PassThru` 时不返回对象，脚本读
+`$proc.Id` 在 StrictMode 下抛错 —— **游戏已经拉起来了，脚本却 exit 1 报失败**。
+修完后正式入口实测 `exit 0` + PID 打印 + 窗口 `Responding=True`。
+
+细节与实测数据见 [`iterations/20261103-runtime-launch-guard.md`](iterations/20261103-runtime-launch-guard.md)。
+
 ### 2.4 方法论（本阶段最重要的产出）
 
 **「画面知识」搬，「战斗框架」不搬**：
