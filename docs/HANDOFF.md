@@ -205,6 +205,8 @@ design/characters/archer/
 | 某一帧没写 `Clsn2` = 沿用上一帧 | ❌ 该帧**没有受击框 = 无敌**。`test_fighter_b` 的 210 有 16 tick、230 有 8 tick 是这样 —— 玩家想反击时打空。整段覆盖用 `Clsn2Default`（同角色的 240 一直是对的，210/230 是漏的） |
 | `guard.hittime` 不写没关系 | ❌ 缺省 = **取 `ground.hittime`**（`char.go:883`）⇒「被防」和「打中」收益完全一样，防线形同虚设。要"安全于命中、危险于被读"必须显式写小（210：hittime 20 / guard.hittime 13 ⇒ +2 / **−5**） |
 | 判定框比画面长只是"更宽松" | ❌ 那是**看不见的判定**：210 框到 105 而精灵只画到 81，玩家的体感是"人机出拳比我的刀还远"。框比画面长和短**两个方向都要查**，`frame_data.py` 的「框 vs 画面」列给差值 |
+| 判定框和画面对齐了 = 玩家能躲开 | ❌ **两回事**。能不能跳过取决于**画面顶端 vs 跳跃顶点**，跟框与画面对不对齐无关。`test_fighter_b` 的气弹素材 84 px 高、浮在 40..123，而 `apex = 8.4²/(2×0.44) = 80.2` ⇒ 永远跳不过去，框再准也没用。调"躲得开"先算 `apex`，再算 `-offset_y + 素材高` |
+| `numProj()` 和其他触发器一样带括号 | ❌ `numproj` 在 `compiler.go:3189` 里**不读括号**（直接 `out.append(OC_numproj)`），必须写裸 `numProj`。写成 `numProj()` 编译失败，而 `validate_character` **不解析 ZSS 语法**，只会表现为"角色加载失败" |
 
 ### 7.2 工作流纪律
 
@@ -264,6 +266,12 @@ design/characters/archer/
   2026-11-03 用 `Clsn2Default` 补齐
 - **击倒 / 击飞招不能用 `adv_hit` 判断**：`fall: 1` 或 `ground.type: Trip` 之后是对手的
   起身段；`ground.velocity` 的 y ≤ −3 时对手走 `air.hittime`。`frame_data.py` 会自动跳过这两类
+- **跳跃顶点要算，不要估**：`apex = jump.neu_y² / (2 × yaccel)`。本工程两个角色都是
+  `8.4² / (2 × 0.44) = 80.2 px`。投射物"能不能跳过"只看**画面顶端**与 `apex` 的关系，
+  与判定框是否与画面对齐无关
+- **`numProj` / `numProjID(id)` 决定"屏幕上还有没有我的弹"**：`numProj` → `Char.numProj()`
+  → `getMultipleProjs(-1,-1)`，**按 `p.ownerId` 过滤**（`char.go:7662-7687`）⇒ 只数自己的、
+  且只数 `isActive()` 的。这是 AI "空场才发"闸门的正确写法（`numProj` 无括号，见 §7.1）
 - **`Clsn3`（推挤盒 / `size` 里的 ground.front）用 `localscl` 不乘 `size.xscale`**，
   而 Clsn1/Clsn2 乘 —— 所以推挤盒和受击框不是同一套缩放，对距离时别混用
 

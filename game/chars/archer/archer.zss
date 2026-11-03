@@ -1490,7 +1490,14 @@ call EndState(0);
 #   费用 2000 气（= 整条气槽），lv4。
 #   伤害全部在剑的投射物上（Action 3105）；本体动作没有 Clsn1。
 #   剑以**对手**为基准生成（postype: p2），从上方落下 —— 这才是"剑雨"。
-#      6 把 × 30 = 180 伤害，与 Super（195）同量级但更慢、更难躲干净。
+#      10 把 × 50 = 上限 500（半管血）；实测能连到 6 把 ≈ 300。
+#
+# ★ 2026-11-03 第二次：单把 16 → 50。
+#   原来的问题不是"数字小"，是**结构倒挂**：
+#       Super（3000）花 1000 气得 195；
+#       终极（3100）花 2000 气（整条槽）只有 10 × 16 = 160 上限、实测 96。
+#   花两倍的气打出四分之一的伤害 —— 那不是"大招"，是惩罚。
+#   现在 6 连 ≈ 300（≈ 3.5 记重斩），10 连命中（对手站着不动）才是 500。
 [StateDef 3100;
 type: S; movetype: A; physics: S;
 juggle: 10; velset: 0, 0; ctrl: 0;
@@ -1562,7 +1569,7 @@ if animElem = 4 && var(10) = 0 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1600,7 +1607,7 @@ if animElem = 6 && var(10) = 1 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1638,7 +1645,7 @@ if animElem = 8 && var(10) = 2 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1676,7 +1683,7 @@ if animElem = 10 && var(10) = 3 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1714,7 +1721,7 @@ if animElem = 11 && var(10) = 4 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1752,7 +1759,7 @@ if animElem = 12 && var(10) = 5 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1790,7 +1797,7 @@ if animElem = 13 && var(10) = 6 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1828,7 +1835,7 @@ if animElem = 14 && var(10) = 7 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1866,7 +1873,7 @@ if animElem = 15 && var(10) = 8 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1904,7 +1911,7 @@ if animElem = 16 && var(10) = 9 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 16, 4;
+        damage: 50, 10;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;

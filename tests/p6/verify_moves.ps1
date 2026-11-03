@@ -600,7 +600,7 @@ $Moves = @(
     # ---- 终极技先测 ----
     #   ★ 顺序有讲究：3100 的门槛是 power >= 2000（整条槽），所以必须在
     #     "刚开局的 2000 气" 状态下第一个测，否则任何一个耗气招之后都测不了。
-    (New-Move 3100 '无限剑制 C+D' 'C+D' @(@{ Do = 'tap'; Keys = 'C+D'; Ms = 100 }) -Dist none -Dmg 48 -DmgRule atleast -Note '不可防：对手全程必防仍须 ≥48（被防只剩 20 削减）')
+    (New-Move 3100 '无限剑制 C+D' 'C+D' @(@{ Do = 'tap'; Keys = 'C+D'; Ms = 100 }) -Dist none -Dmg 200 -DmgRule atleast -Note '不可防：对手全程必防仍须 >=200（10x50，实测连到 5~6 把 = 250~300）')
     # ---- 站立普通技 ----
     (New-Move 200 '站立 A 轻拳' 'A' @(@{ Do = 'tap'; Keys = 'A'; Ms = 70 }))
     (New-Move 210 '站立 S 重拳' 'S' @(@{ Do = 'tap'; Keys = 'S'; Ms = 70 }))
@@ -1083,7 +1083,8 @@ function Analyze-Window($win) {
         } elseif ($res.DmgRule -eq 'atleast') {
             # ★ 「至少要打到这么多」—— 用来断言"这一招打穿了某种防御"。
             #   `min` 只要求 ≥1，挡不住"被防御后只剩削减伤害"这种退化
-            #   （3100 实测：不可防 96，被防只剩 20 削减，两者在 min 下都算 ok）。
+            #   （3100 历史实测：不可防 96，被防只剩 20 削减，两者在 min 下都算 ok。
+            #     2026-11-03 第二次把单把剑 16 → 50，门槛随之提到 200）。
             if ($null -ne $res.DmgExp -and $res.Damage -ge [int]$res.DmgExp) { $res.DmgVerdict = 'ok' }
             else { $res.DmgVerdict = 'MISMATCH' }
         } elseif (-not $res.Seen) {

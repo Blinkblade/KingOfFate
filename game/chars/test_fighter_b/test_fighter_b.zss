@@ -859,7 +859,11 @@ if animElem = 4 && var(10) = 0 {
         projanim: 1005;
         projid: 1000;
         postype: p1;
-        offset: 34, -40;          # 从身前胸高发出（判定框见 .air 的 Action 1005）
+        offset: 34, 18;           # ★ 2026-11-03 第二次：原来 34,-40（胸高）。
+                                  #   素材是 84 px 高的人形，浮在 40..123 而跳跃顶点只有
+                                  #   80.2 ⇒ 数学上不可能跳过去。压到 +18（画面 -18..65）
+                                  #   之后跳跃窗口约 16 tick，真的能躲。
+                                  #   判定框见 .air 的 Action 1005（与画面严格一致）。
         velocity: 6, 0;           # 每 tick 前进 6 px（方向由朝向决定）
         projhits: 1;              # ① 命中 1 次即消失
         projremovetime: 80;       # ② 80 tick 后强制消失（约 1.3 s）
@@ -932,13 +936,15 @@ if time = 0 {
 }
 
 # 第 1 发：偏上
+# ★ 2026-11-03：offset y 原 -52（胸高）。整组压到地面附近，理由见 State 1000 的注释
+#   （素材 84 px 高而跳跃顶点只有 80.2，浮在高处就永远跳不过去）。
 if animElem = 3 && var(10) = 0 {
     var(10) := 1;
     projectile{
         projanim: 1005;
         projid: 1001;
         postype: p1;
-        offset: 34, -52;
+        offset: 34, 12;
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -975,7 +981,7 @@ if animElem = 5 && var(10) = 1 {
         projanim: 1005;
         projid: 1002;
         postype: p1;
-        offset: 34, -28;
+        offset: 34, 26;
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -1115,13 +1121,16 @@ if time = 0 {
 }
 
 # 第 1 发：高
+# ★ 2026-11-03：三发整组压到地面附近（原 -55 / -40 / -25 = 胸高）。
+#   理由见 State 1000：素材 84 px 高，跳跃顶点 80.2，浮高就是"完全躲不掉"。
+#   现在三发在高 12 / 18 / 24 处，顶都在 71 以下 ⇒ 跳得过，但三发连发仍然难躲干净。
 if animElem = 4 && var(10) = 0 {
     var(10) := 1;
     projectile{
         projanim: 1005;
         projid: 3001;
         postype: p1;
-        offset: 34, -55;
+        offset: 34, 12;
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1158,7 +1167,7 @@ if animElem = 7 && var(10) = 1 {
         projanim: 1005;
         projid: 3002;
         postype: p1;
-        offset: 34, -40;
+        offset: 34, 18;
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1195,7 +1204,7 @@ if animElem = 9 && var(10) = 2 {
         projanim: 1005;
         projid: 3003;
         postype: p1;
-        offset: 34, -25;
+        offset: 34, 24;
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
