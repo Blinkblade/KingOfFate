@@ -478,8 +478,19 @@ Add-Check -Group '7' -Name 'no PNG was written outside logs/' -Passed ($strayPng
 # between runs -- a tool run must not touch it, but the build legitimately does.
 # Every other character directory stays guarded: an accidental edit to
 # test_fighter_a/b must still fail here.
+#
+# 2026-11-03: the feel/balance pass
+#   docs/iterations/20261103-feel-distance-stun-unguardable.md
+# changed the two prototype fighters and the _template they are both cloned
+# from, on purpose (frame advantage, hitbox-vs-artwork, projectile tuning).
+# Those three directories are therefore allowed for the duration of that pass;
+# p1_kfm_zss_lab and any future character directory are still guarded.
 $characterTouched = @($status | Where-Object {
-    $_ -match 'game/chars/' -and $_ -notmatch 'test_fighter_b\.air$' -and $_ -notmatch 'game/chars/archer/'
+    $_ -match 'game/chars/' -and
+    $_ -notmatch 'game/chars/archer/' -and
+    $_ -notmatch 'game/chars/test_fighter_a/' -and
+    $_ -notmatch 'game/chars/test_fighter_b/' -and
+    $_ -notmatch 'game/chars/_template/'
 })
 Add-Check -Group '7' -Name 'no character file outside the P6 build changed' `
     -Passed ($characterTouched.Count -eq 0) -Detail ($characterTouched -join '; ')

@@ -19,6 +19,12 @@ neither shows up in any existing check:
 2. **Hitbox vs artwork.** A box that is shorter than the drawn blade produces
    "the sword clearly went through him" with no damage, and no tool complains.
 
+3. **Block disadvantage.** ``guard.hittime`` defaults to ``ground.hittime``
+   (``char.go:883``), so a move that is +2 on hit is also +2 **on block** -- the
+   defender gets nothing for blocking. Writing an explicit, shorter
+   ``guard.hittime`` is how "safe on hit, punishable on block" is expressed; the
+   ``adv_gr`` column makes the difference visible.
+
 Usage
 -----
     python tools/frame_data.py [character_dir]
@@ -28,6 +34,12 @@ Usage
 shorter than the artwork it is supposed to represent. Everything is computed
 from the character's own files; the scale comes from [Size] xscale, never
 hardcoded.
+
+Moves that do not return the opponent to neutral are excluded from the
+advantage check, because the formula does not describe them: air normals
+(600-699), knockdowns (``fall: 1`` / ``ground.type: Trip``), and launchers
+(``ground.velocity`` y <= -3, the target is in ``air.hittime`` instead).
+
 
 Frame data convention (60 ticks = 1 second):
   startup  ticks before the first hitbox frame
@@ -110,12 +122,26 @@ def parse_states(zss_text):
             def num(key, default=None):
                 mm = re.search(key + r'\s*:\s*(-?\d+)', body)
                 return int(mm.group(1)) if mm else default
+
+            def gvy():
+                """y component of ground.velocity (0 when only x is given)."""
+                mm = re.search(r'ground\.velocity\s*:\s*(-?[\d.]+)\s*(?:,\s*(-?[\d.]+))?', body)
+                if not mm or mm.group(2) is None:
+                    return 0.0
+                return float(mm.group(2))
             rec['hitdefs'].append({
                 'hittime': num(r'ground\.hittime'),
                 'airhittime': num(r'air\.hittime'),
                 'slidetime': num(r'ground\.slidetime'),
+                'guardhittime': num(r'guard\.hittime'),
                 'pausetime': num(r'pausetime'),
                 'damage': num(r'damage'),
+                # 两种"对手不会回到中立"的命中，adv_hit 都不适用：
+                #   击倒（fall: 1 / ground.type: Trip）—— 对手躺下再起身
+                #   击飞（ground.velocity 的 y <= -3）—— 对手在空中，走 air.hittime
+                # 对这类招用 adv_hit 去卡，只会得到一个错的数字。
+                'knockdown': bool(num(r'fall', 0)) or 'trip' in body.lower(),
+                'launcher': gvy() <= -3,
                 'guardflag': (re.search(r'guardflag\s*:\s*(\w*)', body) or [None, ''])[1]
                 if re.search(r'guardflag\s*:\s*(\w*)', body) else '',
             })
@@ -162,8 +188,8 @@ def main(argv):
 
     print('# %s — frame data (xscale = %.4g)' % (os.path.basename(os.path.normpath(char_dir)), xscale))
     print()
-    print('| state | anim | total | startup | active | recovery | hittime | adv_hit | damage | 刀尖(世界) | Clsn1(世界) | 框 vs 画面 |')
-    print('|---|---|---|---|---|---|---|---|---|---|---|---|')
+    print('| state | anim | total | startup | active | recovery | hittime | adv_hit | guard | adv_gr | damage | 刀尖(世界) | Clsn1(世界) | 框 vs 画面 |')
+    print('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|')
     problems = []
     tip_cache = {}
     for st, rec in sorted(states.items()):
@@ -183,7 +209,11 @@ def main(argv):
         recovery = total - startup - active
         hd = rec['hitdefs'][0]
         ht = hd['hittime']
-        adv = None if ht is None else ht - (total - startup - 1)
+        # guard.hittime 缺省时引擎取 ground.hittime（char.go:883），这里照抄。
+        gt = hd['guardhittime'] if hd['guardhittime'] is not None else ht
+        span = total - startup - 1
+        adv = None if ht is None else ht - span
+        advg = None if gt is None else gt - span
 
         art_tip = 0.0
         if sff is not None:
@@ -200,20 +230,24 @@ def main(argv):
         if sff is not None and delta < -2:
             verdict = '**短 %.1f**' % (-delta)
             problems.append('%s: hitbox is %.1f units shorter than the artwork' % (st, -delta))
-        if adv is not None and st < 600 and adv < 0:
-            # 只查地面普通技。空中招（600~699）落地前本来就不可能连段，
-            # 负帧优势是"跳进去要付代价"的一部分，不该当成缺陷。
+        if adv is not None and st < 600 and not hd['knockdown'] and not hd['launcher'] and adv < 0:
+            # 只查地面普通技，且跳过击倒 / 击飞：
+            #   空中招（600~699）落地前本来就不可能连段，负帧优势是"跳进去要付代价"
+            #   的一部分；击倒 / 击飞之后是对手的倒地起身段，adv_hit 无意义。
             problems.append('%s: negative hit advantage (%d)' % (st, adv))
             verdict += ' **adv<0**'
-        print('| %d | %d | %d | %d | %d | %d | %s | %s | %s | %.1f | %.1f | %s |' % (
+        print('| %d | %d | %d | %d | %d | %d | %s | %s | %s | %s | %s | %.1f | %.1f | %s |' % (
             st, rec['anim'], total, startup, active, recovery,
             '' if ht is None else ht,
             '' if adv is None else adv,
+            '' if gt is None else gt,
+            '' if advg is None else advg,
             hd['damage'],
             art_tip, box, verdict))
 
     print()
     print('adv_hit = hittime - (total - startup - 1)  正 = 打中后你先能动（能接招）')
+    print('adv_gr  = guard.hittime - 同上         负 = 被防后对手先能动（你被反制）')
     print('刀尖 = 判定帧里画面实际伸到的最远处；框 vs 画面为负表示框比画面短')
     if check:
         print()

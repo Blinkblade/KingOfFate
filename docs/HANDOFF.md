@@ -202,6 +202,9 @@ design/characters/archer/
 | 判定框"差不多长"就行 | ❌ 判定框和刀**不在同一帧**等于没有：210 重斩伸得最远的一帧（77.3）原本是空帧，230 的框比刀短 18.7。必须逐帧把框对齐到该帧的刀尖，`frame_data.py --check` 会报 |
 | 终极技伤害写够就行 | ❌ 默认 `guardflag` 就是可防，站着举手能挡掉从天上落下来的剑。不可防要攻方带 `assertSpecial{flag: unguardable}`（见 §7.3） |
 | `assertSpecial` 在某一 tick 写一次就生效 | ❌ 它每 tick 都要重新声明，写在 `if time = 0` 里等于只有 1 tick 有效 |
+| 某一帧没写 `Clsn2` = 沿用上一帧 | ❌ 该帧**没有受击框 = 无敌**。`test_fighter_b` 的 210 有 16 tick、230 有 8 tick 是这样 —— 玩家想反击时打空。整段覆盖用 `Clsn2Default`（同角色的 240 一直是对的，210/230 是漏的） |
+| `guard.hittime` 不写没关系 | ❌ 缺省 = **取 `ground.hittime`**（`char.go:883`）⇒「被防」和「打中」收益完全一样，防线形同虚设。要"安全于命中、危险于被读"必须显式写小（210：hittime 20 / guard.hittime 13 ⇒ +2 / **−5**） |
+| 判定框比画面长只是"更宽松" | ❌ 那是**看不见的判定**：210 框到 105 而精灵只画到 81，玩家的体感是"人机出拳比我的刀还远"。框比画面长和短**两个方向都要查**，`frame_data.py` 的「框 vs 画面」列给差值 |
 
 ### 7.2 工作流纪律
 
@@ -252,6 +255,15 @@ design/characters/archer/
   `canguard := !c.asf(ASF_unguardable) && ...`，`c` 是**攻方**。紧邻注释明确写着
   "Unguardable flag also affects projectiles"（issue #2367）→ 对投射物同样有效，
   不需要改 `guardflag`。写法：状态级 `assertSpecial{ flag: unguardable }`（每 tick 都要声明）
+- **`guard.hittime` / `guard.slidetime` 的缺省链**（`char.go:878-888`）：
+  ikemenver 角色 `guard.hittime` ← `ground.hittime`，非 ikemenver ← `ground.slidetime`；
+  再 `guard.slidetime` ← `guard.hittime`、`guard.ctrltime` ← `guard.slidetime`。
+  **所以"被防"默认和"打中"一样长** —— 想做出防御劣势必须显式写
+- **一帧没有 `Clsn2` = 该帧无敌**（不是沿用上一帧）。`validate_character` 报
+  `AIR_HURTBOX_GAP` 就是在说这件事；`test_fighter_b` 的 210/230 曾各有 16 / 8 tick 如此，
+  2026-11-03 用 `Clsn2Default` 补齐
+- **击倒 / 击飞招不能用 `adv_hit` 判断**：`fall: 1` 或 `ground.type: Trip` 之后是对手的
+  起身段；`ground.velocity` 的 y ≤ −3 时对手走 `air.hittime`。`frame_data.py` 会自动跳过这两类
 - **`Clsn3`（推挤盒 / `size` 里的 ground.front）用 `localscl` 不乘 `size.xscale`**，
   而 Clsn1/Clsn2 乘 —— 所以推挤盒和受击框不是同一套缩放，对距离时别混用
 
@@ -280,9 +292,12 @@ python tools/character_validate/validate_character.py game/chars/archer
 # 招式体检（查那些引擎不报错的问题）
 python tools/audit_moveset.py               # 干净=0，有问题=1
 
-# 帧数据 / 帧优势（改攻击数值前先跑；--check 会因负帧优势或框短于画面而失败）
+# 帧数据 / 帧优势（改攻击数值前先跑）
+#   列：adv_hit = 命中帧优势（正 = 我的回合）、adv_gr = 被防帧优势（负 = 对手能反制）
+#   --check 会因「地面普通技负帧优势」或「框比画面短」而失败；击倒/击飞招自动跳过
 python tools/frame_data.py game/chars/archer
 python tools/frame_data.py game/chars/archer --check
+pwsh -File scripts/test.ps1 -Suite frame    # 对 game/chars/*/ 逐个 --check（已进回归）
 
 # 实测装置
 pwsh -File tests/p6/verify_moves.ps1 -Pass all      # ★ 端到端全招式验收（30 条配方 + T2）

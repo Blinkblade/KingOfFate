@@ -145,8 +145,10 @@ if animElem = 3 {
         hitsound: 5, 0;               # 命中音效
         guardsound: 6, 0;             # 防御音效
         ground.type: High;            # 地面受击类型
-        ground.slidetime: 5;          # 地面滑动时间
-        ground.hittime: 11;           # 地面受击硬直
+        ground.slidetime: 6;          # 地面滑动时间
+        ground.hittime: 14;           # 地面受击硬直（★ 必须与 Animation 200 的总长相配：
+                                      #   帧优势 = hittime - (total - startup - 1)，要 >= 0。
+                                      #   原值 11 配 20 tick 的动画 = -5，打中了对手先动。）
         ground.velocity: -4;          # 地面击退速度
         airguard.velocity: -1.9, -.8; # 空中防御击退
         air.type: High;               # 空中受击类型

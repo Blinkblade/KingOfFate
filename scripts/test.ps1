@@ -10,6 +10,8 @@
       smoke   tests/smoke/smoke.ps1            project invariants, engine baseline,
                                                runtime files, build artifact
       tools   tests/tools/run_tool_tests.ps1   the P5 character asset tools
+      frame   tools/frame_data.py --check      frame advantage and hitbox-vs-artwork
+                                               for every character under game/chars
 
     Exit code: 0 = PASS, non-zero = FAIL.
 
@@ -27,8 +29,9 @@
 [CmdletBinding()]
 param(
     [switch]$RuntimeTest,
-    [ValidateSet('smoke', 'tools', 'all')]
+    [ValidateSet('smoke', 'tools', 'frame', 'all')]
     [string]$Suite = 'all',
+    [string]$Python = 'python',
     [switch]$Full
 )
 
@@ -58,6 +61,46 @@ function Invoke-Suite {
     if ($LASTEXITCODE -ne 0) { $script:failures += $Name }
 }
 
+function Invoke-FrameCheck {
+    param([string]$CharsRoot, [string]$ToolPath, [string]$Python = 'python')
+    Write-Host ''
+    Write-Host '=== suite: frame ===' -ForegroundColor White
+    if (-not (Test-Path -LiteralPath $ToolPath)) {
+        Write-Host "[fail] tool not found: $ToolPath" -ForegroundColor Red
+        $script:failures += 'frame'
+        return
+    }
+    if (-not (Test-Path -LiteralPath $CharsRoot)) {
+        Write-Host "[fail] character root not found: $CharsRoot" -ForegroundColor Red
+        $script:failures += 'frame'
+        return
+    }
+    # Every character directory that carries its own <name>.zss -- labs and
+    # data-less stubs are skipped instead of being reported as broken.
+    $dirs = @(Get-ChildItem -LiteralPath $CharsRoot -Directory |
+        Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName ($_.Name + '.zss')) } |
+        Sort-Object Name)
+    if ($dirs.Count -eq 0) {
+        Write-Host '[fail] no character directories with a .zss found' -ForegroundColor Red
+        $script:failures += 'frame'
+        return
+    }
+    $bad = 0
+    foreach ($d in $dirs) {
+        $out = @(& $Python $ToolPath $d.FullName '--check' 2>&1 | ForEach-Object { "$_" })
+        if ($LASTEXITCODE -ne 0) {
+            $bad++
+            Write-Host ("[fail] {0}" -f $d.Name) -ForegroundColor Red
+            $out | Where-Object { $_ -match '^\s+- |^FAIL' } |
+                ForEach-Object { Write-Host ("       {0}" -f $_.Trim()) }
+        } else {
+            Write-Host ("[ ok ] {0}" -f $d.Name) -ForegroundColor Green
+        }
+    }
+    Write-Host ("frame: {0} checked, {1} failed" -f $dirs.Count, $bad) -ForegroundColor DarkGray
+    if ($bad -gt 0) { $script:failures += 'frame' }
+}
+
 if ($Suite -eq 'smoke' -or $Suite -eq 'all') {
     $smokeArgs = @{ RepoRoot = $RepoRoot }
     if ($RuntimeTest) { $smokeArgs.RuntimeTest = $true }
@@ -65,9 +108,15 @@ if ($Suite -eq 'smoke' -or $Suite -eq 'all') {
 }
 
 if ($Suite -eq 'tools' -or $Suite -eq 'all') {
-    $toolArgs = @{ RepoRoot = $RepoRoot }
+    $toolArgs = @{ RepoRoot = $RepoRoot; Python = $Python }
     if ($Full) { $toolArgs.Full = $true }
     Invoke-Suite -Name 'tools' -Path $tools -Arguments $toolArgs
+}
+
+if ($Suite -eq 'frame' -or $Suite -eq 'all') {
+    Invoke-FrameCheck -CharsRoot (Join-Path $RepoRoot 'game\chars') `
+                      -ToolPath (Join-Path $RepoRoot 'tools\frame_data.py') `
+                      -Python $Python
 }
 
 Write-Host ''

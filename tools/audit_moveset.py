@@ -13,6 +13,11 @@ nothing, or looks wrong, and nothing complains:
 
 Usage: python tools/audit_moveset.py [character_directory]
 Exits 0 when clean, 1 when it finds something.
+
+Every box coordinate is converted to world units with the character's **own**
+[Size] xscale, read from its .const. It used to be a hardcoded 0.48 (Archer's
+value), which silently scaled every other character by 0.48 and produced five
+bogus "projectile never connects" reports for test_fighter_b (2026-11-03).
 """
 import os
 import re
@@ -26,7 +31,37 @@ from kofassets import air as airmod, sff
 AIR_PATH = os.path.join(TARGET, os.path.basename(TARGET) + ".air")
 SFF_PATH = os.path.join(TARGET, os.path.basename(TARGET) + ".sff")
 A = airmod.Air.load(AIR_PATH); S = sff.Sff.load(SFF_PATH)
-SC = 0.48
+
+
+def _read_xscale(char_dir, name):
+    """[Size] xscale 从角色自己的 .const 读 —— 绝不硬编码。
+
+    2026-11-03：原本写死 0.48（Archer 的值），对其他角色会把所有判定框
+    按 0.48 缩放，于是 test_fighter_b 的 5 条投射物检查全是假警报。
+    缩放规则见 char.go:updateClsnScale()。
+    """
+    const = os.path.join(char_dir, name + '.const')
+    if not os.path.isfile(const):
+        return 1.0
+    sect = None
+    with open(const, encoding='utf-8', errors='replace') as fh:
+        for raw in fh:
+            line = raw.split(';', 1)[0].strip()
+            m = re.match(r'^\[(.+)\]$', line)
+            if m:
+                sect = m.group(1).strip().lower()
+                continue
+            if sect == 'size' and '=' in line:
+                k, v = line.split('=', 1)
+                if k.strip().lower() == 'xscale':
+                    try:
+                        return float(v.strip())
+                    except ValueError:
+                        return 1.0
+    return 1.0
+
+
+SC = _read_xscale(TARGET, os.path.basename(TARGET))
 AIR = open(AIR_PATH, encoding="utf-8").read()
 ZS  = open(os.path.join(TARGET, os.path.basename(TARGET) + ".zss"), encoding="utf-8").read()
 issues = []

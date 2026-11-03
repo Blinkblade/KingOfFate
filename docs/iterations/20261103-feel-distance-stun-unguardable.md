@@ -1,4 +1,7 @@
-# 2026-11-03 — 距离、硬直、终极技：三条「手感」缺陷的量化修复
+# 2026-11-03 — 距离、硬直、终极技，以及 Fighter B 的"没有反制手段"
+
+> 前半部分（一~七节）= Archer 的三条手感缺陷；后半部分（八节）= 同一轮的
+> Fighter B 平衡。两处都动到了 `game/chars/` 下的多个角色，原因在 8.6 末尾说明。
 
 **负责人反馈（原话摘要）**
 
@@ -148,4 +151,130 @@ if playerNo = 2 && p2StateNo = 3100 { assertSpecial{ flag: autoGuard } }
 - 1400（跳劈下压）判定框 103.7 vs 画面 64.3，**框比画面长 39**；1100（升斬）框 73 vs 画面 25.4。
   这两处是"看不见的判定"，本次没动（负责人没提，且它们是当前能用的招式），
   但已进入 `tools/frame_data.py` 的可见范围，随时可以收。
-- `scripts/test.ps1` 里的资产测试套件还没有 `frame_data.py --check`，下次接进回归。
+- ~~`scripts/test.ps1` 里的资产测试套件还没有 `frame_data.py --check`，下次接进回归。~~
+  **已接**，见第八节 8.5。
+
+---
+
+# 附：同一轮的 Fighter B 平衡（2026-11-03 续）
+
+**负责人第二条反馈**：「test fighter B 是不是也得改一下，**无限远程攻击 + 高硬直，
+几乎没有反制手段**。」（前半句"可以"= 对 Archer 三条修复的确认，所以本轮**不再回头动 Archer**。）
+
+## 八、Fighter B：四条机制问题
+
+### 8.1 「无限远程」的两个成因
+
+| 项 | 改前 | 改后 |
+| --- | --- | --- |
+| `StateDef 1000` 的 `poweradd` | **40** | 0 |
+| 气弹 `projremovetime` | 130 | 80 |
+| AI 放波冷却 `var(1)` | 90 | 140 |
+
+`poweradd: 40` 是**纯套利**：这一招的动画 42 tick，一轮 +40 气，对手还没接触就能攒满 EX。
+"免费"是 Zoner 该有的（投射物是主力手段），"免费还倒赚"不是。
+
+冷却这一项要连着算：出招 42 + 冷却 90 = **132 tick 一轮**，而波**活 130 tick** ——
+屏幕上 98% 的时间都有波在飞。这就是"无限远程"的实感来源，不是单发太强。
+改成 42 + 140 = **182 tick 一轮**、波活 **80** ⇒ 占用 44%，每轮留 **102 tick（约 1.7 s）**真空窗。
+
+### 8.2 高硬直
+
+气弹 `ground.hittime` 16 → 12、`air.hittime` 20 → 16、`ground.velocity` −6 → −4。
+
+### 8.3 ★ 「没有反制手段」的真正原因：几何上跳不过去
+
+`Action 1005` 原判定框 `-40,-60, 40,60`：高 **120**，且 y 到 **+60**（往下伸到地面以下 20）。
+角色跳跃顶点约 **80 px** —— **不存在任何一个时刻能跳过它**，只能防。
+
+```
+原来：y −60…+60（高 120）      跳跃顶点 ≈ 80   → 顶不动
+现在：y −86…+2 （高 88，= 素材 123×84 + 2 px 余量）
+```
+
+**这一条是"反制手段"的根**：不能跳、不能从上面过，就只剩防御一种应对，
+剩下的就只是"防不防得住"而不是"我怎么选"。
+
+### 8.4 三类"这个角色不该有的坑"（与 Archer 同一批）
+
+| 问题 | 具体 | 玩家感受 |
+| --- | --- | --- |
+| 空白判定（框 > 画面） | 210 框 **105** vs 画面 **81**；240 88 vs 67；1100 62 vs 46 | 「人机出拳比我的刀还远」—— 不是拳头长，是框撒谎 |
+| 画面到了打不到（框 < 画面） | 200 −3、430 −7、440 −5、630 −8、800 −6 | 看着踢中了却没伤害 |
+| 招式中途无敌（受击框缺口） | 210 **16 tick**、230 **8 tick** 无 Clsn2 | 想反击时打不到人 |
+
+第三类是最容易被忽略的一条：`Clsn2` 没写 ≠ 沿用上一帧，而是**该帧没有受击框**。
+`240` 一直用 `Clsn2Default`（所以它是对的），`210`/`230` 是漏的 —— 同一角色内部写法不一致。
+修法是补 `Clsn2Default`，与 `240` 对齐。
+
+顺带一个结论：**「人机出拳比我刀远」这件事，两边都要修**。Archer 那侧是框比刀短 16~19，
+Fighter B 这侧是框比画面长 21~24。只修一边，"谁更长"仍然是错的。
+
+### 8.5 帧优势：`guard.hittime` 缺省 = 取 `ground.hittime`
+
+| 状态 | 改前 adv | 改后 adv | 改后被防 adv |
+| --- | --- | --- | --- |
+| 200 站轻拳 | **−5** | **+2**（尾巴 10→6、hittime 11→14） | +2 |
+| 210 站重拳 | **−2** | **+2**（hittime 16→20） | **−5** |
+
+210 显式写了 `guard.hittime: 13` / `guard.slidetime: 8`。原因是一条引擎事实：
+
+```go
+// char.go:878-884
+// In Mugen this one acts diferent from the documentation
+if c.stWgi().ikemenver[0] == 0 && c.stWgi().ikemenver[1] == 0 {
+    ifierrset(&hd.guard_hittime, hd.ground_slidetime)
+} else {
+    ifierrset(&hd.guard_hittime, hd.ground_hittime)
+}
+```
+
+本角色是 ikemenver 角色 ⇒ `guard.hittime` 缺省**等于 `ground.hittime`** ⇒
+"被防"和"打中"收益完全一样，防线形同虚设。长手招的正确形状是
+**安全于命中、危险于被读**：+2 / −5。
+
+410（蹲重拳）**没有动**：它是 `ground.velocity: -3, -6` 的击飞招，对手在空中走
+`air.hittime`，地面帧优势公式对它不成立。
+
+### 8.6 工具：三个真 bug
+
+1. **`audit_moveset.py` 的 `SC = 0.48` 是硬编码的**（Archer 的 xscale）。
+   对 `test_fighter_b`（xscale = 1）会把所有判定框按 0.48 缩放 —— 5 条
+   "投射物打不到人"全是假警报。改为从角色自己的 `.const` 读 `[Size] xscale`。
+2. **`frame_data.py` 对击倒 / 击飞招误判**：440（`ground.type: Trip` + `fall: 1`）报 −3，
+   410（`ground.velocity: -3, -6`）报 −2，都不是缺陷 —— 对手不回到中立，公式不适用。
+   现在这两类招会跳过帧优势检查（但仍在表里显示数字，便于人看）。
+3. **`frame_data.py` 没有 `guard.` 这一列**：被防之后的帧优势以前根本不可见，
+   于是"被防和打中一样赚"这种问题没有任何工具会报。新增 `guard` / `adv_gr` 两列。
+
+顺手把 `--check` 接进了回归：
+
+```powershell
+pwsh -File scripts/test.ps1 -Suite frame     # 对 game/chars/*/ 逐个 --check
+```
+
+`tests/tools/run_tool_tests.ps1` 的"角色文件守卫"（按 `git status` 判断有没有意外改动）
+原本只放行 `archer/` 与 `test_fighter_b.air`，本轮扩到
+`archer/` + `test_fighter_a/` + `test_fighter_b/` + `_template/`（写明原因与迭代文档）；
+`p1_kfm_zss_lab` 与未来新角色仍受保护。
+
+### 8.7 验证
+
+```text
+python tools/frame_data.py game/chars/<角色> --check
+    _template PASS / archer PASS / test_fighter_a PASS / test_fighter_b PASS
+python tools/audit_moveset.py game/chars/test_fighter_b   → 13 项 → 6 项
+    （剩下 6 项与 _template / test_fighter_a 完全一致 = 模板基线，非本轮引入）
+python tools/character_validate/validate_character.py     → 0 错误
+    受击框缺口 210/230 已消失，只剩 820（受害状态，预期）
+pwsh -File scripts/test.ps1                               → ALL TEST SUITES PASS
+    资产测试 86/86 + 新增 frame 套件 4/4
+```
+
+负向对照（"只通过过的检查不算检查"）：把 `test_fighter_b` 复制一份、把 200 的框从 62 改回 40，
+`--check` 立刻 `FAIL (1) - 200: hitbox is 21.0 units shorter than the artwork`，退出码 1。
+
+Runtime 冒烟（`tests/p3/run_match_watch.ps1 -P1 archer -P2 test_fighter_b -Ai1 8 -Ai2 8 -RunSec 40`）：
+角色正常加载并打完，**0 个新崩溃日志**。波的实际出现频率未取到程序化读数
+（`numProj` 对本角色不可用，见 `verify_moves.ps1` 里那条注释），所以 8.1 的周期是**算术值**，
+不是实测值 —— 这一条留给人工试玩确认。

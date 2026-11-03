@@ -169,8 +169,11 @@ if animElem = 3 {
         hitsound: 5, 0;
         guardsound: 6, 0;
         ground.type: High;
-        ground.slidetime: 5;
-        ground.hittime: 11;
+        ground.slidetime: 6;
+        ground.hittime: 14;           # ★ 2026-11-03：原 11 → 14，配 Animation 200
+                                      #   缩到 16 tick（原 20），帧优势 -5 → +2。
+                                      #   原值是照 KFM 抄的，但本动作的动画比 KFM 长，
+                                      #   于是"打中了反而对手先动"—— 轻拳不能不是自己的回合。
         ground.velocity: -5;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -231,7 +234,12 @@ if animElem = 5 {
         guardsound: 6, 0;
         ground.type: High;
         ground.slidetime: 9;
-        ground.hittime: 16;
+        ground.hittime: 20;           # ★ 2026-11-03：原 16 → 20（总 33 tick），帧优势 -2 → +2。
+                                      #   长手牵制技"打中算我的回合"，代价改由**防御**支付：
+        guard.slidetime: 8;           #   被防 13 tick，帧优势 -5 —— 距离越长，挥空/被防
+        guard.hittime: 13;            #   的惩罚越重（这才是 Zoner 该有的形状：
+                                      #   安全于命中、危险于被读）。原值缺省 = 取 hittime，
+                                      #   等于"被防和打中一样赚"，防线形同虚设。
         ground.velocity: -7;
         airguard.velocity: -2.6, -1.1;
         air.type: High;
@@ -831,7 +839,11 @@ call EndState(0);
 type: S; movetype: A; physics: S;
 juggle: 4; velset: 0, 0; ctrl: 0;
 anim: 1000;
-poweradd: 40;
+poweradd: 0;                      # ★ 2026-11-03：原 40 = 发波**倒赚**气。
+                                  #   这一招不收气（Zoner 的主力手段本该免费），
+                                  #   但"免费 + 赚气"就是纯套利：42 tick 一轮，
+                                  #   一轮 +40，对手还没接触就已经被你攒满 EX。
+                                  #   气只能靠**打中**赚（见各状态 hitDef 的 powerAdd）。
 sprpriority: 2;]
 
 if time = 0 {
@@ -850,7 +862,11 @@ if animElem = 4 && var(10) = 0 {
         offset: 34, -40;          # 从身前胸高发出（判定框见 .air 的 Action 1005）
         velocity: 6, 0;           # 每 tick 前进 6 px（方向由朝向决定）
         projhits: 1;              # ① 命中 1 次即消失
-        projremovetime: 130;      # ② 130 tick 后强制消失（约 2.2 s）
+        projremovetime: 80;       # ② 80 tick 后强制消失（约 1.3 s）
+                                  #    ★ 2026-11-03：原 130 tick（2.2 s）。配合 AI 的
+                                  #    90 tick 冷却，屏幕上**永远**有一枚在飞 —— 对手
+                                  #    找不到"两波之间的空窗"，这也是"无限远程"的实感
+                                  #    来源。80 tick × 6 px = 480 px（约 1.5 屏）。
         projpriority: 1;          # 与对手投射物对撞时的优先级
         projmisstime: 0;
         projsprpriority: 3;       # 画在角色前面
@@ -868,12 +884,12 @@ if animElem = 4 && var(10) = 0 {
         hitsound: 1, 1;   # [P6] 原 5,1 在本角色音效库里不存在
         guardsound: 6, 0;
         ground.type: High;
-        ground.slidetime: 9;
-        ground.hittime: 16;
-        ground.velocity: -6;
+        ground.slidetime: 6;
+        ground.hittime: 12;
+        ground.velocity: -4;
         airguard.velocity: -2.6, -1.1;
         air.velocity: -2.6, -3.8;
-        air.hittime: 20;
+        air.hittime: 16;
     }
 }
 
