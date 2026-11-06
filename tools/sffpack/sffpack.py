@@ -8,6 +8,9 @@ sprite numbering matches the target character's animation table.
     python tools/sffpack/sffpack.py transcode <in.sff> --out <out.sff>
         [--remap map.csv] [--report FILE]
 
+    python tools/sffpack/sffpack.py set-sprite <in.sff> --out <out.sff>
+        --sprite GROUP,NUMBER=art.png [--sprite ...] [--axis GROUP,NUMBER=X,Y ...]
+
 Without ``--remap`` every sprite keeps its (group, image) key -- a faithful
 format conversion, used to prove the pipeline byte-for-byte before any
 remapping happens. With ``--remap`` the CSV decides the mapping:
@@ -25,6 +28,13 @@ A named ``palette_index`` column may contain a source palette number or
 Every sprite is re-encoded as raw depth 8 (pixel-exact for palette-indexed
 sources). Palettes are deduplicated by content.
 
+``set-sprite`` is the "换一张图" path: every sprite is copied **byte for byte**
+(lz5 / PNG / raw alike, palettes untouched) and only the named keys are
+replaced — or appended, if the key is new, which is how a character gets art
+its placeholder source never had. The output is re-read and every untouched
+sprite is compared pixel-exact against the source; a mismatch fails the command
+instead of quietly shipping a shifted sprite.
+
 Exit codes: 0 OK / 1 verification failed / 2 usage / 3 IO.
 """
 
@@ -37,7 +47,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-from kofassets import sff, sffwrite  # noqa: E402
+from kofassets import pngio, sff, sffwrite  # noqa: E402
 
 
 def _fail(message, code):
@@ -292,6 +302,172 @@ def cmd_transcode(args):
     return 0
 
 
+def cmd_set_sprite(args):
+    """Swap (or append) a handful of sprites, copying every other one verbatim."""
+    if not os.path.isfile(args.input):
+        return _fail("no such file: %s" % args.input, 3)
+    try:
+        source = sff.Sff.load(args.input)
+    except sff.SffError as exc:
+        return _fail(str(exc), 3)
+
+    wanted = []           # (group, number, png path)
+    for spec in args.sprite:
+        if "=" not in spec:
+            return _fail("--sprite wants GROUP,NUMBER=PATH, got %r" % spec, 2)
+        key, path = spec.split("=", 1)
+        parts = key.split(",")
+        if len(parts) != 2 or not all(p.strip().isdigit() for p in parts):
+            return _fail("--sprite key must be GROUP,NUMBER, got %r" % key, 2)
+        if not os.path.isfile(path):
+            return _fail("no such PNG: %s" % path, 3)
+        wanted.append((int(parts[0]), int(parts[1]), path))
+    if not wanted:
+        return _fail("nothing to do: pass at least one --sprite", 2)
+
+    axis_override = {}
+    for spec in args.axis:
+        if "=" not in spec:
+            return _fail("--axis wants GROUP,NUMBER=X,Y, got %r" % spec, 2)
+        key, value = spec.split("=", 1)
+        parts = key.split(",")
+        nums = value.split(",")
+        if len(parts) != 2 or len(nums) != 2:
+            return _fail("--axis wants GROUP,NUMBER=X,Y, got %r" % spec, 2)
+        try:
+            axis_override[(int(parts[0]), int(parts[1]))] = (int(nums[0]), int(nums[1]))
+        except ValueError:
+            return _fail("--axis coordinates must be integers, got %r" % value, 2)
+
+    # Copy every existing sprite exactly as stored (lz5 / PNG / raw), so the
+    # only difference in the output is the sprites named on the command line.
+    entries = []
+    for spr in source.sprites:
+        entry = {
+            "group": spr.group, "number": spr.number,
+            "width": spr.width, "height": spr.height,
+            "axis_x": spr.axis_x, "axis_y": spr.axis_y,
+            "pal_index": spr.pal_index,
+            "format": spr.format,
+            "depth": spr.coldepth,
+            # Bit 0 of the flag word switches the offset base from lofs to tofs;
+            # this writer always emits lofs-relative offsets, so drop it.
+            "flags": spr.flags & ~1,
+            "verbatim": True,
+            "payload": b"" if spr.is_linked else bytes(
+                source._raw[spr.data_offset:spr.data_offset + spr.data_size]),
+        }
+        if spr.is_linked:
+            entry["link"] = spr.linked_source_index
+        entries.append(entry)
+    index_of = {(e["group"], e["number"]): i for i, e in enumerate(entries)}
+
+    replaced, added = [], []
+    for group, number, path in wanted:
+        try:
+            image = pngio.read(path)
+        except (pngio.PngError, OSError) as exc:
+            return _fail("%s: %s" % (path, exc), 3)
+        try:
+            payload = pngio.encode_rgba(image.width, image.height, image.rgba)
+        except pngio.PngError as exc:
+            return _fail("%s: %s" % (path, exc), 2)
+        key = (group, number)
+        old = entries[index_of[key]] if key in index_of else None
+        axis = axis_override.get(key)
+        if axis is None:
+            axis = (old["axis_x"], old["axis_y"]) if old else (
+                image.width // 2, image.height // 2)
+        entry = {
+            "group": group, "number": number,
+            "width": image.width, "height": image.height,
+            "axis_x": axis[0], "axis_y": axis[1],
+            "pal_index": 0,
+            "format": sffwrite.FMT_PNG_RGBA2,
+            "depth": 32,
+            "flags": 0,
+            "payload": payload,
+        }
+        if old is None:
+            index_of[key] = len(entries)
+            entries.append(entry)
+            added.append(key)
+        else:
+            entries[index_of[key]] = entry
+            replaced.append(key)
+
+    palettes = [pal.colours for pal in source.palettes]
+    try:
+        blob = sffwrite.build_sff_v2(entries, palettes)
+        with open(args.out, "wb") as handle:
+            handle.write(blob)
+    except (sffwrite.SffWriteError, OSError) as exc:
+        return _fail(str(exc), 3)
+
+    # Verify: re-read the output and compare every untouched sprite against the
+    # source **byte for byte** -- the stored payload, not a decoded bitmap. A
+    # silent shift (an offset recomputed one block too far, a length prefix
+    # added twice) is the failure mode that matters here, and it is invisible
+    # without this pass. Comparing decoded pixels would miss it, and would also
+    # false-alarm on PNG8 sprites, which carry their own palette and therefore
+    # have a pal_index the container palette cannot satisfy.
+    try:
+        written = sff.Sff.load(args.out)
+    except sff.SffError as exc:
+        return _fail("the output cannot be re-read: %s" % exc, 1)
+    touched = set((g, n) for g, n, _ in wanted)
+    mismatch = []
+    if len(written.sprites) != len(entries):
+        mismatch.append("sprite count %d, expected %d"
+                        % (len(written.sprites), len(entries)))
+    compared = 0
+    for spr in written.sprites:
+        if (spr.group, spr.number) in touched:
+            continue
+        old = source.sprite(spr.group, spr.number)
+        if old is None:
+            mismatch.append("(%d,%d) did not exist in the source" % (spr.group, spr.number))
+            continue
+        if (spr.width, spr.height, spr.axis_x, spr.axis_y) != (
+                old.width, old.height, old.axis_x, old.axis_y):
+            mismatch.append("(%d,%d): geometry changed" % (spr.group, spr.number))
+            continue
+        if old.is_linked != spr.is_linked:
+            mismatch.append("(%d,%d): link state changed" % (spr.group, spr.number))
+            continue
+        if old.is_linked:
+            if spr.link != old.link:
+                mismatch.append("(%d,%d): link target %d, expected %d"
+                                % (spr.group, spr.number, spr.link, old.link))
+            compared += 1
+            continue
+        if (spr.format, spr.coldepth, spr.pal_index) != (
+                old.format, old.coldepth, old.pal_index):
+            mismatch.append("(%d,%d): format/depth/palette changed" % (spr.group, spr.number))
+            continue
+        got = written._raw[spr.data_offset:spr.data_offset + spr.data_size]
+        want = source._raw[old.data_offset:old.data_offset + old.data_size]
+        if got != want:
+            mismatch.append("(%d,%d): %d stored bytes differ from the source's %d"
+                            % (spr.group, spr.number, len(got), len(want)))
+            continue
+        compared += 1
+    if mismatch:
+        for line in mismatch[:10]:
+            print("ERROR: %s" % line)
+        return _fail("%d verification failure(s)" % len(mismatch), 1)
+
+    print("set-sprite: %s -> %s" % (args.input, args.out))
+    print("  source:   %s, %d sprites, %d palettes"
+          % (source.version_string, len(source.sprites), len(source.palettes)))
+    print("  replaced: %s" % (", ".join("%d,%d" % k for k in replaced) or "-"))
+    print("  added:    %s" % (", ".join("%d,%d" % k for k in added) or "-"))
+    print("  written:  2.0.1.0, %d sprites, %d bytes" % (len(entries), len(blob)))
+    print("  verify:   re-read OK; %d untouched sprites compared byte-exact, 0 mismatch"
+          % compared)
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
@@ -305,9 +481,20 @@ def main(argv=None):
                          "each sprite's own bank (some packs ship stale banks)")
     tr.add_argument("--selection-palette", action="append", default=[], metavar="ACT",
                     help="reserve a selectable ACT bank after the base palette; repeat for further banks")
+    ss = sub.add_parser("set-sprite",
+                        help="replace or append sprites, copying the rest verbatim")
+    ss.add_argument("input")
+    ss.add_argument("--out", required=True)
+    ss.add_argument("--sprite", action="append", default=[], metavar="G,N=PATH",
+                    help="replace sprite (G,N) with this PNG, or append it if new; repeatable")
+    ss.add_argument("--axis", action="append", default=[], metavar="G,N=X,Y",
+                    help="override the axis for that sprite; defaults to the "
+                         "replaced sprite's axis, or the PNG centre when new")
     args = parser.parse_args(argv)
     if args.command == "transcode":
         return cmd_transcode(args)
+    if args.command == "set-sprite":
+        return cmd_set_sprite(args)
     return 2
 
 

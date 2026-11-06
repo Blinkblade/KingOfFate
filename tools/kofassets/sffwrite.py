@@ -51,11 +51,27 @@ def build_sff_v2(sprites, palettes):
         payload                  -- bytes to embed:
                                     format 0: width*height palette indices
                                     format 12: a complete PNG stream
+                                    verbatim: the exact bytes the container
+                                    stores, length prefix included
         format                   -- 0 (raw depth 8) or 12 (PNG RGBA)
         link (optional)          -- index of an earlier sprite in this list
                                     whose pixels this sprite shares; the sprite
                                     is then written with data size 0 and no
                                     payload is read.
+        verbatim (optional)      -- write ``payload`` byte-for-byte, with no
+                                    length prefix added and no validation.
+                                    Used by ``sffpack set-sprite``, which swaps
+                                    one sprite and copies every other one
+                                    untouched (lz5, PNG or raw alike).
+        depth (optional)         -- colour depth for verbatim sprites (raw is
+                                    8, PNG 32, lz5 5); defaults as before.
+        flags (optional)         -- sprite flag word; defaults to 0. Bit 0
+                                    selects the base for ``data_at``: set means
+                                    the offset is relative to "tofs" instead of
+                                    "lofs" (``sff.py:774``, ported from
+                                    ``image.go``). This writer always emits
+                                    lofs-relative offsets, so callers passing a
+                                    source's flag word must mask bit 0 off.
 
     Sprites must be given in file order; ``link`` must point backwards.
     """
@@ -97,7 +113,12 @@ def build_sff_v2(sprites, palettes):
         else:
             fmt = sprite["format"]
             payload = sprite["payload"]
-            if fmt == FMT_RAW:
+            if sprite.get("verbatim"):
+                # Byte-for-byte passthrough: the caller already holds the exact
+                # bytes the source container stores, including the 4-byte length
+                # prefix that every compressed v2 format carries.
+                pass
+            elif fmt == FMT_RAW:
                 if len(payload) != sprite["width"] * sprite["height"]:
                     raise SffWriteError(
                         "sprite %d (%d,%d): raw payload is %d bytes, expected %d for %dx%d"
@@ -112,8 +133,8 @@ def build_sff_v2(sprites, palettes):
                 payload = struct.pack("<I", len(payload)) + payload
             else:
                 raise SffWriteError(
-                    "sprite %d (%d,%d): the writer only supports format 0 (raw depth 8) "
-                    "and 12 (PNG RGBA), got %d"
+                    "sprite %d (%d,%d): the writer only supports format 0 (raw depth 8), "
+                    "12 (PNG RGBA) and verbatim passthrough, got %d"
                     % (i, sprite["group"], sprite["number"], fmt))
             data_at = payload_start + len(payloads) - data_offset
 
@@ -124,11 +145,11 @@ def build_sff_v2(sprites, palettes):
             sprite["axis_x"], sprite["axis_y"],
             link if link is not None else 0,
             sprite["format"],
-            8 if sprite["format"] == FMT_RAW else 32,
+            sprite.get("depth", 8 if sprite["format"] == FMT_RAW else 32),
             data_at,
             len(payload),
             sprite["pal_index"],
-            0,  # flags: data offset is relative to lofs
+            sprite.get("flags", 0),  # flags bit 0 = data offset based on tofs, not lofs
         )
         payloads += payload
 

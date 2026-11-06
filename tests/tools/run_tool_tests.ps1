@@ -65,6 +65,8 @@ $Fixtures = Join-Path $RepoRoot 'tests\fixtures\assets'
 $WorkDir = Join-Path $RepoRoot 'logs\p5\tool-tests'
 $Sffctl = Join-Path $ToolsDir 'sffctl\sffctl.py'
 $Airtool = Join-Path $ToolsDir 'airtool\airtool.py'
+$Sffpack = Join-Path $ToolsDir 'sffpack\sffpack.py'
+$MakeProjectileArt = Join-Path $ToolsDir 'make_projectile_art.py'
 $Sndctl = Join-Path $ToolsDir 'sndctl\sndctl.py'
 $Validate = Join-Path $ToolsDir 'character_validate\validate_character.py'
 $MakeFixtures = Join-Path $RepoRoot 'tests\fixtures\make_fixtures.py'
@@ -173,9 +175,13 @@ Invoke-Tool -Group '1' -Label 'decoded pixels match known patterns and goldens' 
 Write-Host '2. sffctl inspect' -ForegroundColor Cyan
 
 $realSff = Join-Path $RepoRoot 'game\chars\test_fighter_b\test_fighter_b.sff'
+# Golden sprite count of the real container. It moves whenever the character gains
+# art -- 286 since the Zoner projectile got its own four frames (group 1900) --
+# so it is declared once here instead of being repeated at every assertion.
+$realSffSprites = 286
 $r = Invoke-Tool -Group '2' -Label 'real container is summarised' `
     -Arguments @($Sffctl, 'inspect', $realSff) -Expect 0 `
-    -MustContain @('Version:   2.0.1.0', 'Sprites:   282', 'Palettes:  16')
+    -MustContain @('Version:   2.0.1.0', "Sprites:   $realSffSprites", 'Palettes:  16')
 $rJson = Invoke-Tool -Group '2' -Label 'inspect --json runs' `
     -Arguments @($Sffctl, 'inspect', $realSff, '--json') -Expect 0 -MustContain @('"sprite_count"')
 $json = $null
@@ -184,7 +190,7 @@ try { $json = ($rJson.Text | ConvertFrom-Json) } catch { $jsonError = $_.Excepti
 Add-Check -Group '2' -Name 'real container is summarised (--json)' -Passed ($null -ne $json) `
     -Detail $jsonError
 if ($null -ne $json) {
-    $shapeOk = ($json.version -eq '2.0.1.0') -and ($json.sprite_count -eq 282) -and
+    $shapeOk = ($json.version -eq '2.0.1.0') -and ($json.sprite_count -eq $realSffSprites) -and
                ($json.sprites.Count -gt 0) -and
                ($null -ne $json.sprites[0].group) -and ($null -ne $json.sprites[0].axis_x)
     Add-Check -Group '2' -Name '--json exposes version, count, group and axis' -Passed $shapeOk
@@ -211,7 +217,7 @@ Invoke-Tool -Group '2' -Label 'SFF v1 fixture reports its palette paths' `
 # Two sprite-sharing paths the engine has and that production data uses: a linked
 # sprite (data size 0, reuse the pixels of `link`) and a sprite the engine leaves
 # blank (data size 0 and `link` out of range). Both must be reported, neither may
-# fail the whole container. The real character files have 41 linked sprites of 282.
+# fail the whole container. The real character files have 41 linked sprites of 286.
 Invoke-Tool -Group '2' -Label 'a linked sprite is resolved through its link' `
     -Arguments @($Sffctl, 'inspect', (Join-Path $Fixtures 'linked_sprite.sff')) -Expect 0 `
     -MustContain @('Sprites:   2', 'linked_sprite.sff') | Out-Null
@@ -272,18 +278,18 @@ Invoke-Tool -Group '3' -Label 'the blank sprite is exported at its declared size
 
 if ($Full) {
     $outAll = Join-Path $WorkDir 'real_all'
-    Invoke-Tool -Group '3' -Label 'all 282 real sprites export and verify' `
+    Invoke-Tool -Group '3' -Label "all $realSffSprites real sprites export and verify" `
         -Arguments @($Sffctl, 'export', $realSff, '--out', $outAll, '--overwrite') `
-        -Expect 0 -MustContain @('exported 282 of 282') | Out-Null
+        -Expect 0 -MustContain @("exported $realSffSprites of $realSffSprites") | Out-Null
     Invoke-Tool -Group '3' -Label 'exported real sprites match the container' `
         -Arguments @($CheckExport, '--sff', $realSff, '--out', $outAll) -Expect 0 `
-        -MustContain @('282 file(s) verified, 0 problem(s)') | Out-Null
+        -MustContain @("$realSffSprites file(s) verified, 0 problem(s)") | Out-Null
 
     $montage1 = Join-Path $WorkDir 'montage_1.png'
     $montage2 = Join-Path $WorkDir 'montage_2.png'
     Invoke-Tool -Group '3' -Label 'montage renders every sprite' `
         -Arguments @($Sffctl, 'montage', $realSff, '--out', $montage1) -Expect 0 `
-        -MustContain @('282 sprite(s) drawn') | Out-Null
+        -MustContain @("$realSffSprites sprite(s) drawn") | Out-Null
     Invoke-Tool -Group '3' -Label 'montage is deterministic' `
         -Arguments @($Sffctl, 'montage', $realSff, '--out', $montage2) -Expect 0 | Out-Null
     $montageSame = (Test-Path -LiteralPath $montage1) -and
@@ -301,10 +307,17 @@ Invoke-Tool -Group '4' -Label 'real animation table is summarised' `
     -Arguments @($Airtool, 'inspect', $realAir) -Expect 0 `
     -MustContain @('Actions:  88', 'infinite') | Out-Null
 
+# Action 600 (jump) is the real table's "-1 hold" case. Action 1005 used to be one
+# too, but the Zoner projectile now loops its four frames instead of holding on a
+# single one, so the hold assertion moved to 600 and 1005 gained a loop assertion.
 $r = Invoke-Tool -Group '4' -Label 'a single action can be inspected' `
-    -Arguments @($Airtool, 'inspect', $realAir, '--action', '1005') -Expect 0 `
+    -Arguments @($Airtool, 'inspect', $realAir, '--action', '600') -Expect 0 `
     -MustContain @('Infinite element: yes', 'Duration:  infinite')
-Add-Check -Group '4' -Name 'action 1005 reports an -1 hold' -Passed ($r.Text -like '*has a -1 hold*')
+Add-Check -Group '4' -Name 'action 600 reports an -1 hold' -Passed ($r.Text -like '*has a -1 hold*')
+
+Invoke-Tool -Group '4' -Label 'the looping projectile action reports its loop point' `
+    -Arguments @($Airtool, 'inspect', $realAir, '--action', '1005') -Expect 0 `
+    -MustContain @('Loopstart: element 0', 'Duration:  12 ticks') | Out-Null
 
 $r2 = Invoke-Tool -Group '4' -Label 'action data is available as JSON' `
     -Arguments @($Airtool, 'inspect', $realAir, '--action', '210', '--json') -Expect 0
@@ -551,6 +564,85 @@ Invoke-Tool -Group '9' -Label 'the archer moveset audits clean' `
 Invoke-Tool -Group '9' -Label 'the audit rejects a deliberately broken character' `
     -Arguments @($Audit, (Join-Path $Fixtures 'char_broken_clsn')) -Expect 1 `
     -MustContain @('===') | Out-Null
+
+# ---------------------------------------------------------------------------
+# 17. make_projectile_art + sffpack set-sprite  (the "swap one sprite" path)
+# ---------------------------------------------------------------------------
+#   set-sprite writes into a real container, so it is the one tool here that can
+#   silently corrupt art. Its contract has two halves that must both hold:
+#     * the named keys are replaced/appended,
+#     * EVERY other sprite is copied byte for byte (lz5 / PNG8 payloads, axes,
+#       palette slots, link targets).
+#   The second half is what these checks pin down; it has no other observer.
+Write-Host '17. projectile art and set-sprite' -ForegroundColor Cyan
+
+$artDir = Join-Path $WorkDir 'projectile_art'
+$artDir2 = Join-Path $WorkDir 'projectile_art_again'
+Invoke-Tool -Group '17' -Label 'projectile art is generated at the requested size' `
+    -Arguments @($MakeProjectileArt, '--out', $artDir, '--size', '24', '--frames', '2') `
+    -Expect 0 -MustContain @('2 frame(s) of 24x24', 'axis:') | Out-Null
+Add-Check -Group '17' -Name 'one PNG per frame was written' `
+    -Passed ((Test-Path (Join-Path $artDir 'orb_00.png')) -and
+             (Test-Path (Join-Path $artDir 'orb_01.png')) -and
+             -not (Test-Path (Join-Path $artDir 'orb_02.png')))
+
+Invoke-Tool -Group '17' -Label 'generation is deterministic' `
+    -Arguments @($MakeProjectileArt, '--out', $artDir2, '--size', '24', '--frames', '2') `
+    -Expect 0 | Out-Null
+$artSame = (Get-Sha256 (Join-Path $artDir 'orb_00.png')) -eq
+           (Get-Sha256 (Join-Path $artDir2 'orb_00.png'))
+Add-Check -Group '17' -Name 'the same arguments produce the same bytes' -Passed $artSame
+
+$srcSff = Join-Path $Fixtures 'minimal_v2.sff'
+$outSff = Join-Path $WorkDir 'set_sprite_v2.sff'
+Invoke-Tool -Group '17' -Label 'a new sprite key is appended' `
+    -Arguments @($Sffpack, 'set-sprite', $srcSff, '--out', $outSff,
+        '--sprite', "1900,0=$(Join-Path $artDir 'orb_00.png')",
+        '--axis', '1900,0=12,12') -Expect 0 `
+    -MustContain @('added:    1900,0', '0 mismatch', '3 sprites') | Out-Null
+Invoke-Tool -Group '17' -Label 'the appended key is readable afterwards' `
+    -Arguments @($Sffctl, 'inspect', $outSff) -Expect 0 `
+    -MustContain @('Sprites:   4') | Out-Null
+Invoke-Tool -Group '17' -Label 'the appended sprite carries the axis it was given' `
+    -Arguments @($Sffctl, 'inspect', $outSff, '--json') -Expect 0 `
+    -MustContain @('"axis_x": 12', '"axis_y": 12') | Out-Null
+
+# The untouched half of the contract, verified independently of the tool's own
+# self-report: export both containers and compare the three shared sprites
+# byte for byte. A silent payload shift would show up here even if set-sprite's
+# internal check had a hole.
+$exportSrc = Join-Path $WorkDir 'setsprite_src_png'
+$exportOut = Join-Path $WorkDir 'setsprite_out_png'
+Invoke-Tool -Group '17' -Label 'the source container exports for comparison' `
+    -Arguments @($Sffctl, 'export', $srcSff, '--out', $exportSrc, '--overwrite') `
+    -Expect 0 | Out-Null
+Invoke-Tool -Group '17' -Label 'the rewritten container exports' `
+    -Arguments @($Sffctl, 'export', $outSff, '--out', $exportOut, '--overwrite') `
+    -Expect 0 | Out-Null
+$sharedSame = $true
+$sharedDiff = @()
+foreach ($name in @('0_0.png', '1_0.png', '2_0.png')) {
+    $a = Get-Sha256 (Join-Path $exportSrc $name)
+    $b = Get-Sha256 (Join-Path $exportOut $name)
+    if ($a -ne $b) { $sharedSame = $false; $sharedDiff += $name }
+}
+Add-Check -Group '17' -Name 'every untouched sprite survived byte for byte' `
+    -Passed $sharedSame -Detail ($sharedDiff -join ', ')
+Add-Check -Group '17' -Name 'the new sprite is present in the rewritten container' `
+    -Passed (Test-Path (Join-Path $exportOut '1900_0.png'))
+
+foreach ($c in @(
+        @{ n = 'a missing PNG is IO (3)'; a = @($Sffpack, 'set-sprite', $srcSff, '--out',
+                (Join-Path $WorkDir 'never.sff'), '--sprite', "1900,0=$(Join-Path $WorkDir 'nope.png')"); e = 3; m = 'no such PNG' },
+        @{ n = 'a key without = is a usage error (2)'; a = @($Sffpack, 'set-sprite', $srcSff,
+                '--out', (Join-Path $WorkDir 'never.sff'), '--sprite', '1900,0'); e = 2; m = 'GROUP,NUMBER=PATH' },
+        @{ n = 'a malformed sprite key is a usage error (2)'; a = @($Sffpack, 'set-sprite', $srcSff,
+                '--out', (Join-Path $WorkDir 'never.sff'), '--sprite', 'x,y=z'); e = 2; m = 'must be GROUP,NUMBER' },
+        @{ n = 'a missing input is IO (3)'; a = @($Sffpack, 'set-sprite', (Join-Path $WorkDir 'nope.sff'),
+                '--out', (Join-Path $WorkDir 'never.sff'), '--sprite', '1,1=a'); e = 3; m = 'no such file' }
+    )) {
+    Invoke-Tool -Group '17' -Label $c.n -Arguments $c.a -Expect $c.e -MustContain @($c.m) | Out-Null
+}
 
 # ---------------------------------------------------------------------------
 # Report: include every group before collecting failures and printing results.

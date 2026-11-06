@@ -364,3 +364,90 @@ tests/p6/verify_moves.ps1 -Pass moves -Only 1
 所以"场上有没有波"这件事已经进了游戏逻辑；但**没有任何探针把它读出来**。
 282 tick 依然是算术值 —— 这一条只能靠人工试玩确认，下一轮如果还要精确调，先给
 `test_fighter_b` 加一份 probe（照 `tests/p6/fixtures/archer_probe.zss` 的样子）。
+
+---
+
+## 十、第三轮：把"占位人形"换成真火球（2026-11-06）
+
+**动机**：9.3 的结论是「素材本身决定了它不可能被跳过」——48 px 高的对称光球只要
+`offset_y ≥ -44` 就跳得过去，而 84 px 高、轴在底边的人形需要把发射点压到 **+18**
+（沉进地下 18 px）才勉强够。也就是说：**上一轮那个"18 px 沉在地下"的补偿，
+是占位素材的物理尺寸换来的，不是设计**。把它去掉的唯一办法是换素材。
+
+### 10.1 素材：自己生成，避免授权与产能双重卡点
+
+`tools/make_projectile_art.py`（纯标准库，~150 行）：48×48、4 帧、轴在中心，
+核心半径脉动 + 边缘色相漂移。输出 PNG 并把可直接抄进 `.air` 的 `axis` / `Clsn` 打出来。
+选"生成"而不是"找素材"的原因：投射物是**纯能量体**，没有解剖结构，程序生成的观感
+足够用；而任何第三方素材都要走 `assets/LICENSE_MANIFEST.csv` 那套流程。
+
+### 10.2 写回：`sffpack set-sprite`，不是 `transcode`
+
+`transcode` 会把**每个**精灵重编码成 raw 深度 8。目标容器 282 个精灵全是 lz5(depth 5)
+与 PNG8，重编码等于把整包重写一遍，白白改变压缩率与色板槽位。
+新增的 `set-sprite` 走另一条路：**未点名的精灵按原始字节复制**（连 v2 的 4 字节长度前缀
+都不碰），只替换/追加命令行点名的键。写盘后重新读取，对每个未触碰精灵比对
+"存储字节 + 宽高 + 轴 + 格式/深度/pal_index + link"，不一致返回 1。
+
+实测：
+
+```text
+set-sprite: test_fighter_b.sff -> test_fighter_b.sff
+  source:   2.0.1.0, 282 sprites, 16 palettes
+  added:    1900,0, 1900,1, 1900,2, 1900,3
+  written:  2.0.1.0, 286 sprites, 215419 bytes
+  verify:   re-read OK; 282 untouched sprites compared byte-exact, 0 mismatch
+```
+
+写这套验证时踩到两个坑，都记进 `docs/character_asset_tooling.md`：
+① 用"解码后的像素"比对会**误报** PNG8 精灵（它自带 PLTE，`pal_index` 指向容器里不存在的槽）；
+② sprite header 的 `flags` 位 0 决定偏移基准是 **tofs** 还是 **lofs**，复制源精灵时必须清掉。
+
+### 10.3 发射点全部重算（这次先算，再改）
+
+```text
+光球 48×48、axis 24,24 ⇒ 画面相对原点 -24..+23
+apex = 8.4² / (2 × 0.44) = 80.2
+画面顶 = -offset_y + 24 ≤ 80.2 - 12 = 68.2   ⇒   offset_y ≥ -44.2
+```
+
+| 状态 | 改前 | 改后 | 画面顶 |
+| --- | --- | --- | --- |
+| 1000 普通 | `+18` | **`-40`** | 64 |
+| 1010 EX（2 发） | `+12, +26` | **`-44, -32`** | 68 / 56 |
+| 3000 Super（3 发） | `+12, +18, +24` | **`-44, -38, -32`** | 68 / 62 / 56 |
+
+判定框 `-58,-83,72,0` → **`-22,-22,21,21`**（画面 ±2）。
+命中判定的 y 重叠核过：新弹体世界高度 **-62..-18**，对手站姿受击盒 0..-80 ⇒ 重叠 44 px；
+蹲姿 0..-50 ⇒ 重叠 32 px。**x 方向变短了**（世界 12..55，原来到 106），
+但这只影响"多飞几 tick 才够到"，弹体活 80 tick × 6 px = 480 px，够。
+
+动画从"1 帧 + `-1` 保持"改成 **4 帧 + `Loopstart` 循环**（每帧 3 tick）。
+`Clsn1Default` 的必要性不变（引擎里 `-1` 与循环是同一种"动画停留"）。
+
+### 10.4 验证
+
+```text
+python tools/airtool/airtool.py validate .../test_fighter_b.air   → 0 error（sprite 引用按 286 个核对）
+python tools/character_validate/validate_character.py ...          → 0 error，WARN 1（820 受击盒缺口，既有）
+python tools/frame_data.py game/chars/test_fighter_b --check       → PASS
+python tools/audit_moveset.py game/chars/test_fighter_b            → 6 项（模板基线，无新增）
+pwsh -File scripts/test.ps1                                        → 87/87 + frame 4/4 全 PASS
+tests/p3/run_match_watch.ps1 -P1 archer -P2 test_fighter_b -RunSec 35
+    → 0 个新崩溃日志；截图确认光球按预期渲染、位于腰高
+```
+
+**测试侧的连带修改**（`tests/tools/run_tool_tests.ps1`）：四条断言把
+`test_fighter_b` 的旧内容写死了 —— `Sprites: 282`（现 286）、
+`action 1005 ... -1 hold`（现为 `Loopstart` 循环）。改法：
+① 精灵数收进文件顶部一个 `$realSffSprites` 常量；
+② `-1` 检查挪到仍然带 `-1` 的 **action 600**（跳跃）；
+③ 另加一条断言：**1005 必须报 `Loopstart: element 0` + `Duration:  12 ticks`**
+（换素材时若把循环写丢，这条会挂）。
+
+**新增 group 17**（`set-sprite` 与光球生成器此前完全没有测试，而 `set-sprite` 是
+能静默毁掉美术的写盘路径）：15 条断言，其中最关键的一条是**独立**验证 ——
+把源容器和产物都导出成 PNG，逐字节比对三张共享精灵，
+不依赖工具自己的 "0 mismatch" 自述。全套 87 → **102** 项。
+
+**仍未取到**：波的实际出现频率（与 9.5 同一项未决）。下一轮加 probe。

@@ -859,11 +859,13 @@ if animElem = 4 && var(10) = 0 {
         projanim: 1005;
         projid: 1000;
         postype: p1;
-        offset: 34, 18;           # ★ 2026-11-03 第二次：原来 34,-40（胸高）。
-                                  #   素材是 84 px 高的人形，浮在 40..123 而跳跃顶点只有
-                                  #   80.2 ⇒ 数学上不可能跳过去。压到 +18（画面 -18..65）
-                                  #   之后跳跃窗口约 16 tick，真的能躲。
-                                  #   判定框见 .air 的 Action 1005（与画面严格一致）。
+        offset: 34, -40;          # ★ 2026-11-03 第三次：换成 48x48 真火球后回到腰高
+                                  #   （球心离地 40）。旧的 +18 是为了让人形占位素材
+                                  #   （轴在底边、画面只向上长）不被跳过而做的下沉补偿 ——
+                                  #   那是素材缺陷的补丁，不是设计意图。
+                                  #   光球轴在中心 (24,24) ⇒ 画面顶 = 40 + 24 = 64，
+                                  #   跳跃顶点 80.2 ⇒ 窗口约 17 tick（公式见 .air 1005）。
+                                  #   判定框 ±22 见 .air 的 Action 1005。
         velocity: 6, 0;           # 每 tick 前进 6 px（方向由朝向决定）
         projhits: 1;              # ① 命中 1 次即消失
         projremovetime: 80;       # ② 80 tick 后强制消失（约 1.3 s）
@@ -936,15 +938,15 @@ if time = 0 {
 }
 
 # 第 1 发：偏上
-# ★ 2026-11-03：offset y 原 -52（胸高）。整组压到地面附近，理由见 State 1000 的注释
-#   （素材 84 px 高而跳跃顶点只有 80.2，浮在高处就永远跳不过去）。
+# ★ 2026-11-03 第三次：光球回来之后弹道回到腰高（原 34,12 是人形占位素材的下沉补偿）。
+#   画面顶 = 44 + 24 = 68 <= apex 80.2 - 12，两发都还跳得过去。见 .air Action 1005。
 if animElem = 3 && var(10) = 0 {
     var(10) := 1;
     projectile{
         projanim: 1005;
         projid: 1001;
         postype: p1;
-        offset: 34, 12;
+        offset: 34, -44;
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -974,14 +976,14 @@ if animElem = 3 && var(10) = 0 {
     }
 }
 
-# 第 2 发：偏下 —— 两发高度差 18 px，站防挡住上面那发时下面那发仍会擦到
+# 第 2 发：偏下 —— 两发高度差 12 px，站防挡住上面那发时下面那发仍会擦到
 if animElem = 5 && var(10) = 1 {
     var(10) := 2;
     projectile{
         projanim: 1005;
         projid: 1002;
         postype: p1;
-        offset: 34, 26;
+        offset: 34, -32;
         velocity: 7.5, 0;
         projhits: 1;
         projremovetime: 130;
@@ -1130,7 +1132,10 @@ if animElem = 4 && var(10) = 0 {
         projanim: 1005;
         projid: 3001;
         postype: p1;
-        offset: 34, 12;
+        offset: 34, -44;          # ★ 2026-11-03 第三次：三发共用一条 12 px 间距的
+                                  #   竖直扇面（-44 / -38 / -32），最高一发画面顶
+                                  #   = 68 <= apex 80.2 - 12 ⇒ 连 Super 都还能跳过去。
+                                  #   人形占位时代的 +12/+18/+24 是同一件事的下沉版本。
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1167,7 +1172,7 @@ if animElem = 7 && var(10) = 1 {
         projanim: 1005;
         projid: 3002;
         postype: p1;
-        offset: 34, 18;
+        offset: 34, -38;
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;
@@ -1204,7 +1209,7 @@ if animElem = 9 && var(10) = 2 {
         projanim: 1005;
         projid: 3003;
         postype: p1;
-        offset: 34, 24;
+        offset: 34, -32;
         velocity: 8, 0;
         projhits: 1;
         projremovetime: 150;

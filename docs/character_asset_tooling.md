@@ -20,7 +20,8 @@
 | **airtool** | `python tools/airtool/airtool.py` | 这个 `.air` 有多少 Action、每个 Action 有几个元素、持续多少 tick、判定框在哪一帧生效？ |
 | **validate_character** | `python tools/character_validate/validate_character.py` | 这个角色目录完整吗？引用都对得上吗？能不能进 Runtime？ |
 | **asset_report** | `python tools/asset_report.py` | 上面那一整套跑一遍是什么结果？一条命令，输出一份带命令行的报告。 |
-| **sffpack**（P6 新增） | `python tools/sffpack/sffpack.py transcode` | 把一份源 SFF（v1 或 v2）转成目标角色编号体系的 SFF **v2**——写盘的唯一入口。 |
+| **sffpack**（P6 新增） | `python tools/sffpack/sffpack.py transcode` / `set-sprite` | 把一份源 SFF（v1 或 v2）转成目标角色编号体系的 SFF **v2**——写盘的唯一入口。`set-sprite` 是"只换几张图"：其余精灵逐字节原样带走（§10.2.1）。 |
+| **make_projectile_art**（2026-11-06 新增） | `python tools/make_projectile_art.py --out DIR [--size 48]` | 没有美术也要一颗**授权干净**的投射物：生成脉动光球 PNG，并直接给出 `.air` 该用的 `axis` 与 `Clsn`（§10.2.2）。 |
 | **frame_data**（2026-11-03 新增） | `python tools/frame_data.py <角色目录> [--check]` | 每招的起手/判定/收招多少 tick？**打中之后谁先能动**（`adv_hit`）？**被防之后谁先能动**（`adv_gr`）？判定框比画面短还是长？`--check` 会把负帧优势或"框短于刀锋"判成失败；击倒（`fall`/`Trip`）与击飞（`ground.velocity` y ≤ −3）招自动跳过帧优势检查，因为对手不回到中立。已接进 `scripts/test.ps1 -Suite frame`。 |
 
 前三者共享一个只用标准库的小解析库 `tools/kofassets/`（见 §8）；`asset_report` 不加
@@ -451,6 +452,54 @@ python tools\sffpack\sffpack.py transcode <in.sff> --out <out.sff> --remap map.c
 
 纪律：写盘后**立即回读**，逐精灵比对"解码索引 + 调色板映射 RGBA"（与源逐字节一致才
 返回 0）；引擎实载用 `tests/p3/run_match_watch.ps1` 做冒烟（判据 = `crashlogs: 0 new`）。
+
+### 10.2.1 set-sprite —— 只换几张图，其余逐字节原样带走（2026-11-06）
+
+`transcode` 会把**每一个**精灵重新编码成 raw 深度 8。当目标只是"给角色补几个新精灵"
+（典型场景：给投射物换上自己画的火球）时，那等于把整个容器重写一遍 —— 没必要，也有风险
+（lz5 的压缩率、原色板槽位都会变）。`set-sprite` 是这条路：
+
+```powershell
+python tools\sffpack\sffpack.py set-sprite <in.sff> --out <out.sff> `
+    --sprite 1900,0=orb_00.png --sprite 1900,1=orb_01.png `
+    --axis   1900,0=24,24      --axis   1900,1=24,24
+```
+
+- **未点名的精灵按原始字节复制**（lz5 / PNG8 / raw 一律不管，连 4 字节长度前缀都不碰），
+  色板原样保留 ⇒ 唯一的变化就是命令行点名的那几个键。
+- 点名一个**不存在的键就追加**，这是"占位素材时代没画过的东西"进入容器的正规路径。
+- 新精灵写成 **format 12（PNG RGBA，depth 32）**，`--axis` 省略时取替换前那个精灵的轴
+  （新键则取 PNG 中心）。
+- **验证是逐字节的**：写盘后重新读取，把每个未触碰精灵的"存储字节 + 宽高 + 轴 +
+  格式/深度/pal_index + link 状态"与源容器比对，有任何一处不同就返回 1 而不是悄悄发布。
+  ★ 这一步不能用"解码后的像素"比对：PNG8 精灵自带 PLTE，它的 `pal_index` 字段指向容器
+  里并不存在的色板槽，用像素比对会**误报**（这是写这套验证时实际踩到的坑）。
+
+相关的两个引擎细节（写进 `sffwrite.build_sff_v2`）：
+
+| 项 | 事实 |
+| --- | --- |
+| `flags` 位 0 | 决定 `data_at` 的基准是 **tofs** 还是 **lofs**（`sff.py:774`，移植自 `image.go`）。写出器恒发 lofs 相对偏移，所以复制源精灵时必须把这一位**清掉**，否则偏移会被二次加上 |
+| `lofs` | 本写出器取 `64 + 16 × 色板数`（色板头之后、色板数据之前）。与 Archer 的容器同构；`sffctl inspect` 会把它打出来，便于一眼看出容器是不是本工具写的 |
+
+### 10.2.2 make_projectile_art —— 生成投射物光球（2026-11-06）
+
+```powershell
+python tools\make_projectile_art.py --out .tmp\orb [--size 48] [--frames 4] [--prefix orb]
+```
+
+纯标准库，输出 `orb_00.png … orb_NN.png`，轴心在画面中心，并打印可直接抄进 `.air` 的
+两行（`axis:` 与 `Clsn:` 建议值）。用途：占位角色需要一颗**不涉及第三方授权**的投射物。
+
+★ 换尺寸之后必须重算发射点 —— 判定框是"画面 ±2"，而角色能不能**跳过**这发弹只取决于
+**画面顶**（= `-offset_y` + 素材轴上方的像素高），与框是否对齐画面**无关**：
+
+```text
+apex = jump.neu y² / (2 × yaccel)          # 本角色 8.4² / (2 × 0.44) = 80.2 px
+跳得过去 ⇔ 画面顶 ≤ apex - 12
+```
+
+来源：`game/chars/test_fighter_b/README.md` §11.3 / §11.7（那里记了一次算错顶端的返工）。
 
 ---
 
