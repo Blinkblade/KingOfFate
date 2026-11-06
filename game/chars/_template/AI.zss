@@ -97,11 +97,11 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 && p2BodyDist x = [45, 130] {
         if power >= 500 {
+            var(1) := 150;
             changeState{value: 1010}
-            var(1) := 150;
         } else {
-            changeState{value: 1000}
             var(1) := 150;
+            changeState{value: 1000}
         }
     }
 

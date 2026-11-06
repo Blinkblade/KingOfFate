@@ -1,0 +1,53 @@
+# ============================================================================
+# test_fighter_b 运行时遥测探针（telemetry probe）—— 测试专用，不进 game/ 真值
+#
+# 为什么需要它：
+#   「Fighter B 远程无限波」这条反馈修了两轮，两轮的依据都只是**算术**：
+#   "出招 42 + 冷却 240 = 282 tick 一轮，所以 4.7 秒一波"。
+#   但谁也没在运行时数过屏幕上到底有几枚波、两波之间隔了多少 tick。
+#   这一份探针把 `numProj`（引擎里"我名下还活着的投射物数量"，char.go:7662
+#   Char.numProj → getMultipleProjs(-1,-1) 按 ownerId 过滤且只数 isActive()）
+#   逐 tick 打到 stdout，于是"有没有波"从算术值变成读数。
+#
+# 怎么用：
+#   1) 复制到 **runtime 角色目录** engine/ikemen-go/chars/test_fighter_b/probe.zss
+#      （该目录在子模块里被 .gitignore 忽略，不污染 git）
+#   2) 在 runtime 的 test_fighter_b.def 的 [Files] 段加一行 st5 = probe.zss
+#   3) 启动时把 stdout 重定向到文件，见 tests/p4/probe_projectile.ps1
+#
+#   为什么 -2 号全局状态可以占用：common1.cns.zss **没有**定义 -2
+#   （只有 dizzy / guardbreak / tag 这三个本角色不加载的附加状态文件定义了它），
+#   所以这里不会覆盖任何现有逻辑。Archer 的探针（tests/p6/fixtures/）用的是同一招。
+#
+# 输出格式（一行一 tick，逗号分隔）：
+#   KOF,gameTime,stateNo,p2StateNo,life,p2Life,p2DistX,power,proj1000,projAll,ctrl,cd
+#
+#   cd       = var(1) —— AI 的必杀技冷却计数（.const 台账里的 aiCooldown）。
+#               ★ 加这一列是为了把"冷却到底有没有被写进去"变成读数：
+#                 「两波只隔 42 tick」既可能是冷却赋值没执行，也可能是招式被
+#                 **命令路由**（236+A）而不是 AI 规则触发的 —— 两者的修法完全不同。
+#
+#   proj1000 = numProjID(1000) —— 普通版气弹的数量（projid 1000）
+#   projAll  = numProj         —— **全部**投射物的数量（★ 无参触发器，
+#               compiler.go:3189 的 case "numproj" 不读括号，写 numProj() 会编译失败）
+#               EX 是 1001/1002、Super 是 3001/3002/3003，
+#               所以只看 proj1000 会把 EX / Super 误判成 "没放出来"。
+#   p2DistX  = p2Dist x —— 两人**轴心**的水平距离（带符号）。
+#               ★ 它是判断"这一下是不是被波打中"的唯一凭据：Fighter B 的手最长
+#                 只有约 70 px，所以 p2Life 掉血而 |p2DistX| 远大于 70 时，
+#                 伤害只可能来自投射物（或 Archer 的箭，所以对手选**不会还手**的）。
+#
+# ★ 采样点：全局状态 -2 在当前状态的动作**之前**执行（char.go:11932-11944），
+#   所以第 g 行的 state/pos 是第 g-1 tick 结束时的画面状态；相邻两行差分不受影响。
+#   命中停顿期间全局状态不执行 → gameTime 会跳号，跳号长度 = 命中停顿长度。
+# ============================================================================
+
+[StateDef -2]
+
+# roundState = 2 才是"对战中"，避免选人 / 回合演出阶段刷屏。
+if roundState = 2 {
+    printToConsole{
+        text: "KOF,%d,%d,%d,%d,%d,%.1f,%d,%d,%d,%d,%d";
+        params: gameTime, stateNo, p2StateNo, life, p2Life, p2Dist x, power, numProjID(1000), numProj, cond(ctrl, 1, 0), var(1)
+    }
+}

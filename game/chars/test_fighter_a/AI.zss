@@ -106,8 +106,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # 也是"AI 能区分两个 Special"的直接证据（对手在地面时它不会乱放）。
     # ========================================================================
     if ctrl && stateType = S && $p2air && var(1) = 0 && p2BodyDist x = [30, 150] {
-        changeState{value: 1100}
         var(1) := 120;
+        changeState{value: 1100}
     }
 
     # ========================================================================
@@ -116,8 +116,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 &&
         power >= 1000 && $midR && random <= 250 {
-        changeState{value: 3000}
         var(1) := 200;
+        changeState{value: 3000}
     }
 
     # ========================================================================
@@ -125,16 +125,16 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 &&
         power >= 500 && $midR && random <= 400 {
-        changeState{value: 1010}
         var(1) := 160;
+        changeState{value: 1010}
     }
 
     # ========================================================================
     # ⑤ Special 1 —— State 1000（无 Power 要求，兜底必杀）
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 && $midR {
-        changeState{value: 1000}
         var(1) := 120;
+        changeState{value: 1000}
     }
 
     # ========================================================================

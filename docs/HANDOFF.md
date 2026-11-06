@@ -207,6 +207,7 @@ design/characters/archer/
 | 判定框比画面长只是"更宽松" | ❌ 那是**看不见的判定**：210 框到 105 而精灵只画到 81，玩家的体感是"人机出拳比我的刀还远"。框比画面长和短**两个方向都要查**，`frame_data.py` 的「框 vs 画面」列给差值 |
 | 判定框和画面对齐了 = 玩家能躲开 | ❌ **两回事**。能不能跳过取决于**画面顶端 vs 跳跃顶点**，跟框与画面对不对齐无关。`test_fighter_b` 的气弹素材 84 px 高、浮在 40..123，而 `apex = 8.4²/(2×0.44) = 80.2` ⇒ 永远跳不过去，框再准也没用。调"躲得开"先算 `apex`，再算 `-offset_y + 素材高` |
 | `numProj()` 和其他触发器一样带括号 | ❌ `numproj` 在 `compiler.go:3189` 里**不读括号**（直接 `out.append(OC_numproj)`），必须写裸 `numProj`。写成 `numProj()` 编译失败，而 `validate_character` **不解析 ZSS 语法**，只会表现为"角色加载失败" |
+| `changeState{...}` 之后的语句还会执行 | ❌ `bytecode.go:5203` 是 `stop := (crun.id == c.id)` —— **对自己 ChangeState 时 `Run()` 返回 true，引擎就此停止执行同一块里剩下的语句**（除非显式 `continue: 1`）。所以"换状态 + 置变量/加气/放特效"必须**把赋值写在前面**。这条让 Fighter B 的波冷却 240 变成 0、实际 42 tick 一发，**两轮调参都没发现**（表现只是"波变密"，正是当时被投诉的现象）。四个角色 19 处同批修正，见 `docs/iterations/20261103-...` 第十一节 |
 
 ### 7.2 工作流纪律
 
@@ -314,7 +315,15 @@ pwsh -File tests/p6/verify_moves.ps1 -Pass moves -Only 25,26,28    # 只跑指�
 pwsh -File tests/p6/verify_moves.ps1 -Pass guard     # 只跑 T2 完美防
 pwsh -File tests/p2/inject_phases.ps1 -P1 archer -P2 test_fighter_b -Phases '0x09:0.12' -ButtonMap 'x=TAB' -Shots 3
 pwsh -File tests/p3/run_match_watch.ps1 -P1 archer -P2 test_fighter_b -Ai1 8 -Ai2 8 -RunSec 30
+
+# ★ 遥测读数（不开窗口注入，纯 AI 对局 + stdout）：屏幕上有几枚波、隔多少 tick、远距离有没有打中
+pwsh -File tests/p4/probe_projectile.ps1 -RunSec 45
+pwsh -File tests/p4/probe_projectile.ps1 -P1 test_fighter_a -P2 test_fighter_b -RunSec 45
 ```
+
+`probe_projectile.ps1` 只改 runtime 副本（探针 `tests/p4/fighter_b_probe.zss` 由它复制并
+在 `.def` 里加 `st5`，跑完写回原始字节）。它读 `var(1)` 这一列是为了回答
+"冷却到底有没有被写进去" —— 这个问题的答案曾经是"没有"，见 §7.1 的 `changeState` 条目。
 
 `verify_moves.ps1` 的产物（`logs/p6/verify/`）：`report.md`（人读）、`run.csv`（moves 趟逐 tick）、
 `run_guard.csv`（T2 趟，**单独一份**，不再被覆盖）、`windows.json`（每条配方的采样窗口）。

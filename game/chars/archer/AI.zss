@@ -139,8 +139,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     #   优先级必须高于一切进攻规则。
     # ========================================================================
     if ctrl && stateType = S && $p2air && var(1) = 0 && p2BodyDist x = [25, 160] {
-        changeState{value: 1100}
         var(1) := 120;
+        changeState{value: 1100}
     }
 
     # ========================================================================
@@ -160,13 +160,13 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     #             或者被逼到角落时后撤闪。
     # ========================================================================
     if ctrl && stateType != A && var(1) = 0 && p2BodyDist x > 120 && random <= 90 {
-        changeState{value: 110}
         var(1) := 150;
+        changeState{value: 110}
     }
 
     if ctrl && stateType = S && var(1) = 0 && p2BodyDist x < 40 && random <= 70 {
-        changeState{value: 115}
         var(1) := 150;
+        changeState{value: 115}
     }
 
     # ========================================================================
@@ -175,8 +175,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 &&
         power >= 1000 && p2BodyDist x = [100, 320] && random <= 250 {
-        changeState{value: 3000}
         var(1) := 200;
+        changeState{value: 3000}
     }
 
     # ========================================================================
@@ -186,8 +186,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 &&
         power >= 300 && p2BodyDist x = [60, 320] && random <= 400 {
-        changeState{value: 1150}
         var(1) := 160;
+        changeState{value: 1150}
     }
 
     # ========================================================================
@@ -197,8 +197,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 &&
         power >= 600 && p2BodyDist x = [80, 220] && random <= 300 {
-        changeState{value: 1300}
         var(1) := 200;
+        changeState{value: 1300}
     }
 
     # ========================================================================
@@ -207,8 +207,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 &&
         power >= 600 && p2BodyDist x = [30, 90] && p2StateType != A && random <= 250 {
-        changeState{value: 1400}
         var(1) := 200;
+        changeState{value: 1400}
     }
 
     # ========================================================================
@@ -217,8 +217,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     # ========================================================================
     if ctrl && stateType = S && $grounded && var(1) = 0 &&
         power >= 2000 && p2BodyDist x = [90, 320] && random <= 400 {
-        changeState{value: 3100}
         var(1) := 240;
+        changeState{value: 3100}
     }
 
     # ========================================================================
@@ -231,8 +231,8 @@ ignoreHitPause if aiLevelF && roundState = 2 && !standby {
     #   路由里那条 `power >= 300` 对 AI 完全不生效。没有这一行，
     #   AI 在 0 气时照样能出箭（扣气被引擎夹在 0），等于白嫖。
     if ctrl && stateType = S && $grounded && var(1) = 0 && $farR && power >= 300 {
-        changeState{value: 1000}
         var(1) := 90;
+        changeState{value: 1000}
     }
 
     # ========================================================================

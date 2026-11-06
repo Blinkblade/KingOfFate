@@ -299,6 +299,12 @@ Runtime 冒烟（`tests/p3/run_match_watch.ps1 -P1 archer -P2 test_fighter_b -Ai
 
 第二轮改成 **42 + 240 = 282 tick ≈ 4.7 秒**，并加了一道硬闸门：
 
+> ★ **2026-11-06 更正：这个算法和这条改动都不成立。**
+> ① 冷却在招式期间照样每 tick 递减，周期是冷却值本身（240），不是 42 + 240；
+> ② 更要紧的是 `var(1) := 240` 写在 `changeState` 之后，**引擎换状态就吞掉后面的语句**，
+> 所以它一次都没执行过 —— 运行时读到的 `var(1)` 恒为 0，实际是 42 tick 一发。
+> 下面这段"节流"的描述，当时只有 `numProj` 那半条真的生效了。详见第十一节。
+
 ```zss
 let noProj = numProj = 0;      # 场上还有我的波，就绝不发下一发
 ```
@@ -451,3 +457,105 @@ tests/p3/run_match_watch.ps1 -P1 archer -P2 test_fighter_b -RunSec 35
 不依赖工具自己的 "0 mismatch" 自述。全套 87 → **102** 项。
 
 **仍未取到**：波的实际出现频率（与 9.5 同一项未决）。下一轮加 probe。
+
+---
+
+## 十一、第四次：探针装上之后，第一件事就是发现前两轮都没生效（2026-11-06）
+
+第九、十节反复写"波的实际频率没取到，282 是算术值"。这一节把它取到了，
+结论是：**算术是对的，代码是错的，而且错了两轮。**
+
+### 11.1 探针
+
+`tests/p4/fighter_b_probe.zss` + `tests/p4/probe_projectile.ps1`。
+照 P6 的 `archer_probe.zss` 做，但只关心四件事：
+
+```text
+KOF,gameTime,stateNo,p2StateNo,life,p2Life,p2DistX,power,proj1000,projAll,ctrl,cd
+```
+
+`projAll = numProj` 回答"屏幕上有几枚波"，`cd = var(1)` 回答"冷却到底写进去没有"，
+`p2DistX` 回答"这次掉血是不是只能来自投射物"（Fighter B 手长只有 ~70 px，
+所以 `|dist| > 100` 时的掉血必然是波打中的）。
+
+跑法是**开着 AI 打一局，不注入任何按键**，45 秒后强杀引擎读 stdout ——
+比截图 OCR 可靠，也比逐帧注入省事。三个断言：
+max `projAll` ≤ 3、两波间隔 ≥ 200 tick、远距离至少命中一次。
+
+### 11.2 第一次跑：42 tick 一发
+
+```text
+waves       : 15 start(s)  (1000 = 13, 1010 = 2, 3000 = 0)
+cooldown    : var(1) at first wave starts = 0, 0, 0
+gap (ticks) : min 37 / median 43 / max 43
+```
+
+42/43 正好是 State 1000 自身的长度 —— 招式一结束就再来一发，**冷却等于不存在**。
+
+### 11.3 定位：`changeState` 会终止同一块
+
+先做了一个只用运行时副本的 A/B：把 `var(1) := 240` 挪到 `changeState` 之前。
+
+| | `var(1)` 读数 | 波间隔 |
+| --- | --- | --- |
+| 赋值在 `changeState` 之后（原样） | 0 / 0 / 0 | 37 ~ 43 |
+| 赋值在 `changeState` 之前（改动） | 240 / 240 | 240 ~ 265 |
+
+然后回引擎确认机制，`bytecode.go:5196`：
+
+```go
+func (sc changeState) Run(c *Char, _ []int32) bool {
+	...
+	stop := (crun.id == c.id)      // ★ 对自己 ChangeState 时默认 stop = true
+	...
+	case changeState_continue:
+		stop = !exp[0].evalB(c)    // 只有显式 continue: 1 才会继续
+	...
+	return stop
+}
+```
+
+`Run` 返回 true 的含义就是"本块剩余语句不再执行"。所以 `changeState{value: N}`
+之后的赋值、`powerAdd`、`explod` 全都会被吞掉。
+
+**这条与项目已有的四条"写了但没生效"是同一类坑**，已并入 `docs/HANDOFF.md` §7.1。
+
+### 11.4 波及面：19 处，四个角色
+
+```text
+game/chars/_template/AI.zss        2 处
+game/chars/archer/AI.zss           9 处
+game/chars/test_fighter_a/AI.zss   4 处
+game/chars/test_fighter_b/AI.zss   4 处
+```
+
+全部是 `changeState` 紧跟 `var(1) := <冷却>`。也就是说 **P6 以来所有 AI 冷却从未生效**：
+Archer 的 90~240、Fighter A 的 120~200，AI 一直比设计更凶。
+修法统一为"赋值在前、换状态在后"（比 `continue: 1` 更不容易忘，也不改变别处语义）。
+
+状态脚本侧也扫了一遍（`hits.zss` 的 `changeState{value: 5200}` 等），
+全部是分支内最后一句，无影响。
+
+### 11.5 修完之后的读数
+
+```text
+rows        : 2519  (gameTime 142 .. 2660, 2518 tick)
+on screen   : max projAll = 2
+waves       : 7 start(s)  (1000 = 6, 1010 = 1, 3000 = 0)
+cooldown    : var(1) at first wave starts = 300, 240, 240
+gap (ticks) : min 240 / median 240 / max 313
+damage      : 8 event(s), 8 at |dist| > 100 (= 只能来自投射物)
+VERDICT: PASS
+```
+
+同样的 42 秒：**15 波 → 7 波**，间隔 42 → 240 tick。
+
+顺带确认了第十节的成果：8 次掉血全部发生在 `|dist|` 140~213 的远距离，
+伤害 55/60 与 `.zss` 声明一致 —— 换过素材、重算过判定框的**新火球真的打得中人**。
+
+### 11.6 口误更正
+
+"42 + 240 = 282" 这个算法两处都错了：冷却在招式期间**照样递减**，
+所以周期就是冷却值本身。已在 README §11.1 与本节 11.3 注明。
+`tests/p4/probe_projectile.ps1` 的断言阈值因此写成 **200 tick**（给 AI 的位置/概率
+留余量），而不是 282。
