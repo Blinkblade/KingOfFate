@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Archer 全招式端到端验收（Runtime，基于引擎 stdout 遥测）。
@@ -97,6 +97,7 @@ $ProbeFixture = Join-Path $ScriptDir 'fixtures\archer_probe.zss'
 $RuntimeConfig = Join-Path $RuntimeRoot 'save\config.ini'
 $ZssPath = Join-Path $GameChar 'archer.zss'
 $HitsPath = Join-Path $GameChar 'hits.zss'
+$ConstPath = Join-Path $GameChar 'archer.const'
 
 if ([string]::IsNullOrWhiteSpace($OutDir)) { $OutDir = Join-Path $RepoRoot 'logs\p6\verify' }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
@@ -463,6 +464,24 @@ $StateSpec = Get-StateSpec
 Write-Note ("parsed {0} state blocks from archer.zss + hits.zss" -f $StateSpec.Count)
 
 # ---------------------------------------------------------------------------
+# 伤害缩放：computeDamage() 是 damage *= atkmul / finalDefense（char.go:8672），
+#   finalDefense = defenceBase/100 x ... 。验收局是 archer vs archer，双方共用
+#   同一份 .const，所以把 defence 从 100 调到 120 时，所有实测伤害会变成
+#   声明值的 100/120 —— 断言若还按声明值比，24 招会集体假失败。
+#   ★ 从源码读 ratio，不写死；以后调 attack / defence 时断言自动跟上。
+# ---------------------------------------------------------------------------
+$DamageRatio = 1.0
+if (Test-Path -LiteralPath $ConstPath) {
+    $constText = [IO.File]::ReadAllText($ConstPath)
+    $mAtk = [regex]::Match($constText, '(?m)^\s*attack\s*=\s*([0-9]+)')
+    $mDef = [regex]::Match($constText, '(?m)^\s*defence\s*=\s*([0-9]+)')
+    if ($mAtk.Success -and $mDef.Success -and ([int]$mDef.Groups[1].Value) -gt 0) {
+        $DamageRatio = [double]([int]$mAtk.Groups[1].Value) / ([int]$mDef.Groups[1].Value)
+    }
+}
+Write-Note ("damage ratio (attack/defence from .const) = {0:N4}" -f $DamageRatio)
+
+# ---------------------------------------------------------------------------
 # CSV 增量读取
 # ---------------------------------------------------------------------------
 $script:CsvStream = $null
@@ -600,7 +619,7 @@ $Moves = @(
     # ---- 终极技先测 ----
     #   ★ 顺序有讲究：3100 的门槛是 power >= 2000（整条槽），所以必须在
     #     "刚开局的 2000 气" 状态下第一个测，否则任何一个耗气招之后都测不了。
-    (New-Move 3100 '无限剑制 C+D' 'C+D' @(@{ Do = 'tap'; Keys = 'C+D'; Ms = 100 }) -Dist none -Dmg 200 -DmgRule atleast -Note '不可防：对手全程必防仍须 >=200（10x50，实测连到 5~6 把 = 250~300）')
+    (New-Move 3100 '无限剑制 C+D' 'C+D' @(@{ Do = 'tap'; Keys = 'C+D'; Ms = 100 }) -Dist none -Dmg 300 -DmgRule atleast -Note '不可防：对手全程必防仍须 >=300 = 30% 血（10x80，实测连到 4~6 把 = 320~480）')
     # ---- 站立普通技 ----
     (New-Move 200 '站立 A 轻拳' 'A' @(@{ Do = 'tap'; Keys = 'A'; Ms = 70 }))
     (New-Move 210 '站立 S 重拳' 'S' @(@{ Do = 'tap'; Keys = 'S'; Ms = 70 }))
@@ -620,10 +639,27 @@ $Moves = @(
     (New-Move 250 'T1 连 A' 'A,A' (& $Tap2 'A' 200 8) -Dmg 44 -Note '24+20')
     (New-Move 251 'T1 连 S' 'S,S' (& $Tap2 'S' 210 15) -Dmg 112 -Note '62+50')
     (New-Move 252 'T1 连 Z' 'Z,Z' (& $Tap2 'Z' 230 7) -Dmg 54 -Note '30+24')
-    # ★ 253 只断言第一段（64）。重脚 240 的击退会把对手滑到身体间隙 54.6，
-    #   而二段起手 9 tick + 射程 77.8 覆盖不到 —— 实测第二段必然空振。
-    #   这是平衡事实（轻拳 A / 轻脚 Z 的两段都能连上），记进 docs 待平衡阶段处理。
-    (New-Move 253 'T1 连 X' 'X,X' (& $Tap2 'X' 240 11) -Dmg 64 -DmgRule min -Note '重脚击退导致二段空振')
+    # ★ 2026-11-08：轻技击退从 60 px 降到 15 px 后，重脚二段**能连上了**
+    #   （实测 96 而不是 64）。把门槛从 min(>=1) 提到 atleast 70（一段只有
+    #   64 x ratio，二段命中才会过 70），这样以后谁把击退调回去，这条会直接挂，
+    #   而不是悄悄退回"二段空振"。
+    (New-Move 253 'T1 连 X' 'X,X' (& $Tap2 'X' 240 11) -Dmg 70 -DmgRule atleast -Note '重脚二段命中：击退修复的回归守护')
+    # ★ 2026-11-08 新增：A 四连打。负责人反馈"连续猛按 A 根本无法连击"，
+    #   根因是 CanChain 只允许等级严格递增（lv1 -> lv1 恒假）+ 轻技击退 60 px。
+    #   两条修完后，用固定 ~9 tick 间隔连按 4 次，断言至少 3 段命中
+    #   （24+20+24 = 68 声明值，x0.833 约 57，门槛取 55）。
+    #   这里刻意用固定 wait 而不是 waitto：c) 分支的取消窗口是
+    #   [time>=6, 状态结束]，比 T1 的 TAP_* 窗口宽得多，注入抖动不会掉出去。
+    $TapChain = @(
+        @{ Do = 'tap'; Keys = 'A'; Ms = 50 }
+        @{ Do = 'wait'; Ms = 150 }
+        @{ Do = 'tap'; Keys = 'A'; Ms = 50 }
+        @{ Do = 'wait'; Ms = 150 }
+        @{ Do = 'tap'; Keys = 'A'; Ms = 50 }
+        @{ Do = 'wait'; Ms = 150 }
+        @{ Do = 'tap'; Keys = 'A'; Ms = 50 }
+    )
+    (New-Move 200 'A 四连打' 'A,A,A,A' $TapChain -Dmg 55 -DmgRule atleast -Note '连段修复的回归守护：至少 3 段命中')
     # ---- 闪身 ----
     #   ★ 只给 110 / 1300 加 -DisplAt：它们是**朝对手推进**的招，贴身起手会撞进
     #     推挤盒。115 后撤闪 / 1200 后撤投剑是往反方向走，本来就量得准，而且退到
@@ -1089,7 +1125,11 @@ function Analyze-Window($win) {
             else { $res.DmgVerdict = 'MISMATCH' }
         } elseif (-not $res.Seen) {
             $res.DmgVerdict = 'MISS'
-        } elseif ($res.Damage -eq $res.DmgExp) {
+        # ★ 容差 ±2：引擎对**每一段命中单独取整**。例如 T1 连 S 声明 62+50=112，
+        #   缩放后按总和取整是 93，但引擎算的是 62*0.833->52、50*0.833->42，
+        #   合计 94。多段招必然差 1~2，写死相等会假失败。
+        } elseif ($null -ne $res.DmgExp -and
+                  [math]::Abs(($res.Damage - [int]$res.DmgExp)) -le 2) {
             $res.DmgVerdict = 'ok'
         } else {
             $res.DmgVerdict = 'MISMATCH'
@@ -1265,6 +1305,12 @@ try {
                 if ($StateSpec.ContainsKey($mv.State)) { $spec = $StateSpec[$mv.State] }
                 $dmgExp = $mv.Dmg
                 if ($null -eq $dmgExp -and $null -ne $spec) { $dmgExp = $spec.Damage }
+                # ★ 2026-11-08：exact 规则的期望按 .const 缩放。
+                #   atleast 是产品门槛（3100 >= 30% 血），不能被测试参数稀释；
+                #   min 只要求 >= 1，不需要。
+                if ($null -ne $dmgExp -and $mv.DmgRule -eq 'exact') {
+                    $dmgExp = [int][math]::Round(([double]$dmgExp) * $DamageRatio)
+                }
                 $powExp = $null
                 $powAlt = $null
                 if ($null -ne $spec) {

@@ -24,7 +24,14 @@ power                = 2000   ; ★ 气槽**上限**（不是起始气量！）
                               ;   只是这个角色的容量更大（合同 §14 允许按角色调）。
                               ;   不写此行的引擎默认上限是 3000（char.go:292）。
 attack               = 100    ; 攻击力（越高越强，全局倍率）
-defence              = 100    ; 防御力（越高越强，全局倍率）
+defence              = 120    ; 防御力（越高越强，全局倍率）
+                              ; ★ 2026-11-08：100 -> 120（承伤 x0.83）。
+                              ;   引擎 computeDamage: damage *= atkmul / finalDefense
+                              ;   （char.go:8672）。和引擎自带的 kfm 对打时，
+                              ;   对方一套连击能打掉近半管血；我方 attack/defence
+                              ;   原本和 kfm 一样都是 100，而我方又连不上招，
+                              ;   净 DPS 差距被放大。连招已在 command.zss 修好，
+                              ;   这一档是生存侧的余量，不改 damage 主值以免膨胀。
 fall.defence_up      = 50     ; 每次倒地后防御力提升的百分比
 liedown.time         = 60     ; 倒地后躺多久才起身（tick）
 airjuggle            = 15     ; 空中追打点数总量

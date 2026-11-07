@@ -5,7 +5,7 @@
 > **新窗口接手先读 [`HANDOFF.md`](HANDOFF.md)**（背景 + 现状 + 坑）
 > [`game-design-charter.md`](game-design-charter.md)（方向）· [`GLOSSARY.md`](GLOSSARY.md)（**术语表，讨论前先对齐用词**）· [`TODO-backlog.md`](TODO-backlog.md)（施工清单）· [`P6-acceptance-checklist.md`](P6-acceptance-checklist.md)（验收记录）
 
-**最后更新：2026-10-31。分支 `feature/p6-first-final-art-character`，尚未合并 `main`。**
+**最后更新：2026-11-08。分支 `feature/p6-first-final-art-character`，尚未合并 `main`。**
 
 ---
 
@@ -22,6 +22,13 @@
 2026-10-31 复核时修掉四条**文档承诺与代码不符**的硬伤（气账 ×3、闪身收招位移、跳劈 overhead），详见 §2.3d 与 [`20261031-gameplay-rule-fixes.md`](iterations/20261031-gameplay-rule-fixes.md)。
 
 2026-10-31 端到端验收入口 `tests/p6/verify_moves.ps1` 落地，**30/30 PASS + T2 PASS**，详见 §2.3e 与 [`20261031-full-moveset-acceptance.md`](iterations/20261031-full-moveset-acceptance.md)。
+
+2026-11-03 ~ 11-08 三轮试玩反馈收尾（详见 `docs/iterations/20261103-feel-distance-stun-unguardable.md`
+与 [`20261108-combo-and-damage-balance.md`](iterations/20261108-combo-and-damage-balance.md)）：
+Archer 手感三修、Fighter B「无限波」两轮返工 + 换成自绘火球、**用运行时探针查出所有 AI
+冷却是死代码**（`changeState` 会吞掉它后面的语句，四个角色 19 处）、最后按和引擎自带
+`kfm` 对打的反馈修好连段链路。当前：**轻拳可四连打（实测 74 伤害）、无限剑制 402（40% 血）、
+全量招式验收 30/30 + 四连打配方 PASS、全部测试套件 PASS、波频探针 PASS**。
 
 ---
 
@@ -268,6 +275,11 @@ F3 备注：`docs/P6-summary.md` 已写，PR 还没合并 `main`
 
 - 换任何资源（精灵/音效/调色板）都要**重映射引用 + 有校验规则兜底
 - Bash heredoc 会吞反斜杠，导致正则**静默失配** → 用 `[0-9]` 或字符串处理
+  （2026-11-08 **又踩了一次**：内联 Python 的 `\d`/`\s` 变成 `/d`/`/s`，
+  分析脚本 16 个状态全部返回空却"跑成功"。改为把脚本写成文件再执行）
+- 2026-11-08：**"两边不一样"的试玩反馈，先当成同一机制的两侧**，
+  别当成逻辑冲突。「对方防御不掉血」和「我方被打掉很多」不矛盾，
+  是同一个攻防不对称的两面；误判成矛盾会把排查带到完全错的方向
 - 精灵可以用**形状分析**（填充率/行宽分布）判断是人物 / 剑 / 特效帧，不必依赖看
 - 输入测试失败时，先怀疑测试装置，再怀疑角色（已踩过两次：字母键注入不通、按键时机太早）
 - 2026-10-31 第三次、也是最贵的一次：**验收脚本把设计方向写死成物理键**，p1 一转身，

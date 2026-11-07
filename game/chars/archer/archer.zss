@@ -169,7 +169,7 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;                  # 判定帧开始 → 打开取消窗口
     hitDef{
         attr: S, NA;
-        damage: 24, 0;
+        damage: 24, 6;
         animtype: Light;
         guardflag: MA;
         hitflag: MAF;
@@ -181,9 +181,9 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 12;
+        ground.slidetime: 5;
         ground.hittime: 16;
-        ground.velocity: -5;
+        ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
         air.velocity: -1.4, -3;
@@ -243,7 +243,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 62, 4;
+        damage: 62, 8;
         animtype: Medium;
         guardflag: MA;
         hitflag: MAF;
@@ -255,9 +255,9 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 16;
+        ground.slidetime: 10;
         ground.hittime: 20;
-        ground.velocity: -7;
+        ground.velocity: -5;
         airguard.velocity: -2.6, -1.1;
         air.type: High;
         air.velocity: -2.4, -4;
@@ -291,7 +291,7 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 30, 0;
+        damage: 30, 6;
         animtype: Light;
         guardflag: MA;
         hitflag: MAF;
@@ -303,9 +303,9 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 12;
+        ground.slidetime: 5;
         ground.hittime: 15;
-        ground.velocity: -5;
+        ground.velocity: -3;
         airguard.velocity: -2, -.9;
         air.type: High;
         air.velocity: -1.6, -3.1;
@@ -340,7 +340,7 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 64, 5;
+        damage: 64, 10;
         animtype: Heavy;
         guardflag: MA;
         hitflag: MAF;
@@ -352,9 +352,9 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 16;
+        ground.slidetime: 10;
         ground.hittime: 20;
-        ground.velocity: -9;
+        ground.velocity: -7;
         airguard.velocity: -2.8, -1.2;
         air.type: High;
         air.velocity: -2.6, -4.2;
@@ -415,7 +415,7 @@ if animElem = 6 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 20, 0;
+        damage: 20, 6;
         animtype: Light;
         guardflag: MA;
         hitflag: MAF;
@@ -429,7 +429,7 @@ if animElem = 6 {
         ground.type: High;
         ground.slidetime: 4;
         ground.hittime: 13;
-        ground.velocity: -4;
+        ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
         air.velocity: -1.4, -3;
@@ -470,7 +470,7 @@ if animElem = 7 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 50, 3;
+        damage: 50, 6;
         animtype: Medium;
         guardflag: MA;
         hitflag: MAF;
@@ -484,7 +484,7 @@ if animElem = 7 {
         ground.type: High;
         ground.slidetime: 7;
         ground.hittime: 19;
-        ground.velocity: -6;
+        ground.velocity: -4;
         airguard.velocity: -2.6, -1.1;
         air.type: High;
         air.velocity: -2.4, -4;
@@ -515,7 +515,7 @@ if animElem = 5 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 24, 0;
+        damage: 24, 6;
         animtype: Light;
         guardflag: MA;
         hitflag: MAF;
@@ -529,7 +529,7 @@ if animElem = 5 {
         ground.type: High;
         ground.slidetime: 5;
         ground.hittime: 11;
-        ground.velocity: -5;
+        ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
         air.velocity: -1.4, -3;
@@ -560,7 +560,7 @@ if animElem = 5 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
-        damage: 52, 4;
+        damage: 52, 8;
         animtype: Medium;
         guardflag: MA;
         hitflag: MAF;
@@ -574,7 +574,7 @@ if animElem = 5 {
         ground.type: High;
         ground.slidetime: 8;
         ground.hittime: 19;
-        ground.velocity: -7;
+        ground.velocity: -5;
         airguard.velocity: -2.8, -1.2;
         air.type: High;
         air.velocity: -2.6, -4.2;
@@ -608,7 +608,7 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: C, NA;              # C = 蹲姿（下段攻击）
-        damage: 24, 0;
+        damage: 24, 6;
         animtype: Light;
         guardflag: L;             # L = 只能下防
         hitflag: MAF;
@@ -620,9 +620,9 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: Low;
-        ground.slidetime: 10;
+        ground.slidetime: 5;
         ground.hittime: 17;
-        ground.velocity: -4;
+        ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: Low;
         air.velocity: -1.4, -3;
@@ -677,7 +677,7 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: C, NA;
-        damage: 50, 4;
+        damage: 50, 8;
         animtype: Up;             # 向上打飞
         guardflag: MA;
         hitflag: MAF;
@@ -689,7 +689,7 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 16;
+        ground.slidetime: 10;
         ground.hittime: 20;
         ground.velocity: -3, -6;  # 对空命中会把对手顶起来
         airguard.velocity: -2.6, -1.1;
@@ -725,7 +725,7 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: C, NA;
-        damage: 30, 0;
+        damage: 30, 6;
         animtype: Light;
         guardflag: L;
         hitflag: MAF;
@@ -737,9 +737,9 @@ if animElem = 5 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: Low;
-        ground.slidetime: 10;
+        ground.slidetime: 5;
         ground.hittime: 16;
-        ground.velocity: -5;
+        ground.velocity: -3;
         airguard.velocity: -2, -.9;
         air.type: Low;
         air.velocity: -2, -3;
@@ -785,7 +785,7 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: C, NA;
-        damage: 46, 5;
+        damage: 46, 10;
         animtype: Hard;
         guardflag: L;
         hitflag: MAFD;
@@ -797,7 +797,7 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: Trip;
-        ground.slidetime: 14;
+        ground.slidetime: 10;
         ground.hittime: 17;
         ground.velocity: -1.5, -2;
         air.velocity: -1.2, -3;
@@ -833,7 +833,7 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: A, NA;
-        damage: 24, 0;
+        damage: 24, 6;
         animtype: Light;
         guardflag: HA;
         hitflag: MAF;
@@ -847,7 +847,7 @@ if animElem = 3 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         ground.type: High;
         ground.slidetime: 5;
         ground.hittime: 10;
-        ground.velocity: -4;
+        ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
         air.velocity: -1.3, -3;
@@ -890,7 +890,7 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: A, NA;
-        damage: 54, 5;
+        damage: 54, 10;
         animtype: Medium;
         guardflag: HA;
         hitflag: MAF;
@@ -902,9 +902,9 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 12;
+        ground.slidetime: 10;
         ground.hittime: 14;
-        ground.velocity: -6;
+        ground.velocity: -4;
         airguard.velocity: -2.6, -1.1;
         air.type: High;
         air.velocity: -3, -4;
@@ -935,7 +935,7 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: A, NA;
-        damage: 30, 0;
+        damage: 30, 6;
         animtype: Light;
         guardflag: HA;
         hitflag: MAF;
@@ -947,9 +947,9 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 6;
+        ground.slidetime: 5;
         ground.hittime: 10;
-        ground.velocity: -4;
+        ground.velocity: -3;
         airguard.velocity: -2, -.9;
         air.type: High;
         air.velocity: -2, -3;
@@ -992,7 +992,7 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: A, NA;
-        damage: 48, 5;
+        damage: 48, 10;
         animtype: Medium;
         guardflag: HA;
         hitflag: MAF;
@@ -1004,9 +1004,9 @@ if animElem = 2 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         hitsound: 9000, 0;      # [P6] 原 5,x 是 KFM 编号，kuri 库里不存在
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
-        ground.slidetime: 12;
+        ground.slidetime: 10;
         ground.hittime: 15;
-        ground.velocity: -7;
+        ground.velocity: -5;
         airguard.velocity: -2.8, -1.2;
         air.type: High;
         air.velocity: -3, -4;
@@ -1039,7 +1039,7 @@ if time = 0 {
     hitDef{
         attr: S, NT;            # Standing, Normal Throw
         hitflag: M;
-        damage: 60, 0;          # ★ 投技原本**没有伤害行** → 造成 0 伤害（被 git checkout 回退过一次）
+        damage: 60, 6;          # ★ 投技原本**没有伤害行** → 造成 0 伤害（被 git checkout 回退过一次）
         priority: 1, Miss;
         sparkno: -1;
         p1sprpriority: 1;
@@ -1189,7 +1189,7 @@ if animElem = 4 && var(10) = 0 {
         projedgebound: 40;        # ③ 飞出屏幕边界 40 px 即消失
         projstagebound: 40;
         attr: S, SP;              # SP = Special Projectile
-        damage: 56, 6;
+        damage: 56, 12;
         animtype: Medium;
         guardflag: MA;
         hitflag: MAF;
@@ -1276,7 +1276,7 @@ if animElem = 4 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, SA;
-        damage: 66, 6;
+        damage: 66, 12;
         animtype: Up;
         guardflag: MA;
         hitflag: MAF;
@@ -1378,7 +1378,7 @@ if animElem = 4 && var(10) = 0 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;              # HP = Hyper Projectile
-        damage: 42, 6;
+        damage: 42, 12;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1416,7 +1416,7 @@ if animElem = 7 && var(10) = 1 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 42, 6;
+        damage: 42, 12;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1454,7 +1454,7 @@ if animElem = 9 && var(10) = 2 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 42, 6;
+        damage: 42, 12;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1490,14 +1490,21 @@ call EndState(0);
 #   费用 2000 气（= 整条气槽），lv4。
 #   伤害全部在剑的投射物上（Action 3105）；本体动作没有 Clsn1。
 #   剑以**对手**为基准生成（postype: p2），从上方落下 —— 这才是"剑雨"。
-#      10 把 × 50 = 上限 500（半管血）；实测能连到 6 把 ≈ 300。
+#      10 把 × 80 = 上限 800；实测常见 4~6 连 ⇒ 320~480（32%~48% 血）。
 #
 # ★ 2026-11-03 第二次：单把 16 → 50。
 #   原来的问题不是"数字小"，是**结构倒挂**：
 #       Super（3000）花 1000 气得 195；
 #       终极（3100）花 2000 气（整条槽）只有 10 × 16 = 160 上限、实测 96。
 #   花两倍的气打出四分之一的伤害 —— 那不是"大招"，是惩罚。
-#   现在 6 连 ≈ 300（≈ 3.5 记重斩），10 连命中（对手站着不动）才是 500。
+# ★ 2026-11-08 第三次（负责人试玩反馈）：单把 50 → 80，剑的击退 -2 → -1、
+#   hittime 18 → 20。原因：50 × 6 连 = 300 只在"对手站着不动"时成立，
+#   实机里对手会走位/被前一把剑推开，常常只吃到 2~3 把 = 100~150，
+#   体感完全不像整槽大招。改成 80 之后 **连到 4 把就 320 ≥ 30% 血**，
+#   这是"一次至少打掉 30%"的保底，不是最好情况。
+#   减小击退 / 加长硬直是为了让后续剑更容易连上（剑落点是固定的，
+#   对手被推太远就会漏）。
+
 [StateDef 3100;
 type: S; movetype: A; physics: S;
 juggle: 10; velset: 0, 0; ctrl: 0;
@@ -1513,7 +1520,8 @@ sprpriority: 2;]
 #   所以这一条对 3100 发出的投射物同样有效 —— 不需要改 guardflag。
 #   必须是**状态级**：只在某一 tick 写一次的话，下一 tick 就失效了。
 #   状态总长 198 tick ≥ 最后一把剑的 110 tick 存活期，覆盖整场剑雨。
-#   代价：2000 气 + 长咏唱，换一发不可防的 300 伤害；可被走位/跳跃躲开，不是必胜。
+#   代价：2000 气 + 长咏唱，换一发不可防、保底 320（4 连）的伤害；
+#   可被走位/跳跃躲开，不是必胜。
 assertSpecial{ flag: unguardable }
 
 # Art pass: non-interactive visual accents.
@@ -1569,7 +1577,7 @@ if animElem = 4 && var(10) = 0 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1582,8 +1590,8 @@ if animElem = 4 && var(10) = 0 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1607,7 +1615,7 @@ if animElem = 6 && var(10) = 1 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1620,8 +1628,8 @@ if animElem = 6 && var(10) = 1 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1645,7 +1653,7 @@ if animElem = 8 && var(10) = 2 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1658,8 +1666,8 @@ if animElem = 8 && var(10) = 2 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1683,7 +1691,7 @@ if animElem = 10 && var(10) = 3 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1696,8 +1704,8 @@ if animElem = 10 && var(10) = 3 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1721,7 +1729,7 @@ if animElem = 11 && var(10) = 4 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1734,8 +1742,8 @@ if animElem = 11 && var(10) = 4 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1759,7 +1767,7 @@ if animElem = 12 && var(10) = 5 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1772,8 +1780,8 @@ if animElem = 12 && var(10) = 5 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1797,7 +1805,7 @@ if animElem = 13 && var(10) = 6 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1810,8 +1818,8 @@ if animElem = 13 && var(10) = 6 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1835,7 +1843,7 @@ if animElem = 14 && var(10) = 7 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1848,8 +1856,8 @@ if animElem = 14 && var(10) = 7 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1873,7 +1881,7 @@ if animElem = 15 && var(10) = 8 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1886,8 +1894,8 @@ if animElem = 15 && var(10) = 8 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1911,7 +1919,7 @@ if animElem = 16 && var(10) = 9 {
         projedgebound: 40;
         projstagebound: 40;
         attr: S, HP;
-        damage: 50, 10;
+        damage: 80, 20;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -1924,8 +1932,8 @@ if animElem = 16 && var(10) = 9 {
         guardsound: 9000, 1;    # [P6] 原 6,0 是 KFM 编号，kuri 库里不存在
         ground.type: High;
         ground.slidetime: 10;
-        ground.hittime: 18;
-        ground.velocity: -2;
+        ground.hittime: 20;
+        ground.velocity: -1;
         airguard.velocity: -2, -1.3;
         air.velocity: -2, -3.5;
         air.hittime: 20;
@@ -1993,7 +2001,7 @@ if animElem = 6 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         projedgebound: 40;
         projstagebound: 40;
         attr: S, SP;
-        damage: 50, 4;
+        damage: 50, 8;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -2091,7 +2099,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
         projedgebound: 40;
         projstagebound: 40;
         attr: S, SP;
-        damage: 56, 4;
+        damage: 56, 8;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -2172,7 +2180,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, SA;
-        damage: 78, 6;
+        damage: 78, 12;
         animtype: Hard;
         guardflag: MA;
         hitflag: MAF;
@@ -2235,7 +2243,7 @@ if animElem = 7 {          # ★ P6 对齐：AIR 重排后首个判定元素是�
     var(4) := 1;
     hitDef{
         attr: S, SA;
-        damage: 84, 6;
+        damage: 84, 12;
         animtype: Up;
         guardflag: H;             # ★ Overhead：只能站防（蹲防防不住）
                                   #   原来写 MA = 上下都能防，与出招表「破防（overhead）」、

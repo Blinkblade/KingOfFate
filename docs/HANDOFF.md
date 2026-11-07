@@ -208,6 +208,10 @@ design/characters/archer/
 | 判定框和画面对齐了 = 玩家能躲开 | ❌ **两回事**。能不能跳过取决于**画面顶端 vs 跳跃顶点**，跟框与画面对不对齐无关。`test_fighter_b` 的气弹素材 84 px 高、浮在 40..123，而 `apex = 8.4²/(2×0.44) = 80.2` ⇒ 永远跳不过去，框再准也没用。调"躲得开"先算 `apex`，再算 `-offset_y + 素材高` |
 | `numProj()` 和其他触发器一样带括号 | ❌ `numproj` 在 `compiler.go:3189` 里**不读括号**（直接 `out.append(OC_numproj)`），必须写裸 `numProj`。写成 `numProj()` 编译失败，而 `validate_character` **不解析 ZSS 语法**，只会表现为"角色加载失败" |
 | `changeState{...}` 之后的语句还会执行 | ❌ `bytecode.go:5203` 是 `stop := (crun.id == c.id)` —— **对自己 ChangeState 时 `Run()` 返回 true，引擎就此停止执行同一块里剩下的语句**（除非显式 `continue: 1`）。所以"换状态 + 置变量/加气/放特效"必须**把赋值写在前面**。这条让 Fighter B 的波冷却 240 变成 0、实际 42 tick 一发，**两轮调参都没发现**（表现只是"波变密"，正是当时被投诉的现象）。四个角色 19 处同批修正，见 `docs/iterations/20261103-...` 第十一节 |
+| `damage: N, 0` 里的 0 无所谓 | ❌ 第二个数是 **guard damage（被防削减伤害）**，写在 `hd.guarddamage`（`char.go:10859`）。全填 0 = 对手站着防就零收益，玩家会觉得"打他不掉血"。kfm 的必杀是 `90,4`~`155,12`。2026-11-08 给普通技补 6、必杀/投射物翻倍，见 `20261108-combo-and-damage-balance.md` |
+| 命中硬直够长 = 能连招 | ❌ **还要看击退**。Archer 轻拳 `slidetime 12 × velocity −5` 把对手推 60 px，而 kfm 是 `5 × −4` = 20 px；二段判定框和一段一样长，必然空振。hittime 16 比 kfm 的 11 还长，白给。轻技击退降到 ≈15 px 后四连打实测 74 伤害 |
+| 取消链「等级严格递增」= 有连段 | ❌ lv1 → lv1 时 `var(3) < 1` **恒假**，猛按 A 只能出一下。kfm 在 `kfm.cmd:637` 用 `stateno = 200 && time > 6` 允许轻拳取消自己。本项目 2026-11-08 在 `CanChain` 加同等级取消分支（带 `time >= 6` 守卫）。另注意 `var(0)` 全仓只有 `:= 0`、从未置 1，"一次攻击只取消一次"是死条件 |
+| 改 `defence` 不影响验收脚本 | ❌ `computeDamage` 是 `damage *= atkmul / finalDefense`（`char.go:8672`），验收局是 archer vs archer，双方共用 .const ⇒ 改 defence 120 后所有实测伤害 ×0.833，30 条配方集体假失败。`verify_moves.ps1` 现在从 `.const` 读 `attack/defence` 算 ratio，并给 `exact` ±2 容差（引擎按**每段命中单独取整**） |
 
 ### 7.2 工作流纪律
 

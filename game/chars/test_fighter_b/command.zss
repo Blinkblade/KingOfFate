@@ -77,8 +77,21 @@ let ret = 0;
 if stateType != A && ctrl {
     let ret = 1;
 }
-# b) 取消：等级严格递增 + 判定帧已开始 + 本次攻击尚未取消
-if var(3) > 0 && var(3) < $lv && var(4) = 1 && var(0) = 0 {
+# b) 升阶取消：等级严格递增 + 判定帧已开始
+#    ★ 2026-11-08 补 moveType/stateType 守卫（Archer 在 10-31 已补，这里漏了）：
+#      var(3)/var(4) 离开攻击状态后不清零，没有这条就能从受击硬直里
+#      changeState 出来 = 无代价脱身。
+if moveType = A && stateType != A && var(3) > 0 && var(3) < $lv && var(4) = 1 && var(0) = 0 {
+    let ret = 1;
+}
+
+# c) ★ 2026-11-08 连段延续：普通技允许**同等级**取消（轻拳连打）。
+#    原来只有"严格递增"，lv1 → lv1 恒假 ⇒ 猛按 A 只能出一下；
+#    KFM 的 kfm.cmd 明写 `stateno = 200 && time > 6` 允许轻拳取消自己。
+#    只对 lv1/lv2 开放；time >= 6 防自我重置；击退（约 15 px）自然终止连段。
+#    var(0) 从未被置 1，是死条件，这里明确不依赖它。
+if moveType = A && stateType != A && $lv >= 1 && $lv <= 2 &&
+    var(3) >= 1 && var(4) = 1 && time >= 6 {
     let ret = 1;
 }
 
