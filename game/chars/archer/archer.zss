@@ -593,6 +593,413 @@ call EndState(0);
 # 蹲轻拳 A（Crouching Light Punch）—— State 400   lv1，下段
 # 下段、快、轻。type: C 是必须的（否则站防能挡住）。
 # ============================================================================
+# ============================================================================
+# ★ 2026-11-08 方向变体：→ 冲斩 —— StateDef 260
+#   刀刃 · 短突进 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 200；位移只在起手前 5 tick（约 28 px），判定帧时已停住
+# ============================================================================
+[StateDef 260;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 260;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 5 {
+    velSet{x: 5.5}
+}
+if time >= 5 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 30, 6;
+        animtype: Light;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 16;
+        ground.velocity: -3;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+call EndState(0);
+
+# ============================================================================
+# ★ 2026-11-08 方向变体：→ 升龙斩 —— StateDef 261
+#   ★ 不耗气对空 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 1100；位移只在起手前 4 tick（约 10 px），判定帧时已停住
+# ============================================================================
+[StateDef 261;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 261;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 4 {
+    velSet{x: 2.5}
+}
+if time >= 4 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 55, 8;
+        animtype: Up;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 5, Hit;
+        pausetime: 12, 12;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: 0, -130;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 19;
+        ground.velocity: -2;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -2, -7;
+        air.hittime: 20;
+    }
+}
+
+call EndState(0);
+
+# ============================================================================
+# ★ 2026-11-08 方向变体：→ 冲蹴 —— StateDef 262
+#   踢腿 · 突进 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 230；位移只在起手前 5 tick（约 30 px），判定帧时已停住
+# ============================================================================
+[StateDef 262;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 262;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 5 {
+    velSet{x: 6.0}
+}
+if time >= 5 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 34, 6;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 17;
+        ground.velocity: -3;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+call EndState(0);
+
+# ============================================================================
+# ★ 2026-11-08 方向变体：→ 冲回旋蹴 —— StateDef 263
+#   重踢 · 突进 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 240；位移只在起手前 6 tick（约 42 px），判定帧时已停住
+# ============================================================================
+[StateDef 263;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 263;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 6 {
+    velSet{x: 7.0}
+}
+if time >= 6 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 58, 8;
+        animtype: Heavy;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 19;
+        ground.velocity: -3;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+call EndState(0);
+
+# ============================================================================
+# ★ 2026-11-08 方向变体：← 退斩 —— StateDef 264
+#   后撤 · 刀刃 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 210；位移只在起手前 3 tick（约 14 px），判定帧时已停住
+# ============================================================================
+[StateDef 264;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 264;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 3 {
+    velSet{x: -4.5}
+}
+if time >= 3 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 34, 6;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 16;
+        ground.velocity: -3;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+call EndState(0);
+
+# ============================================================================
+# ★ 2026-11-08 方向变体：← 退重斩 —— StateDef 265
+#   后撤 · 重斩 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 210；位移只在起手前 3 tick（约 12 px），判定帧时已停住
+# ============================================================================
+[StateDef 265;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 265;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 3 {
+    velSet{x: -4.0}
+}
+if time >= 3 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 62, 8;
+        animtype: Heavy;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 20;
+        ground.velocity: -3;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+call EndState(0);
+
+# ============================================================================
+# ★ 2026-11-08 方向变体：← 退蹴 —— StateDef 266
+#   后撤 · 踢 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 230；位移只在起手前 3 tick（约 15 px），判定帧时已停住
+# ============================================================================
+[StateDef 266;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 266;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 3 {
+    velSet{x: -5.0}
+}
+if time >= 3 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 32, 6;
+        animtype: Medium;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 17;
+        ground.velocity: -3;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+call EndState(0);
+
+# ============================================================================
+# ★ 2026-11-08 方向变体：← 退回旋蹴 —— StateDef 267
+#   后撤 · 重踢 / 不耗气 / lv2（可接在普通技之后，也可继续接气键技能）
+#   动画复用 group 240；位移只在起手前 3 tick（约 16 px），判定帧时已停住
+# ============================================================================
+[StateDef 267;
+type: S; movetype: A; physics: S;
+juggle: 2; velset: 0, 0; ctrl: 0;
+anim: 267;
+poweradd: 15;
+sprpriority: 2;]
+
+if time < 3 {
+    velSet{x: -5.5}
+}
+if time >= 3 {
+    velSet{x: 0}
+}
+
+if time = 0 {
+    call AtkInit(2);
+}
+
+if animElem = 4 {
+    var(4) := 1;
+    hitDef{
+        attr: S, NA;
+        damage: 56, 8;
+        animtype: Heavy;
+        guardflag: MA;
+        hitflag: MAF;
+        priority: 4, Hit;
+        pausetime: 10, 10;
+        sparkno: S7190;
+        guard.sparkno: S7191;
+        sparkxy: -10, -76;
+        hitsound: 9000, 0;
+        guardsound: 9000, 1;
+        ground.type: High;
+        ground.slidetime: 5;
+        ground.hittime: 19;
+        ground.velocity: -3;
+        airguard.velocity: -1.9, -.8;
+        air.type: High;
+        air.velocity: -1.4, -3;
+        air.hittime: 15;
+    }
+}
+
+call EndState(0);
 [StateDef 400;
 type: C; movetype: A; physics: C;
 juggle: 2; velset: 0, 0; ctrl: 0;

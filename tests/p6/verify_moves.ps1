@@ -563,7 +563,7 @@ function Get-TickRate {
 
 # ---------------------------------------------------------------------------
 # 招式配方
-#   Dist: near = 先走到贴身(<=20)；far = 先退到 >=110；none = 不调整
+#   Dist: near = 贴身(<=10)；far = 退到 >=110；mid = 中距 30~60（方向变体用）；none = 不调整
 #   DisplAt: 额外跑一次「对峙距离」的位移测量（见下文注释），单位 px
 #   Steps 里的 Do:
 #     tap     按下 -> 等 N tick -> 松开（和弦就是在同一批里按下多个键）
@@ -660,6 +660,17 @@ $Moves = @(
         @{ Do = 'tap'; Keys = 'A'; Ms = 50 }
     )
     (New-Move 200 'A 四连打' 'A,A,A,A' $TapChain -Dmg 55 -DmgRule atleast -Note '连段修复的回归守护：至少 3 段命中')
+    # ---- 方向变体（2026-11-08 新增，8 招全不耗气）----
+    #   ★ → 系用 -Dist mid（中距冲刺，避开贴身投技）；
+    #     ← 系用 -Dist near：后撤招判定框短，本来就是近距反击，中距必然空振。
+    (New-Move 260 '→+A 冲斩'       '→+A' @(@{ Do = 'tap'; Keys = 'fwd+A'; Ms = 80 }) -Dist mid -Note '刀刃短突进')
+    (New-Move 261 '→+S 升龙斩'     '→+S' @(@{ Do = 'tap'; Keys = 'fwd+S'; Ms = 80 }) -Dist mid -Note '★ 不耗气对空')
+    (New-Move 262 '→+Z 冲蹴'       '→+Z' @(@{ Do = 'tap'; Keys = 'fwd+Z'; Ms = 80 }) -Dist mid -Note '踢腿突进')
+    (New-Move 263 '→+X 冲回旋蹴'   '→+X' @(@{ Do = 'tap'; Keys = 'fwd+X'; Ms = 80 }) -Dist mid -Note '重踢突进')
+    (New-Move 264 '←+A 退斩'       '←+A' @(@{ Do = 'tap'; Keys = 'back+A'; Ms = 80 }) -Dist near -Note '后撤刀刃（近距反击）')
+    (New-Move 265 '←+S 退重斩'     '←+S' @(@{ Do = 'tap'; Keys = 'back+S'; Ms = 80 }) -Dist near -Note '后撤重斩（近距反击）')
+    (New-Move 266 '←+Z 退蹴'       '←+Z' @(@{ Do = 'tap'; Keys = 'back+Z'; Ms = 80 }) -Dist near -Note '后撤踢（近距反击）')
+    (New-Move 267 '←+X 退回旋蹴'   '←+X' @(@{ Do = 'tap'; Keys = 'back+X'; Ms = 80 }) -Dist near -Note '后撤重踢（近距反击）')
     # ---- 闪身 ----
     #   ★ 只给 110 / 1300 加 -DisplAt：它们是**朝对手推进**的招，贴身起手会撞进
     #     推挤盒。115 后撤闪 / 1200 后撤投剑是往反方向走，本来就量得准，而且退到
@@ -1020,6 +1031,40 @@ function Move-Far([double]$min, [int]$timeoutMs = 5000) {
     return $false
 }
 
+function Move-Mid([double]$lo, [double]$hi, [int]$timeoutMs = 4500) {
+    # ★ 方向变体专用（2026-11-08）。两条约束同时成立才测得准：
+    #   ① 不能贴身：极贴身 →/←+S/X 会被既有投技抢走（KOF 惯例，产品行为正确）；
+    #   ② 不能太远：判定框最远 84 世界单位，退到 far(>=110) 必然空振。
+    #   单独跑 8 招时用 -Dist none 恰好避开，但**全量连续跑**时上一条突进招
+    #   会把两人推到贴身，接着两条就 STATE-MISS —— 所以必须每条都重新走位。
+    [void](Focus-Window $script:Hwnd)
+    [void](Read-ProbeRows)
+    $last = Get-LastRow
+    if ($null -ne $last -and $last.Dist -ge $lo -and $last.Dist -le $hi) { return $true }
+    $dir = 'back'                       # 太近 → 后退拉开
+    if ($null -ne $last -and ($last.Dist -gt $hi -or $last.Dist -lt -1)) { $dir = 'fwd' }
+    $vks = @(ConvertTo-VKList $dir)
+    Press-Keys $vks
+    $deadline = (Get-Date).AddMilliseconds($timeoutMs)
+    while ((Get-Date) -lt $deadline) {
+        [void](Read-ProbeRows)
+        $last = Get-LastRow
+        if ($null -ne $last) {
+            if ($dir -eq 'back' -and $last.Dist -ge $lo) { break }
+            if ($dir -eq 'fwd'  -and $last.Dist -le $hi -and $last.Dist -ge -1) { break }
+        }
+        Start-Sleep -Milliseconds 12
+    }
+    Release-Keys $vks
+    [void](Wait-Grounded 2000)
+    [void](Read-ProbeRows)
+    $last = Get-LastRow
+    if ($null -ne $last -and $last.Dist -ge $lo -and $last.Dist -le $hi) { return $true }
+    $gap = if ($null -ne $last) { '{0:N1}' -f $last.Dist } else { 'n/a' }
+    Write-Host ("       !! Move-Mid 没走到位（目标 {0}~{1}，实际 {2}）" -f $lo, $hi, $gap) -ForegroundColor Yellow
+    return $false
+}
+
 # ---------------------------------------------------------------------------
 # 分析
 # ---------------------------------------------------------------------------
@@ -1280,6 +1325,7 @@ try {
                 $posOk = $true
                 if ($mv.Dist -eq 'near') { $posOk = Move-Near 10 3500 }
                 elseif ($mv.Dist -eq 'far') { $posOk = Move-Far 110 }
+                elseif ($mv.Dist -eq 'mid') { $posOk = Move-Mid 30 60 }
                 [void](Read-ProbeRows)
                 $from = $script:Rows.Count
                 # ★ 焦点每条配方只抢一次。Focus-Window 为了绕过前台锁要按 ALT +

@@ -367,6 +367,55 @@ if roundState = 2 && !aiLevelF {
     }
 
     # ========================================================================
+    # 【⑦a 方向变体】不耗气，→/← + A/S/Z/X（State 260~267）
+    #   ★ 必须排在 ⑧ 单键之前：单键只判 `command = "x" && !holddown`，
+    #     不排除 holdfwd/holdback —— 写反了这 8 招会全被普通技抢走。
+    #   ★ 排在 ③ 投技 / ⑦ 闪身之后：极贴身 →/←+S/X 仍是投技（KOF 惯例），
+    #     →/←+A+Z 仍是闪身；方向变体在中远距离生效。
+    #   ★ 全部 lv2（AtkInit(2)）：可从 lv1 普通技升阶取消进来，
+    #     也可同等级连打、或升阶进气键技能。
+    #   ★ 键位是引擎按钮名：x=A / y=S / a=Z / b=X（键盘 a/s/z/x）。
+    # ========================================================================
+    # →+A  冲斩（刀刃 · 短突进，30）
+    if command = "x" && command = "holdfwd" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 260}
+    }
+
+    # →+S  升龙斩（★ 不耗气对空，55）
+    if command = "y" && command = "holdfwd" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 261}
+    }
+
+    # →+Z  冲蹴（踢腿 · 突进，34）
+    if command = "a" && command = "holdfwd" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 262}
+    }
+
+    # →+X  冲回旋蹴（重踢 · 突进，58）
+    if command = "b" && command = "holdfwd" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 263}
+    }
+
+    # ←+A  退斩（后撤 · 刀刃，34）
+    if command = "x" && command = "holdback" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 264}
+    }
+
+    # ←+S  退重斩（后撤 · 重斩，62）
+    if command = "y" && command = "holdback" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 265}
+    }
+
+    # ←+Z  退蹴（后撤 · 踢，32）
+    if command = "a" && command = "holdback" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 266}
+    }
+
+    # ←+X  退回旋蹴（后撤 · 重踢，56）
+    if command = "b" && command = "holdback" && command != "holddown" && stateType = S && $canLv2 {
+        changeState{value: 267}
+    }
+    # ========================================================================
     # 【⑦b T1 同键二次】同一个普通键按两次（.cmd 窗口 36 tick）→ 二段（State 250~253）
     #   ★ 必须排在 ⑧ 的单键规则**之前**：第二次按键时 `TAP_x` 与 `x` 同时成立，
     #     路由是"先命中者生效"，写反了就永远只会出单键那一招，二段不可能出现。

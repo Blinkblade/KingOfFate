@@ -212,6 +212,9 @@ design/characters/archer/
 | 命中硬直够长 = 能连招 | ❌ **还要看击退**。Archer 轻拳 `slidetime 12 × velocity −5` 把对手推 60 px，而 kfm 是 `5 × −4` = 20 px；二段判定框和一段一样长，必然空振。hittime 16 比 kfm 的 11 还长，白给。轻技击退降到 ≈15 px 后四连打实测 74 伤害 |
 | 取消链「等级严格递增」= 有连段 | ❌ lv1 → lv1 时 `var(3) < 1` **恒假**，猛按 A 只能出一下。kfm 在 `kfm.cmd:637` 用 `stateno = 200 && time > 6` 允许轻拳取消自己。本项目 2026-11-08 在 `CanChain` 加同等级取消分支（带 `time >= 6` 守卫）。另注意 `var(0)` 全仓只有 `:= 0`、从未置 1，"一次攻击只取消一次"是死条件 |
 | 改 `defence` 不影响验收脚本 | ❌ `computeDamage` 是 `damage *= atkmul / finalDefense`（`char.go:8672`），验收局是 archer vs archer，双方共用 .const ⇒ 改 defence 120 后所有实测伤害 ×0.833，30 条配方集体假失败。`verify_moves.ps1` 现在从 `.const` 读 `attack/defence` 算 ratio，并给 `exact` ±2 容差（引擎按**每段命中单独取整**） |
+| 位移招 `velSet` 写满整个起手没问题 | ❌ 起手 8~9 tick × 后撤 5~6 ⇒ 判定帧出现时人已退 40~52 px，**退出自己的判定框**，实测 0 伤害（265/267 第一版）。位移只能占起手前 3~6 tick，判定帧时早已停住 |
+| 判定帧后写一次 `Clsn1: 0` 就够了 | ❌ 逐帧 Clsn **只作用于紧邻一个元素**，后面还有几帧就要写几次，否则第二帧可能把攻击框带回来 |
+| 方向变体路由放哪都行 | ❌ 单键规则是 `command = "x" && !holddown`，**不排除 `holdfwd`/`holdback`** ⇒ 按 →+A 时单键也成立。方向变体必须排在单键之前。另外极贴身 →/←+S/X 会被既有投技抢走（KOF 惯例，保留），验收配方因此要用中距走位 `Move-Mid` |
 
 ### 7.2 工作流纪律
 
