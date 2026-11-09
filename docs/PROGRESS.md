@@ -31,9 +31,15 @@ Archer 手感三修、Fighter B「无限波」两轮返工 + 换成自绘火球�
 全量招式验收 30/30 + 四连打配方 PASS、全部测试套件 PASS、波频探针 PASS**。
 
 2026-11-08（二）按总纲「方向变体 4~8」补齐 **8 招不耗气方向变体**
-（`→/← + A/S/Z/X`，状态/动画 260~267，全部复用现有精灵，含 **→+S 不耗气升龙**），
+（`→/← + A/S/Z/X`，状态/动画 260~267，含 **→+S 不耗气升龙**），
 详见 [`20261108-direction-variants.md`](iterations/20261108-direction-variants.md)。
-**全量招式验收 39/39 PASS**（新增 8 条伤害精确匹配、耗气全 0）、
+
+2026-11-09 负责人反馈「动作全复用、分不清」⇒ 从**已登记的原始素材包**
+（`assets/imports/archer_hires/Nameless_Archer/Archer.sff`，1805 精灵 / 423 动作，
+其中 306 个动作从未映射）取出 8 套全新动作，经 `asset_map.csv` + `build_archer_art.ps1`
+正式重建 SFF（470 → 518 精灵），见
+[`20261109-new-move-animations.md`](iterations/20261109-new-move-animations.md)。
+**全量招式验收 39/39 PASS**（8 招伤害精确匹配、耗气全 0）、
 `frame_data --check` 四角色全 PASS、`scripts/test.ps1` ALL PASS、实机 0 崩溃日志。
 
 ---

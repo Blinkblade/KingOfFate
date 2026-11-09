@@ -501,6 +501,36 @@ apex = jump.neu y² / (2 × yaccel)          # 本角色 8.4² / (2 × 0.44) = 8
 
 来源：`game/chars/test_fighter_b/README.md` §11.3 / §11.7（那里记了一次算错顶端的返工）。
 
+### 10.2.3 从原始导入包扩招（2026-11-09）
+
+**成品 SFF 里"没有没用过的精灵"≠ 没有新动作。** Archer 的成品容器
+`game/chars/archer/archer.sff` 只有 470 个精灵、其中仅 4 个未被 AIR 引用；
+但导入源 `assets/imports/archer_hires/Nameless_Archer/Archer.sff` 有
+**1805 精灵 / 187 组 / 423 个动作**，源 AIR 里约 **306 个动作的精灵组从未被映射**。
+要加新动作时，第一步永远是查源包，而不是找外部素材或重绘。
+
+正规流程（可复现、进版本控制）：
+
+```powershell
+# 1) 在 design/characters/archer/asset_map.csv 追加 6 行/招
+#    target_group,target_image,source_group,source_image,action,notes,palette_index
+#    2600,0,205,0,,→+A 冲斩 frame 0,
+#    ...
+# 2) 重建（--force-palette 0 是必须的：源 SFF v1 每张精灵自带调色板，
+#    其中一批指向纯绿/品红的调试色板）
+pwsh -File scripts\build_archer_art.ps1
+# 3) 在 .air 里让新 Action 引用目标组；按可见像素 reach 重算 Clsn1
+python tools\frame_data.py game\chars\archer
+```
+
+挑动作前先导出拼图看姿势：源包里大量 Action 是盾牌、爆裂特效、黑洞、
+投射物或调试色噪点，不是人物动作。`説明書.txt`（cp932 编码）和 `.cmd` 的
+`F_a` / `F_b` / `dash slash *` 命令可以反查招式语义。
+
+★ 源包动作是作者的**完整连击**，不是「起手/判定/收招」三段式，帧 3 常常是
+回收姿势。必须逐帧量可见像素相对轴心的最右延伸，把 reach 最大的帧重排到
+判定元素，否则会出现「判定框和刀不在同一帧」。
+
 ---
 
 ## 11. 做过的决定（以及为什么）
