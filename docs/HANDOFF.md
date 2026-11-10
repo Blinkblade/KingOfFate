@@ -217,6 +217,8 @@ design/characters/archer/
 | 方向变体路由放哪都行 | ❌ 单键规则是 `command = "x" && !holddown`，**不排除 `holdfwd`/`holdback`** ⇒ 按 →+A 时单键也成立。方向变体必须排在单键之前。另外极贴身 →/←+S/X 会被既有投技抢走（KOF 惯例，保留），验收配方因此要用中距走位 `Move-Mid` |
 | 想加新动作就得找新素材 | ❌ 先查**原始导入包**：`assets/imports/archer_hires/Nameless_Archer/Archer.sff` 有 1805 精灵 / 423 动作，而成品 SFF 只映射了 470 个，约 306 个动作从未用过，同一作者/调色板/轴心、授权已登记。改 `design/characters/archer/asset_map.csv` + 跑 `scripts/build_archer_art.ps1` 即可。2026-11-09 就是这样给 8 招换上全新动作的 |
 | 换素材可以照抄旧判定框 | ❌ 新帧的画面延伸完全不同。要逐帧量可见像素相对轴心的最右 reach（× `xscale`），把 reach 最大的帧放到判定元素，再按 `框 = reach + 3 世界` 重算。旧框曾比新画面长 30~50 世界单位 = 隐形判定。另外框 x 起点 38 素材 = 18 世界，`Move-Near` 后两人只隔 10~16 ⇒ **贴身漏判**，短 reach 的招要把起点移到 0 |
+| 挑几帧拼个动作就够了 | ❌ 源包动作是作者的**完整连击**（8~14 帧，含 20 tick 的收刀/落地与发力前定格）。只取 6 帧、判定帧后留 2 帧 ⇒ 负责人反馈「半成品、戛然而止」。2026-11-11 扩成 83 帧完整序列；判定元素仍保持第 4 个，所以 ZSS 不用改。收招拉长会压低 `adv_hit`，必须**同步提高 `hittime`**（现 +4~+8），并补 `pausetime` / 命中帧 `explod` |
+| 打击特效写在 `animElem = N` 块里 | ❌ `animElem = N` 在整个元素持续期为真，会每 tick 重复生成特效。用 `if time = <判定帧起始tick> { explod{...} }`，或照投射物那样加 `var(10)` 闩锁 |
 
 ### 7.2 工作流纪律
 

@@ -668,7 +668,10 @@ $Moves = @(
     (New-Move 262 '→+Z 冲蹴'       '→+Z' @(@{ Do = 'tap'; Keys = 'fwd+Z'; Ms = 80 }) -Dist mid -Note '踢腿突进')
     (New-Move 263 '→+X 冲回旋蹴'   '→+X' @(@{ Do = 'tap'; Keys = 'fwd+X'; Ms = 80 }) -Dist mid -Note '重踢突进')
     (New-Move 264 '←+A 退斩'       '←+A' @(@{ Do = 'tap'; Keys = 'back+A'; Ms = 80 }) -Dist near -Note '后撤刀刃（近距反击）')
-    (New-Move 265 '←+S 退重斩'     '←+S' @(@{ Do = 'tap'; Keys = 'back+S'; Ms = 80 }) -Dist near -Note '后撤重斩（近距反击）')
+    #   265 已改成空中斜下射箭（projectile），伤害由 Get-StateSpec 从 .zss 解析。
+    #   -Dist far：箭从半空斜下飞，需要中远距离才落得到对手身上；
+    #   -DmgRule min 先守住「真的是箭在打、不是本体近战」这件事。
+    (New-Move 265 '←+S 空中斜下射箭' '←+S' @(@{ Do = 'tap'; Keys = 'back+S'; Ms = 80 }) -Dist far -DmgRule min -Note '★ 跳起半空拉弓，向斜下发一支真箭；本体无 hitDef')
     (New-Move 266 '←+Z 退蹴'       '←+Z' @(@{ Do = 'tap'; Keys = 'back+Z'; Ms = 80 }) -Dist near -Note '后撤踢（近距反击）')
     (New-Move 267 '←+X 退回旋蹴'   '←+X' @(@{ Do = 'tap'; Keys = 'back+X'; Ms = 80 }) -Dist near -Note '后撤重踢（近距反击）')
     # ---- 闪身 ----
@@ -707,7 +710,7 @@ $Moves = @(
     (New-Move 1200 '后撤投剑 ←C' '←+C' @(@{ Do = 'tap'; Keys = 'back+C'; Ms = 80 }))
     # ---- 大型气技 ----
     (New-Move 3000 '幻想崩坏 D' 'D' @(@{ Do = 'tap'; Keys = 'D'; Ms = 80 }) -Dist far -DmgRule min -Note '42x3，命中段数取决于位置')
-    (New-Move 1300 '突进斩 →D' '→+D' @(@{ Do = 'tap'; Keys = 'fwd+D'; Ms = 80 }) -DisplAt 220 -Note '推进 12 tick × 7.5')
+    (New-Move 1300 '突进斩 →D' '→+D' @(@{ Do = 'tap'; Keys = 'fwd+D'; Ms = 80 }) -Dist mid -DisplAt 220 -Note '推进 12 tick × 7.5；中距走位防全量连续跑的位置漂移')
     (New-Move 1400 '跳劈下压 ↓D' '↓+D' @(@{ Do = 'tap'; Keys = 'down+D'; Ms = 80 }))
 
     # ---- T3 前摇取消（普通技起手 → 直接换成气技，多花 100 气）----

@@ -39,8 +39,15 @@ Archer 手感三修、Fighter B「无限波」两轮返工 + 换成自绘火球�
 其中 306 个动作从未映射）取出 8 套全新动作，经 `asset_map.csv` + `build_archer_art.ps1`
 正式重建 SFF（470 → 518 精灵），见
 [`20261109-new-move-animations.md`](iterations/20261109-new-move-animations.md)。
-**全量招式验收 39/39 PASS**（8 招伤害精确匹配、耗气全 0）、
-`frame_data --check` 四角色全 PASS、`scripts/test.ps1` ALL PASS、实机 0 崩溃日志。
+
+2026-11-11 再按试玩反馈收尾（详见
+[`20261111-full-animations-and-air-arrow.md`](iterations/20261111-full-animations-and-air-arrow.md)）：
+① 上一版每组只映射 6 帧、砍掉了源动作 8~14 帧里的收刀/落地段 → 扩成完整
+**83 帧**（SFF 518 → 553 精灵），补命中刀光、加长 `pausetime` 与同步 `hittime`，
+帧优势回到 +4~+8；② **`←+S` 从近战改成真正的空中斜下射箭**（跳起拉弓 14 帧 →
+`projectile` 斜下发箭，本体无 `hitDef`，实测 46 伤害）。
+当前：**全量招式验收 39/39 PASS**、`frame_data --check` 四角色全 PASS、
+`scripts/test.ps1` ALL PASS、实机 0 崩溃日志。
 
 ---
 

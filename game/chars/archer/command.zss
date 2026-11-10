@@ -401,7 +401,7 @@ if roundState = 2 && !aiLevelF {
         changeState{value: 264}
     }
 
-    # ←+S  退重斩（后撤 · 重斩，62）
+    # ←+S  空中斜下射箭（跳起拉弓 → projectile，55 伤害，本体无 hitDef）
     if command = "y" && command = "holdback" && command != "holddown" && stateType = S && $canLv2 {
         changeState{value: 265}
     }
