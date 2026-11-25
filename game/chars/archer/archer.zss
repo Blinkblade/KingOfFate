@@ -628,7 +628,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 4 {
+if animElem = 3 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -678,7 +678,7 @@ if time >= 4 {
 
 
 # ★ 2026-11-11 打击感：命中帧的刀光/冲击特效（只在这一 tick 放一次）。
-if time = 6 {
+if time = 8 {
     explod{
         anim: 7260; ID: 8101;
         postype: p1; pos: 12, -70;
@@ -691,7 +691,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 4 {
+if animElem = 5 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -708,7 +708,7 @@ if animElem = 4 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 5;
-        ground.hittime: 28;
+        ground.hittime: 24;
         ground.velocity: -2;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -741,7 +741,7 @@ if time >= 5 {
 
 
 # ★ 2026-11-11 打击感：命中帧的刀光/冲击特效（只在这一 tick 放一次）。
-if time = 6 {
+if time = 12 {
     explod{
         anim: 7200; ID: 8102;
         postype: p1; pos: 12, -70;
@@ -754,7 +754,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 4 {
+if animElem = 7 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -771,7 +771,7 @@ if animElem = 4 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 5;
-        ground.hittime: 20;
+        ground.hittime: 10;
         ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -804,7 +804,7 @@ if time >= 6 {
 
 
 # ★ 2026-11-11 打击感：命中帧的刀光/冲击特效（只在这一 tick 放一次）。
-if time = 8 {
+if time = 14 {
     explod{
         anim: 7270; ID: 8103;
         postype: p1; pos: 12, -70;
@@ -817,7 +817,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 4 {
+if animElem = 8 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -834,7 +834,7 @@ if animElem = 4 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 5;
-        ground.hittime: 28;
+        ground.hittime: 18;
         ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -867,7 +867,7 @@ if time >= 3 {
 
 
 # ★ 2026-11-11 打击感：命中帧的刀光/冲击特效（只在这一 tick 放一次）。
-if time = 6 {
+if time = 10 {
     explod{
         anim: 7260; ID: 8104;
         postype: p1; pos: 12, -70;
@@ -880,7 +880,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 4 {
+if animElem = 6 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -897,7 +897,7 @@ if animElem = 4 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 5;
-        ground.hittime: 21;
+        ground.hittime: 16;
         ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -920,7 +920,6 @@ call EndState(0);
 #   现在本体没有 hitDef / Clsn1，伤害全部在箭上。
 #   动画：SFF 组 2650（源包 action 1000 拉弓 14 帧，含放箭与收招）。
 #   不耗气 / lv2 / 31 tick；箭可被走位或跳跃躲开，不是必中。
-# ============================================================================
 [StateDef 265;
 type: A; movetype: A; physics: A;
 juggle: 2; velset: 0, 0; ctrl: 0;
@@ -928,10 +927,19 @@ anim: 265;
 poweradd: 15;
 sprpriority: 2;]
 
-# ★ 起跳初速只在起手段写；之后交给 physics: A 的重力，角色自然升到顶点再落下。
-#   （状态级 velSet 每 tick 都会写回，必须用 if time < 分段，不能写在 time = 0 里。）
-if time < 8 {
-    velSet{x: -2; y: -7}
+# ★ 2026-11-25 修：起跳只在前 4 tick 给初速，之后彻底交给重力。
+#   旧版 `if time < 8 { velSet{y: -7} }` 每 tick 重置一次 → 8 tick 匀速上升 56px，
+#   实际跳到 108px，31 tick 还没落地，切回站立后**永久悬停在 -95.56**。
+#   现在 apex ≈ 7.2²/(2×0.44) ≈ 59px、滞空 ≈ 33 tick，与本状态 30 tick 基本对齐。
+if time < 1 {
+    velSet{x: -1.5; y: -7.2}
+}
+# 后撤只保留 4 tick（约 6px）：旧版让角色一直漂，把距离从 130 拉到 195，箭更难中。
+if time >= 1 && time < 4 {
+    velSet{x: -1.5}
+}
+if time >= 4 {
+    velSet{x: 0}
 }
 
 if time = 0 {
@@ -939,27 +947,26 @@ if time = 0 {
     call ProjInit();
 }
 
-# 拉满弓那一 tick 的弓弦光效
-if time = 16 {
+# 拉满→放箭那一 tick 的弓弦/箭头光
+if time = 17 {
     explod{
         anim: 7250; ID: 8105;
-        postype: p1; pos: 55, -95;
+        postype: p1; pos: 55, -75;
         scale: 0.22, 0.22;
         bindtime: -1; removetime: -2;
         ownpal: 1; sprpriority: 3; removeongethit: 1;
     }
 }
 
-# ★ 第 9 个动画元素（拉满弓）放箭。
-#   animElem = N 在整个元素持续期内都为真 —— 没有 var(10) 闩锁会连发多支箭。
-if animElem = 9 && var(10) = 0 {
+# ★ 第 10 个动画元素（弓弦释放）放箭。var(10) 闩锁必需，否则会连发多支。
+if animElem = 10 && var(10) = 0 {
     var(10) := 1;
     projectile{
         projanim: 1005;
         projid: 2650;
         postype: p1;
-        offset: 70, -110;
-        velocity: 8, 6;          # 斜下：比地面版 ↓C 的 7,3 更陡
+        offset: 60, -80;
+        velocity: 8, 6;
         projhits: 1;
         projremovetime: 90;
         projpriority: 3;
@@ -993,7 +1000,14 @@ if time = 1 {
     call CSnd(9000, 0, 1);
 }
 
-call EndState(0);
+# ★ 不要 EndState(0)：那会在空中切到站立（physics S 不落地），角色会卡在半空。
+#   动画播完且**已经落地**才回站立；没落地就停在最后一帧继续下落。
+#   ★ 触发器必须写 `pos y`（带空格），不是 posY —— 写错会让引擎编译期 panic
+#     （实测 `Invalid data: posy`，见 save/logs/Ikemen_2026-11-25_23-26-54.log）。
+if animTime = 0 && pos y >= 0 {
+    changeState{value: 0; ctrl: 1}
+}
+
 
 
 # ============================================================================
@@ -1018,7 +1032,7 @@ if time >= 3 {
 
 
 # ★ 2026-11-11 打击感：命中帧的刀光/冲击特效（只在这一 tick 放一次）。
-if time = 6 {
+if time = 2 {
     explod{
         anim: 7200; ID: 8106;
         postype: p1; pos: 12, -70;
@@ -1031,7 +1045,7 @@ if time = 0 {
     call AtkInit(2);
 }
 
-if animElem = 4 {
+if animElem = 2 {
     var(4) := 1;
     hitDef{
         attr: S, NA;
@@ -1048,7 +1062,7 @@ if animElem = 4 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 5;
-        ground.hittime: 19;
+        ground.hittime: 17;
         ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;
@@ -1081,7 +1095,7 @@ if time >= 3 {
 
 
 # ★ 2026-11-11 打击感：命中帧的刀光/冲击特效（只在这一 tick 放一次）。
-if time = 8 {
+if time = 6 {
     explod{
         anim: 7270; ID: 8107;
         postype: p1; pos: 12, -70;
@@ -1111,7 +1125,7 @@ if animElem = 4 {
         guardsound: 9000, 1;
         ground.type: High;
         ground.slidetime: 5;
-        ground.hittime: 22;
+        ground.hittime: 18;
         ground.velocity: -3;
         airguard.velocity: -1.9, -.8;
         air.type: High;

@@ -49,6 +49,13 @@ Archer 手感三修、Fighter B「无限波」两轮返工 + 换成自绘火球�
 当前：**全量招式验收 39/39 PASS**、`frame_data --check` 四角色全 PASS、
 `scripts/test.ps1` ALL PASS、实机 0 崩溃日志。
 
+2026-11-25 按「全部实际复测一遍」逐帧读探针 CSV，修掉四个真问题（详见
+[`20261125-order-and-landing-fix.md`](iterations/20261125-order-and-landing-fix.md)）：
+① **265 射完箭永久悬停**（空中 `EndState(0)` 切到 `physics: S` 不落地，posY 卡 −95.56）
+→ 改成落地判定后再回站立；② 265 后撤漂移 65px → 只退 6px；
+③ **8 招帧序回退**（为凑第 4 判定元素重排，动作会倒放跳帧）→ 全部按源顺序播放、
+`animElem` 跟着改到真正的攻击帧；④ ZSS 的 `posY` 必须写 `pos y`，否则加载期 panic。
+
 ---
 
 ## 2. 已完成
